@@ -1,7 +1,7 @@
 # psiphy — Package for Statistical Inference of Physics
 
 <p align="center">
-  <img src="logo.png" alt="psiphy logo" width="500"/>
+  <img src="docs/logo_cropped.png" alt="psiphy logo" width="100"/>
 </p>
 
 [![License](https://img.shields.io/github/license/sambit-giri/psiphy.svg)](https://github.com/sambit-giri/psiphy/blob/master/LICENSE)

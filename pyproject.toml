@@ -50,8 +50,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sambit-giri/PSI"
-Issues = "https://github.com/sambit-giri/PSI/issues"
+Homepage = "https://github.com/sambit-giri/psiphy"
+Issues = "https://github.com/sambit-giri/psiphy/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update_pypi.sh — build and upload BEoRN to PyPI
+# update_pypi.sh — build and upload psiphy to PyPI
 #
 # Usage:
 #   ./update_pypi.sh

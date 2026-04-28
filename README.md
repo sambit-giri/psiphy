@@ -1,5 +1,9 @@
 # psiphy — Package for Statistical Inference of Physics
 
+<p align="center">
+  <img src="logo.png" alt="psiphy logo" width="500"/>
+</p>
+
 [![License](https://img.shields.io/github/license/sambit-giri/PSI.svg)](https://github.com/sambit-giri/PSI/blob/master/LICENSE)
 [![GitHub Repository](https://img.shields.io/github/repo-size/sambit-giri/PSI)](https://github.com/sambit-giri/PSI)
 [![CI status](https://github.com/sambit-giri/PSI/actions/workflows/ci.yml/badge.svg)](https://github.com/sambit-giri/PSI/actions/workflows/ci.yml)

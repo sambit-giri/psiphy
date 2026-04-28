@@ -1,5 +1,12 @@
-PSI — Parameter and Statistical Inference
-==========================================
+.. image:: logo.png
+   :alt: psiphy logo
+   :width: 500px
+   :align: center
+
+|
+
+psiphy — Package for Statistical Inference of Physics
+======================================================
 
 A Python package for cosmological parameter inference, providing tools for
 simulation-based inference (SBI), MCMC sampling, Fisher forecasting, and

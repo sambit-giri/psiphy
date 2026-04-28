@@ -21,3 +21,7 @@ psiphy.toy_models
 .. automodule:: psiphy.toy_models.cosmological
    :members:
    :undoc-members:
+
+.. automodule:: psiphy.toy_models.lotka_volterra
+   :members:
+   :undoc-members:

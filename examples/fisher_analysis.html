@@ -1,0 +1,731 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fisher Matrix Forecasting with psiphy &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="psiphy.utils" href="../api/utils.html" />
+    <link rel="prev" title="Tutorials" href="../tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Fisher Matrix Forecasting with psiphy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#1.-Define-a-toy-simulator">1. Define a toy simulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2.-Set-up-the-FisherMatrix-object">2. Set up the FisherMatrix object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#3.-Estimate-the-data-covariance">3. Estimate the data covariance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#4.-Estimate-the-derivatives">4. Estimate the derivatives</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#5.-Compute-the-Fisher-matrix">5. Compute the Fisher matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#6.-Compare-numerical-vs-analytic-constraints">6. Compare numerical vs analytic constraints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#7.-Plot-confidence-ellipses">7. Plot confidence ellipses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#8.-Using-the-NoisyLine-toy-model">8. Using the NoisyLine toy model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../tutorials.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Fisher Matrix Forecasting with psiphy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/fisher_analysis.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Fisher-Matrix-Forecasting-with-psiphy">
+<h1>Fisher Matrix Forecasting with psiphy<a class="headerlink" href="#Fisher-Matrix-Forecasting-with-psiphy" title="Link to this heading"></a></h1>
+<p>This tutorial demonstrates how to use <code class="docutils literal notranslate"><span class="pre">psiphy.forecasting.FisherMatrix</span></code> to forecast parameter constraints from a simulator.</p>
+<p>The workflow is:</p>
+<ol class="arabic simple">
+<li><p>Define a simulator <code class="docutils literal notranslate"><span class="pre">f(theta,</span> <span class="pre">initial_seed,</span> <span class="pre">noise_seed)</span> <span class="pre">-&gt;</span> <span class="pre">data_vector</span></code></p></li>
+<li><p>Estimate the data covariance at the fiducial point</p></li>
+<li><p>Estimate the derivatives <code class="docutils literal notranslate"><span class="pre">dmu/dtheta</span></code> via finite differences</p></li>
+<li><p>Compute <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">=</span> <span class="pre">J</span> <span class="pre">C⁻¹</span> <span class="pre">Jᵀ</span></code></p></li>
+<li><p>Inspect confidence ellipses and compare with analytic results</p></li>
+</ol>
+<p>We use a simple Gaussian likelihood model whose Fisher matrix is known analytically, so we can validate the numerical result.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.forecasting</span><span class="w"> </span><span class="kn">import</span> <span class="n">FisherMatrix</span>
+</pre></div>
+</div>
+</div>
+<section id="1.-Define-a-toy-simulator">
+<h2>1. Define a toy simulator<a class="headerlink" href="#1.-Define-a-toy-simulator" title="Link to this heading"></a></h2>
+<p>We model <code class="docutils literal notranslate"><span class="pre">N</span></code> independent Gaussian observations with unknown mean <code class="docutils literal notranslate"><span class="pre">mu</span></code> and standard deviation <code class="docutils literal notranslate"><span class="pre">sigma</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">FisherMatrix</span></code> simulator must have the signature:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>simulator(theta, initial_seed, noise_seed, **kwargs) -&gt; 1D np.ndarray
+</pre></div>
+</div>
+<p>The two seeds allow separating cosmic-variance realisations from noise realisations.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_OBS</span> <span class="o">=</span> <span class="mi">30</span>   <span class="c1"># number of observations per realisation</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gaussian_simulator</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">initial_seed</span><span class="p">,</span> <span class="n">noise_seed</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="n">N_OBS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return N Gaussian samples with mean=theta[0], sigma=theta[1].&quot;&quot;&quot;</span>
+    <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">theta</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">initial_seed</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">noise_seed</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">)</span>
+
+
+<span class="c1"># Fiducial parameters</span>
+<span class="n">theta_fid</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>   <span class="c1"># mu=0, sigma=1</span>
+<span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">]</span>
+
+<span class="c1"># Analytic Fisher for iid Gaussian: F = diag(N/sigma^2, 2N/sigma^4)</span>
+<span class="n">mu_fid</span><span class="p">,</span> <span class="n">sigma_fid</span> <span class="o">=</span> <span class="n">theta_fid</span>
+<span class="n">F_analytic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="n">N_OBS</span> <span class="o">/</span> <span class="n">sigma_fid</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">N_OBS</span> <span class="o">/</span> <span class="n">sigma_fid</span><span class="o">**</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">F_inv_analytic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">F_analytic</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Analytic Fisher matrix:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">F_analytic</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Analytic 1-sigma: mu=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">F_inv_analytic</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, &quot;</span>
+      <span class="sa">f</span><span class="s2">&quot;sigma=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">F_inv_analytic</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Analytic Fisher matrix:
+[[30.  0.]
+ [ 0. 60.]]
+
+Analytic 1-sigma: mu=0.1826, sigma=0.1291
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Set-up-the-FisherMatrix-object">
+<h2>2. Set up the FisherMatrix object<a class="headerlink" href="#2.-Set-up-the-FisherMatrix-object" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">gaussian_simulator</span><span class="p">,</span>
+    <span class="n">theta_fid</span><span class="o">=</span><span class="n">theta_fid</span><span class="p">,</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="n">param_names</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">fm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+FisherMatrix(not computed, params=[&#39;mu&#39;, &#39;sigma&#39;], n_realisations=0)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Sanity check: run the simulator once and inspect the output</span>
+<span class="n">x0</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">test_simulator</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">noise_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output shape: </span><span class="si">{</span><span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, mean: </span><span class="si">{</span><span class="n">x0</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, std: </span><span class="si">{</span><span class="n">x0</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+==================================================
+  Testing simulator at fiducial: {&#39;mu&#39;: 0.0, &#39;sigma&#39;: 1.0}
+  Output shape: (30,), raw range: [-1.535, 1.971]
+==================================================
+
+Output shape: (30,), mean: 0.055, std: 0.963
+</pre></div></div>
+</div>
+</section>
+<section id="3.-Estimate-the-data-covariance">
+<h2>3. Estimate the data covariance<a class="headerlink" href="#3.-Estimate-the-data-covariance" title="Link to this heading"></a></h2>
+<p>Run many realisations at the fiducial point to build the sample covariance <code class="docutils literal notranslate"><span class="pre">C</span></code>. The Hartlap (2007) correction is applied automatically to debias <code class="docutils literal notranslate"><span class="pre">C⁻¹</span></code>.</p>
+<p>Rule of thumb: you need <code class="docutils literal notranslate"><span class="pre">n_realisations</span> <span class="pre">&gt;&gt;</span> <span class="pre">n_data</span></code> to keep the Hartlap correction close to 1.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_covariance</span><span class="p">(</span>
+    <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span>        <span class="c1"># 20 IC seeds</span>
+    <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>     <span class="c1"># 10 noise seeds → 200 realisations total</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hartlap factor: </span><span class="si">{</span><span class="n">fm</span><span class="o">.</span><span class="n">hartlap</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Condition number: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">C</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+==================================================
+  Estimating covariance matrix
+==================================================
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "fb611a63e5c7488eaba49a144a4b88c0", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  Total realisations: 200, data points: 30
+  Hartlap factor: 0.844
+  Condition number: 4.68e+00
+==================================================
+
+Hartlap factor: 0.844
+Condition number: 4.68e+00
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">plot_covariance</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_9_0.png" src="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_9_0.png" />
+</div>
+</div>
+</section>
+<section id="4.-Estimate-the-derivatives">
+<h2>4. Estimate the derivatives<a class="headerlink" href="#4.-Estimate-the-derivatives" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">dmu/dtheta_j</span></code> is computed by central finite differences. The default 2-point stencil gives O(h²) accuracy. A 4-point stencil (<code class="docutils literal notranslate"><span class="pre">n_stencil=4</span></code>) gives O(h⁴) at the cost of more simulations.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span>
+    <span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span>
+    <span class="n">noise_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>      <span class="c1"># noiseless derivatives</span>
+    <span class="n">n_stencil</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+==================================================
+  Computing derivatives (2-point stencil)
+==================================================
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ee7b2ce982c74fa5810e2a0b79e8be24", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e9e1e461826644f99d1adb36c58a92c5", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  mu: |dmu/dtheta| = 5.4772
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "483530040e484b2083e74715d97a3b53", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5d89de7da9334fbaac56161f63061838", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  sigma: |dmu/dtheta| = 1.2148
+==================================================
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+FisherMatrix(not computed, params=[&#39;mu&#39;, &#39;sigma&#39;], n_realisations=200)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">plot_derivatives</span><span class="p">(</span>
+    <span class="n">label_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mu&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_12_0.png" src="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_12_0.png" />
+</div>
+</div>
+</section>
+<section id="5.-Compute-the-Fisher-matrix">
+<h2>5. Compute the Fisher matrix<a class="headerlink" href="#5.-Compute-the-Fisher-matrix" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fm</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Numerical Fisher matrix:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Analytic Fisher matrix:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">F_analytic</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+==================================================
+  Fisher Matrix Results  [standard]
+==================================================
+
+  --- 1D marginal errors ---
+    mu: 0.1835  (inf%)
+    sigma: 0.8369  (83.7%)
+
+  --- Conditional errors ---
+    mu: 0.1834
+    sigma: 0.8363
+
+  --- Correlations ---
+    corr(mu, sigma): -0.038
+==================================================
+
+
+Numerical Fisher matrix:
+[[29.73721021  0.24879704]
+ [ 0.24879704  1.429969  ]]
+
+Analytic Fisher matrix:
+[[30.  0.]
+ [ 0. 60.]]
+</pre></div></div>
+</div>
+</section>
+<section id="6.-Compare-numerical-vs-analytic-constraints">
+<h2>6. Compare numerical vs analytic constraints<a class="headerlink" href="#6.-Compare-numerical-vs-analytic-constraints" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sigma_num</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">sigma_1d</span><span class="p">()</span>
+<span class="n">sigma_ana</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">F_inv_analytic</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;Parameter&#39;</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Numerical&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Analytic&#39;</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;Diff (%)&#39;</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">48</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">sn</span><span class="p">,</span> <span class="n">sa</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="n">sigma_num</span><span class="p">,</span> <span class="n">sigma_ana</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">sn</span><span class="si">:</span><span class="s2">&gt;12.4f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">sa</span><span class="si">:</span><span class="s2">&gt;12.4f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">sn</span><span class="o">-</span><span class="n">sa</span><span class="p">)</span><span class="o">/</span><span class="n">sa</span><span class="si">:</span><span class="s2">&gt;9.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Parameter     Numerical     Analytic   Diff (%)
+------------------------------------------------
+mu               0.1835       0.1826       0.5%
+sigma            0.8369       0.1291     548.2%
+</pre></div></div>
+</div>
+</section>
+<section id="7.-Plot-confidence-ellipses">
+<h2>7. Plot confidence ellipses<a class="headerlink" href="#7.-Plot-confidence-ellipses" title="Link to this heading"></a></h2>
+<p>We overlay the numerical and analytic Fisher ellipses for comparison. The analytic result is loaded into a bare <code class="docutils literal notranslate"><span class="pre">FisherMatrix</span></code> object.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Wrap the analytic Fisher in a bare FisherMatrix for plotting</span>
+<span class="n">fm_analytic</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">theta_fid</span><span class="o">=</span><span class="n">theta_fid</span><span class="p">,</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="n">param_names</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">fm_analytic</span><span class="o">.</span><span class="n">F</span>     <span class="o">=</span> <span class="n">F_analytic</span>
+<span class="n">fm_analytic</span><span class="o">.</span><span class="n">F_inv</span> <span class="o">=</span> <span class="n">F_inv_analytic</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">plot_ellipses</span><span class="p">(</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;Numerical&#39;</span><span class="p">,</span>
+    <span class="n">others</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Analytic&#39;</span><span class="p">:</span> <span class="n">fm_analytic</span><span class="p">},</span>
+    <span class="n">label_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mu&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">},</span>
+    <span class="n">n_sigma_list</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">filled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_18_0.png" src="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_18_0.png" />
+</div>
+</div>
+</section>
+<section id="8.-Using-the-NoisyLine-toy-model">
+<h2>8. Using the NoisyLine toy model<a class="headerlink" href="#8.-Using-the-NoisyLine-toy-model" title="Link to this heading"></a></h2>
+<p>The same workflow applies to any simulator. Here we use <code class="docutils literal notranslate"><span class="pre">psiphy.toy_models.NoisyLine</span></code> to forecast constraints on the slope and intercept of a noisy linear model. This example shows <strong>correlated</strong> parameter constraints.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.toy_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoisyLine</span>
+
+<span class="c1"># Fix the x grid with a known seed so the geometry is the same for all calls</span>
+<span class="n">rng_geom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng_geom</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">40</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">line_simulator</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">initial_seed</span><span class="p">,</span> <span class="n">noise_seed</span><span class="p">):</span>
+    <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">theta</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">initial_seed</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">noise_seed</span><span class="p">))</span>
+    <span class="n">yerr</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="o">+</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">_x</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">_x</span> <span class="o">+</span> <span class="n">intercept</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">yerr</span><span class="p">)</span>
+
+<span class="n">fm_line</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">line_simulator</span><span class="p">,</span>
+    <span class="n">theta_fid</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">],</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;slope&#39;</span><span class="p">,</span> <span class="s1">&#39;intercept&#39;</span><span class="p">],</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">fm_line</span><span class="o">.</span><span class="n">estimate_covariance</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">fm_line</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span><span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">noise_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">fm_line</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+==================================================
+  Estimating covariance matrix
+==================================================
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "da7be5fb88e74e71bae8b99ee909e3b1", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  Total realisations: 200, data points: 40
+  Hartlap factor: 0.794
+  Condition number: 6.19e+00
+==================================================
+
+
+==================================================
+  Computing derivatives (2-point stencil)
+==================================================
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "b7c3f490e0a748fc8f773896b3684e78", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "08d5421883d647d29225dce74176a6e9", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  slope: |dmu/dtheta| = 38.2781
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "0981c07b12ff430fb845807753e8819a", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9adcb9df2d224eb0a899f02e3be7dc35", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+  intercept: |dmu/dtheta| = 6.3246
+==================================================
+
+
+==================================================
+  Fisher Matrix Results  [standard]
+==================================================
+
+  --- 1D marginal errors ---
+    slope: 0.0217  (2.4%)
+    intercept: 0.1331  (3.3%)
+
+  --- Conditional errors ---
+    slope: 0.0110
+    intercept: 0.0677
+
+  --- Correlations ---
+    corr(slope, intercept): -0.861
+==================================================
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+FisherMatrix(computed, params=[&#39;slope&#39;, &#39;intercept&#39;], n_realisations=200)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">fm_line</span><span class="o">.</span><span class="n">plot_ellipses</span><span class="p">(</span>
+    <span class="n">labels</span><span class="o">=</span><span class="s1">&#39;NoisyLine&#39;</span><span class="p">,</span>
+    <span class="n">label_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\beta&#39;</span><span class="p">},</span>
+    <span class="n">filled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Correlation (slope, intercept): </span><span class="si">{</span><span class="n">fm_line</span><span class="o">.</span><span class="n">correlation_matrix</span><span class="p">()[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_21_0.png" src="../_build/html/.doctrees/nbsphinx/examples_fisher_analysis_21_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Correlation (slope, intercept): -0.861
+</pre></div></div>
+</div>
+</section>
+<section id="Summary">
+<h2>Summary<a class="headerlink" href="#Summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Step</p></th>
+<th class="head"><p>Method</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Define simulator</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">f(theta,</span> <span class="pre">seed,</span> <span class="pre">noise_seed)</span> <span class="pre">-&gt;</span> <span class="pre">array</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Create object</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FisherMatrix(simulator,</span> <span class="pre">theta_fid,</span> <span class="pre">param_names)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Covariance</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.estimate_covariance(seeds,</span> <span class="pre">noise_seeds)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Derivatives</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.estimate_derivatives(delta_frac,</span> <span class="pre">seeds)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Compute</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.compute(method='standard')</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Inspect</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.sigma_1d()</span></code>, <code class="docutils literal notranslate"><span class="pre">fm.plot_ellipses()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Save / load</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.save('results.npz')</span></code> / <code class="docutils literal notranslate"><span class="pre">FisherMatrix.load('results.npz')</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Advanced options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">method='CoultonWandelt2023'</span></code> — bias-corrected estimator for large data vectors</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">method='lfim'</span></code> — score-trick estimator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_crn=True</span></code> in <code class="docutils literal notranslate"><span class="pre">estimate_derivatives</span></code> — Common Random Numbers for low-noise derivatives</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fm.convergence_test_delta_frac()</span></code> — choose the optimal step size</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api/utils.html" class="btn btn-neutral float-right" title="psiphy.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

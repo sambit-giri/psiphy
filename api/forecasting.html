@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psiphy.forecasting &mdash; PSI  documentation</title>
+  <title>psiphy.forecasting &mdash; psiphy  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
@@ -16,6 +16,7 @@
       <script src="../_static/documentation_options.js?v=5929fcd5"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +33,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            PSI
+            psiphy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -42,12 +43,43 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="utils.html">psiphy.utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sbi.html">psiphy.sbi</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcmc.html">psiphy.mcmc</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">psiphy.forecasting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">psiphy.forecasting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.fisher.tqdm"><code class="docutils literal notranslate"><span class="pre">tqdm()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix"><code class="docutils literal notranslate"><span class="pre">FisherMatrix</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.run_simulations"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.run_simulations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.cache_info"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.cache_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.test_simulator"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.test_simulator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_covariance"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.estimate_covariance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.add_modelling_error"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.add_modelling_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.estimate_derivatives()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.convergence_test_delta_frac"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.convergence_test_delta_frac()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.compute"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.compute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_1d"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sigma_1d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_2d"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sigma_2d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_conditional"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sigma_conditional()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.correlation_matrix"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.correlation_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sub_fisher"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sub_fisher()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.ellipse_params"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.ellipse_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_ellipses"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_ellipses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_derivatives"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_derivatives()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_covariance"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_covariance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sample"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.to_getdist"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.to_getdist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.save"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.load"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.load()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">psiphy.plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="toy_models.html">psiphy.toy_models</a></li>
 </ul>
@@ -58,7 +90,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">PSI</a>
+          <a href="../index.html">psiphy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -76,9 +108,379 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="psiphy-forecasting">
-<h1>psiphy.forecasting<a class="headerlink" href="#psiphy-forecasting" title="Link to this heading"></a></h1>
-<span class="target" id="module-psiphy.forecasting"></span></section>
+  <section id="module-psiphy.forecasting">
+<span id="psiphy-forecasting"></span><h1>psiphy.forecasting<a class="headerlink" href="#module-psiphy.forecasting" title="Link to this heading"></a></h1>
+<span class="target" id="module-psiphy.forecasting.fisher"></span><dl class="py function">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.tqdm">
+<span class="sig-prename descclassname"><span class="pre">psiphy.forecasting.fisher.</span></span><span class="sig-name descname"><span class="pre">tqdm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#tqdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.tqdm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.forecasting.fisher.</span></span><span class="sig-name descname"><span class="pre">FisherMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta_fid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">sim_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix" title="Link to this definition"></a></dt>
+<dd><p>Numerical Fisher matrix forecast.</p>
+<p>F_ij = (dmu/dtheta_i)^T C^{-1} (dmu/dtheta_j)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulator</strong> (<em>callable</em>) – Function with signature
+<code class="docutils literal notranslate"><span class="pre">simulator(theta,</span> <span class="pre">initial_seed,</span> <span class="pre">noise_seed,</span> <span class="pre">**sim_kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">np.ndarray</span></code>.
+Must return a 1D array (the summary statistic).</p></li>
+<li><p><strong>theta_fid</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_params</em><em>,</em><em>)</em>) – Fiducial parameter values.</p></li>
+<li><p><strong>param_names</strong> (<em>list</em><em> of </em><em>str</em>) – Names for each parameter.</p></li>
+<li><p><strong>X_mean</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Mean for normalisation (0.0 = no normalisation).</p></li>
+<li><p><strong>X_std</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Std for normalisation (1.0 = no normalisation).</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Print progress messages.</p></li>
+<li><p><strong>cache_file</strong> (<em>str</em><em> or </em><em>None</em>) – Path to pickle file for caching simulation outputs across runs.</p></li>
+<li><p><strong>**sim_kwargs</strong> – Additional keyword arguments forwarded to the simulator.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span><span class="n">my_sim</span><span class="p">,</span> <span class="n">theta_fid</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_covariance</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span><span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">plot_ellipses</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.run_simulations">
+<span class="sig-name descname"><span class="pre">run_simulations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(0,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.run_simulations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.run_simulations" title="Link to this definition"></a></dt>
+<dd><p>Pre-run and cache simulations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>array-like</em><em> or </em><em>None</em>) – Parameter values. Defaults to theta_fid.</p></li>
+<li><p><strong>seeds</strong> (<em>iterable</em>) – Initial condition seeds.</p></li>
+<li><p><strong>noise_seeds</strong> (<em>iterable</em>) – Noise seeds.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – Save cache to file after running.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.cache_info">
+<span class="sig-name descname"><span class="pre">cache_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.cache_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.cache_info" title="Link to this definition"></a></dt>
+<dd><p>Print a summary of cached simulations grouped by theta.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.test_simulator">
+<span class="sig-name descname"><span class="pre">test_simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.test_simulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.test_simulator" title="Link to this definition"></a></dt>
+<dd><p>Run the simulator once at fiducial to verify it works.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Normalised output at fiducial parameters.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.estimate_covariance">
+<span class="sig-name descname"><span class="pre">estimate_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(0,</span> <span class="pre">10)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_covariance" title="Link to this definition"></a></dt>
+<dd><p>Estimate the data covariance matrix at the fiducial point.</p>
+<p>Realisations are appended to any existing ones, so you can call this
+multiple times with different seed ranges to increase the sample size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seeds</strong> (<em>iterable</em>) – Initial condition / cosmic variance seeds.</p></li>
+<li><p><strong>noise_seeds</strong> (<em>iterable</em>) – Instrument noise seeds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.add_modelling_error">
+<span class="sig-name descname"><span class="pre">add_modelling_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mod_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.add_modelling_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.add_modelling_error" title="Link to this definition"></a></dt>
+<dd><p>Add a fractional modelling error to the covariance.</p>
+<p>Appends C_mod = diag(mod_err * mu_fid)^2 to the existing covariance
+and recomputes C_inv with the Hartlap correction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mod_err</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Fractional error per data bin.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives">
+<span class="sig-name descname"><span class="pre">estimate_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_stencil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_crn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives" title="Link to this definition"></a></dt>
+<dd><p>Estimate dmu/dtheta via central finite differences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta_frac</strong> (<em>float</em>) – Fractional step size h relative to the fiducial value.</p></li>
+<li><p><strong>seeds</strong> (<em>iterable</em>) – Seeds to average over for stable derivatives.</p></li>
+<li><p><strong>noise_seed</strong> (<em>int</em><em> or </em><em>None</em>) – Noise seed for derivatives (0 = noiseless; None = average over 10).</p></li>
+<li><p><strong>n_stencil</strong> (<em>int</em>) – Stencil order: 2, 4, or 6. Higher order reduces truncation error O(h^n).</p></li>
+<li><p><strong>use_crn</strong> (<em>bool</em>) – Use Common Random Numbers to cancel cosmic variance in the subtraction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.convergence_test_delta_frac">
+<span class="sig-name descname"><span class="pre">convergence_test_delta_frac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_fracs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_stencil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_crn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.convergence_test_delta_frac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.convergence_test_delta_frac" title="Link to this definition"></a></dt>
+<dd><p>Test sensitivity of dmu/dtheta to the finite-difference step size.</p>
+<p>Sweeps <code class="docutils literal notranslate"><span class="pre">delta_fracs</span></code> and records the per-parameter norm of the derivative
+and the 1D marginal constraint. A good step size shows a flat plateau in the
+middle: upturn at small h (stochastic noise) and at large h (truncation error).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta_fracs</strong> (<em>array-like</em><em> or </em><em>None</em>) – Step sizes to test. Default: 10 log-spaced values from 1e-3 to 0.3.</p></li>
+<li><p><strong>seeds</strong> (<em>iterable</em>) – Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>noise_seed</strong> (<em>int</em><em> or </em><em>None</em>) – Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>n_stencil</strong> (<em>int</em>) – Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>use_crn</strong> (<em>bool</em>) – Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em>) – If True, show diagnostic plots.</p></li>
+<li><p><strong>restore</strong> (<em>bool</em>) – Restore self.dmu_dtheta to its value before the test.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Per-parameter dict with keys ‘delta_fracs’, ‘norms’, ‘sigma_1d’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bootstrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shrinkage_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'diagonal'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.compute" title="Link to this definition"></a></dt>
+<dd><p>Compute the Fisher matrix. Results stored in self.F and self.F_inv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – ‘standard’           — F = J C⁻¹ Jᵀ (default).
+‘lfim’               — Score-trick estimator via Synthetic Likelihood.
+‘CoultonWandelt2023’ — Geometric combined estimator (Eq. 18).
+‘Shrinkage’          — Ledoit-Wolf-style covariance regularisation.</p></li>
+<li><p><strong>n_bootstrap</strong> (<em>int</em>) – (lfim only) Bootstrap resamples for uncertainty; populates self.F_std.</p></li>
+<li><p><strong>n_split</strong> (<em>int</em><em> or </em><em>None</em>) – (CoultonWandelt2023 only) Size of set A. Defaults to 50/50 split.</p></li>
+<li><p><strong>shrinkage_target</strong> (<em>str</em>) – (Shrinkage only) ‘diagonal’ or ‘identity’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.sigma_1d">
+<span class="sig-name descname"><span class="pre">sigma_1d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.sigma_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_1d" title="Link to this definition"></a></dt>
+<dd><p>1D marginal 1-sigma errors (marginalised over all other parameters).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sigma_i = sqrt(F_inv[i,i])</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray, shape (n_params,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.sigma_2d">
+<span class="sig-name descname"><span class="pre">sigma_2d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.sigma_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_2d" title="Link to this definition"></a></dt>
+<dd><p>2D marginal errors for all parameter pairs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict keyed by (i, j) → (sigma_i, sigma_j)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.sigma_conditional">
+<span class="sig-name descname"><span class="pre">sigma_conditional</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.sigma_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.sigma_conditional" title="Link to this definition"></a></dt>
+<dd><p>Conditional errors (all other parameters perfectly known).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sigma_i = 1 / sqrt(F[i,i])</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray, shape (n_params,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.correlation_matrix">
+<span class="sig-name descname"><span class="pre">correlation_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.correlation_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.correlation_matrix" title="Link to this definition"></a></dt>
+<dd><p>Parameter correlation matrix derived from F_inv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_params, n_params)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.sub_fisher">
+<span class="sig-name descname"><span class="pre">sub_fisher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.sub_fisher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.sub_fisher" title="Link to this definition"></a></dt>
+<dd><p>Extract a Fisher sub-matrix for a subset of parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>param_indices</strong> (<em>list</em><em> of </em><em>int</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>F_sub, F_sub_inv, sigma_sub</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.ellipse_params">
+<span class="sig-name descname"><span class="pre">ellipse_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.ellipse_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.ellipse_params" title="Link to this definition"></a></dt>
+<dd><p>Compute ellipse parameters for the 2D marginal of parameters (i, j).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<em>int</em>) – Parameter indices.</p></li>
+<li><p><strong>j</strong> (<em>int</em>) – Parameter indices.</p></li>
+<li><p><strong>n_sigma</strong> (<em>int</em>) – 1 or 2.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dict with keys</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>center, width, height, angle_deg</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.plot_ellipses">
+<span class="sig-name descname"><span class="pre">plot_ellipses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">others</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sigma_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.plot_ellipses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.plot_ellipses" title="Link to this definition"></a></dt>
+<dd><p>Triangle plot of Fisher confidence ellipses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>others</strong> (<em>dict</em><em> or </em><em>None</em>) – Additional FisherMatrix objects to overlay, keyed by label string.</p></li>
+<li><p><strong>labels</strong> (<em>str</em><em> or </em><em>None</em>) – Label for this Fisher matrix in the legend.</p></li>
+<li><p><strong>label_names</strong> (<em>dict</em><em> or </em><em>None</em>) – param_name -&gt; LaTeX label string (without <code class="docutils literal notranslate"><span class="pre">$</span></code>).</p></li>
+<li><p><strong>prior_range</strong> (<em>dict</em><em> or </em><em>None</em>) – param_name -&gt; (low, high) for axis limits.</p></li>
+<li><p><strong>n_sigma_list</strong> (<em>list</em><em> of </em><em>int</em>) – Contour levels (1 and/or 2).</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em><em> or </em><em>None</em>) – Figure size.</p></li>
+<li><p><strong>colors</strong> (<em>dict</em><em> or </em><em>None</em>) – label -&gt; colour.</p></li>
+<li><p><strong>filled</strong> (<em>bool</em>) – Fill the innermost ellipse.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.plot_derivatives">
+<span class="sig-name descname"><span class="pre">plot_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.plot_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.plot_derivatives" title="Link to this definition"></a></dt>
+<dd><p>Plot dmu/dtheta for each parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.plot_covariance">
+<span class="sig-name descname"><span class="pre">plot_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(6,</span> <span class="pre">5)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.plot_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.plot_covariance" title="Link to this definition"></a></dt>
+<dd><p>Plot the covariance and correlation matrices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.sample" title="Link to this definition"></a></dt>
+<dd><p>Draw Gaussian samples from the Fisher posterior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_samples</strong> (<em>int</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray, shape (n_samples, n_params)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.to_getdist">
+<span class="sig-name descname"><span class="pre">to_getdist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.to_getdist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.to_getdist" title="Link to this definition"></a></dt>
+<dd><p>Generate a getdist MCSamples object (Gaussian approximation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<em>int</em>)</p></li>
+<li><p><strong>label</strong> (<em>str</em><em> or </em><em>None</em>)</p></li>
+<li><p><strong>label_names</strong> (<em>dict</em><em> or </em><em>None</em>) – param_name -&gt; LaTeX label.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>getdist.MCSamples</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.save" title="Link to this definition"></a></dt>
+<dd><p>Save Fisher matrix results to an npz file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.load">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">sim_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.load" title="Link to this definition"></a></dt>
+<dd><p>Load a FisherMatrix from an npz file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<em>str</em>)</p></li>
+<li><p><strong>simulator</strong> (<em>callable</em><em> or </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix" title="psiphy.forecasting.fisher.FisherMatrix">FisherMatrix</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 
 
            </div>

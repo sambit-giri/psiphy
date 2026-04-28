@@ -1,5 +1,5 @@
 psiphy.toy_models
-==============
+=================
 
 .. automodule:: psiphy.toy_models
    :members:

@@ -1,5 +1,5 @@
 psiphy.plotting
-============
+===============
 
 .. automodule:: psiphy.plotting
    :members:

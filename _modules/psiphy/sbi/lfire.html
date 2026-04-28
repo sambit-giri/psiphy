@@ -1,0 +1,538 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psiphy.sbi.lfire &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">psiphy.sbi.lfire</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for psiphy.sbi.lfire</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">KFold</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">simpson</span> <span class="k">as</span> <span class="n">simps</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">simps</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span> 
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">distances</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">helpers</span> <span class="k">as</span> <span class="n">hf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">bayesian_opt</span> <span class="k">as</span> <span class="n">bopt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegressionCV</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.gaussian_process</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcessRegressor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.gaussian_process.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">Matern</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_grid_bounds</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+	<span class="k">def</span><span class="w"> </span><span class="nf">add_dim_to_grid</span><span class="p">(</span><span class="n">bound</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">init_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">init_grid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">final_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">bound</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bound</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_grid</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">final_grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gg</span><span class="p">,</span><span class="n">nn</span><span class="p">)</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">gg</span><span class="p">)</span><span class="o">==</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="k">else</span> <span class="p">[</span><span class="n">gg</span><span class="p">,</span><span class="n">nn</span><span class="p">]</span> <span class="k">for</span> <span class="n">gg</span> <span class="ow">in</span> <span class="n">init_grid</span> <span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">bound</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bound</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_grid</span><span class="p">)]</span>
+		<span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">final_grid</span><span class="p">)</span>
+	<span class="n">ndim_param</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="n">grid</span> <span class="o">=</span> <span class="n">add_dim_to_grid</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_grid</span><span class="o">=</span><span class="n">n_grid</span><span class="p">,</span> <span class="n">init_grid</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">ndim_param</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">grid</span>
+	<span class="k">for</span> <span class="n">bound</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+		<span class="n">grid</span> <span class="o">=</span> <span class="n">add_dim_to_grid</span><span class="p">(</span><span class="n">bound</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="n">n_grid</span><span class="p">,</span> <span class="n">init_grid</span><span class="o">=</span><span class="n">grid</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">grid</span>
+
+
+<div class="viewcode-block" id="LFIRE_core">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFIRE_core</span><span class="p">:</span>
+	<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">observation</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="s1">&#39;l1&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="c1">#self.N_init  = N_init</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
+		<span class="c1">#self.distance  = distance</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">penalty</span> <span class="o">=</span> <span class="n">penalty</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span> <span class="o">=</span> <span class="n">observation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">kk</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">prior</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">param_bound</span> <span class="o">=</span> <span class="n">bounds</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bounds</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">])</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_m</span> <span class="o">=</span> <span class="n">n_m</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span> <span class="o">=</span> <span class="n">n_theta</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span> <span class="o">=</span> <span class="n">n_grid_out</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clfy</span>   <span class="o">=</span> <span class="n">clfy</span>
+
+		<span class="k">if</span> <span class="n">sim_out_den</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">sim_out_den</span> <span class="o">=</span> <span class="n">sim_out_den</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span> <span class="o">=</span> <span class="n">sim_out_den</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">sim_denominator</span><span class="p">()</span>  
+
+		<span class="k">if</span> <span class="n">thetas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_grid</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span> 
+
+<div class="viewcode-block" id="LFIRE_core.sample_prior">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.sample_prior">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">sample_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kk</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_bound</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_bound</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">param_bound</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="LFIRE_core.theta_grid">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.theta_grid">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">theta_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">_grid_bounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LFIRE_core.sim_denominator">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.sim_denominator">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">sim_denominator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Simulating the marginalisation data set.&#39;</span><span class="p">)</span>
+		<span class="n">params</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_prior</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_m</span><span class="p">)])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">sim_out_den</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">params</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="LFIRE_core.sim_numerator">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.sim_numerator">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">sim_numerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">n_theta</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">sim_out_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="LFIRE_core.ratio">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.ratio">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">sim_out_num</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_score</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+		<span class="n">n_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_out_den</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">sim_out_num</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">sim_numerator</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">sim_out_num</span> <span class="o">=</span> <span class="n">sim_out_num</span>
+		<span class="n">sim_out_num</span><span class="p">,</span> <span class="n">sim_out_den</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_out_num</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_out_den</span>
+		<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">sim_out_num</span><span class="p">,</span><span class="n">sim_out_den</span><span class="p">))</span>
+		<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sim_out_num</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sim_out_den</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+
+		<span class="n">clfy</span> <span class="o">=</span> <span class="n">LogisticRegressionCV</span><span class="p">(</span><span class="n">penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;saga&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clfy</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">clfy</span>
+		<span class="n">clfy</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+		<span class="n">sim_out_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span><span class="p">])</span>
+		<span class="c1">#y_pred = clfy.predict(sim_out_true), </span>
+		<span class="n">y_pred_prob</span>  <span class="o">=</span> <span class="n">clfy</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">sim_out_true</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+		<span class="n">n_theta</span><span class="p">,</span> <span class="n">n_m</span> <span class="o">=</span> <span class="n">sim_out_num</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sim_out_den</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">rr</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_m</span><span class="o">/</span><span class="n">n_theta</span><span class="p">)</span><span class="o">*</span><span class="n">y_pred_prob</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">y_pred_prob</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">rr</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">rr</span><span class="o">&gt;</span><span class="mi">1</span> <span class="k">else</span> <span class="n">rr</span>
+		<span class="k">if</span> <span class="n">get_score</span><span class="p">:</span> <span class="k">return</span> <span class="n">rr</span><span class="p">,</span> <span class="n">clfy</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">rr</span></div>
+
+
+<div class="viewcode-block" id="LFIRE_core.run">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_core.run">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">sim_out_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">thetas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thetas</span><span class="p">):</span>
+			<span class="n">r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">sim_out_num</span><span class="o">=</span><span class="n">sim_out_num</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r0</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+				<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">theta</span> <span class="o">=</span> <span class="p">[</span><span class="n">theta</span><span class="p">]</span>
+				<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">])</span> 
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r0</span><span class="p">))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LFIRE_TrainingSetAuto">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_TrainingSetAuto">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFIRE_TrainingSetAuto</span><span class="p">:</span>
+	<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">observation</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_max</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="s1">&#39;l1&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lfire</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_init</span> <span class="o">=</span> <span class="n">n_init</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_m</span> <span class="o">=</span> <span class="kc">None</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span> <span class="o">=</span> <span class="kc">None</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_step</span>  <span class="o">=</span> <span class="n">n_step</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_max</span>   <span class="o">=</span> <span class="n">n_max</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span> <span class="o">=</span> <span class="n">n_grid_out</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">penalty</span> <span class="o">=</span> <span class="n">penalty</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span>  <span class="o">=</span> <span class="n">observation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">prior</span>  <span class="o">=</span> <span class="n">prior</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clfy</span>   <span class="o">=</span> <span class="n">clfy</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">lfire</span> <span class="o">=</span> <span class="n">LFIRE</span> <span class="k">if</span> <span class="n">lfire</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">lfire</span>
+
+<div class="viewcode-block" id="LFIRE_TrainingSetAuto.run">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_TrainingSetAuto.run">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">sim_out_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clfy_score_mean</span> <span class="o">=</span> <span class="p">{}</span>
+		<span class="c1">#self.Ns = []</span>
+		<span class="n">Ns_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_init</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_step</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+		<span class="n">Ns_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_init</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_step</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">ni_m</span> <span class="ow">in</span> <span class="n">Ns_m</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">ni_t</span> <span class="ow">in</span> <span class="n">Ns_theta</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">lfi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfire</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="n">ni_m</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="n">ni_t</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="n">thetas</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clfy</span><span class="p">)</span>
+				<span class="k">if</span> <span class="n">thetas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">posterior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">clfy_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+				<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="p">):</span>
+					<span class="n">r0</span><span class="p">,</span> <span class="n">s0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">sim_out_num</span><span class="o">=</span><span class="n">sim_out_num</span><span class="p">,</span> <span class="n">get_score</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r0</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">clfy_score</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">s0</span>
+					<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+						<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">theta</span> <span class="o">=</span> <span class="p">[</span><span class="n">theta</span><span class="p">]</span>
+						<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">])</span> 
+						<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r0</span><span class="p">))</span>
+						<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="n">ni_m</span><span class="p">,</span><span class="n">ni_t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">clfy_score</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">clfy_score_mean</span><span class="p">[</span><span class="n">ni_m</span><span class="p">,</span><span class="n">ni_t</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clfy_score</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFIRE_BayesianOpt</span><span class="p">:</span>
+	<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">observation</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="s1">&#39;l1&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lfire</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulate_corner</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exploitation_exploration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigma_tol</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">model_pdf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_init</span>     <span class="o">=</span> <span class="n">n_init</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span>   <span class="o">=</span> <span class="n">max_iter</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tol</span>        <span class="o">=</span> <span class="n">tol</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_m</span>        <span class="o">=</span> <span class="n">n_m</span> 
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span>    <span class="o">=</span> <span class="n">n_theta</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span> <span class="o">=</span> <span class="n">n_grid_out</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>   <span class="o">=</span> <span class="n">verbose</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">penalty</span>   <span class="o">=</span> <span class="n">penalty</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span>  <span class="o">=</span> <span class="n">observation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">prior</span>  <span class="o">=</span> <span class="n">prior</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clfy</span>   <span class="o">=</span> <span class="n">clfy</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">exploitation_exploration</span> <span class="o">=</span> <span class="n">exploitation_exploration</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">sigma_tol</span> <span class="o">=</span> <span class="n">sigma_tol</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">lfire</span> <span class="o">=</span> <span class="n">LFIRE</span> <span class="k">if</span> <span class="n">lfire</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">lfire</span>
+		<span class="k">if</span> <span class="n">model_pdf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">kernel</span> <span class="o">=</span> <span class="n">Matern</span><span class="p">(</span><span class="n">length_scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">length_scale_bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span> <span class="n">nu</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+			<span class="n">model_pdf</span> <span class="o">=</span> <span class="n">GaussianProcessRegressor</span><span class="p">(</span><span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span> <span class="o">=</span> <span class="n">model_pdf</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">lfi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfire</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="n">sim_out_den</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_m</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="n">thetas</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clfy</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span>
+
+		<span class="n">params_corner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corner_to_theta</span><span class="p">()</span> <span class="k">if</span> <span class="n">simulate_corner</span> <span class="k">else</span> <span class="kc">None</span>
+		<span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">params</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">sample_prior</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">param_names</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_init</span> <span class="k">if</span> <span class="n">params_corner</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_init</span><span class="o">-</span><span class="n">params_corner</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">params</span>   <span class="o">=</span> <span class="n">params</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_init</span><span class="p">,:]</span>
+		<span class="k">if</span> <span class="n">params_corner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">params_corner</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">JS_dist</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt.corner_to_theta">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt.corner_to_theta">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">corner_to_theta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">pa</span> <span class="o">=</span> <span class="n">_grid_bounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">pa</span></div>
+
+
+	<span class="k">def</span><span class="w"> </span><span class="nf">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">abc</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">abc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">abc</span><span class="o">.</span><span class="n">ndim</span><span class="o">==</span><span class="mi">1</span> <span class="k">else</span> <span class="n">abc</span>
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt.run">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt.run">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">max_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+		<span class="k">if</span> <span class="n">tol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
+		<span class="c1"># Initial grid</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c1">#start_iter&lt;self.n_init:</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing in a coarse parameter space.&#39;</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">):</span>
+				<span class="n">r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r0</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+					<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">theta</span> <span class="o">=</span> <span class="p">[</span><span class="n">theta</span><span class="p">]</span>
+					<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">])</span> 
+					<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r0</span><span class="p">))</span>
+					<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">))</span>
+
+		<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+		<span class="n">posterior_theta_next</span><span class="p">,</span> <span class="n">sigma_theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span><span class="p">),</span> <span class="n">return_std</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+		<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posterior_theta_next</span><span class="p">)</span>
+
+		<span class="c1"># Next points</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Further sampling the parameter space with Bayesian Optimisation.&#39;</span><span class="p">)</span>
+		<span class="n">start_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">size</span>
+		<span class="n">condition1</span> <span class="o">=</span> <span class="kc">False</span>
+		<span class="k">for</span> <span class="n">n_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_iter</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">condition1</span><span class="p">:</span> 
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stopped as extreme tolerance reached.&#39;</span><span class="p">)</span>
+				<span class="k">break</span>
+
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_tol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">exploitation_exploration</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_tol</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sigma_theta</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_tol</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.</span>
+			<span class="c1">#X_next = bopt.propose_location(bopt.expected_improvement, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10).T</span>
+			<span class="n">X_next</span> <span class="o">=</span> <span class="n">bopt</span><span class="o">.</span><span class="n">propose_location</span><span class="p">(</span><span class="n">bopt</span><span class="o">.</span><span class="n">GP_UCB_posterior_space</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_restarts</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exploitation_exploration</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">X_next</span><span class="p">))</span>
+			<span class="n">r_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">,</span> <span class="n">r_next</span><span class="p">))</span>
+	
+			<span class="n">posterior_theta_old</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+			<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+			<span class="n">posterior_theta_next</span><span class="p">,</span> <span class="n">sigma_theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span><span class="p">),</span> <span class="n">return_std</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+			<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posterior_theta_next</span><span class="p">)</span>
+			<span class="n">js</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">jensenshannon</span><span class="p">(</span><span class="n">posterior_theta_old</span><span class="p">,</span> <span class="n">posterior_theta_next</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">JS_dist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">js</span><span class="p">)</span>
+
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+				<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> 
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r_next</span><span class="p">))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;JS = </span><span class="si">{0:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">js</span><span class="p">))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">n_iter</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">))</span>
+
+			<span class="n">condition1</span> <span class="o">=</span> <span class="n">js</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">tol</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">param_names</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt_ShrinkSpace">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt_ShrinkSpace">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFIRE_BayesianOpt_ShrinkSpace</span><span class="p">:</span>
+	<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">observation</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">shrink_condition</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;CI&#39;</span><span class="p">:</span><span class="mi">95</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">},</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="s1">&#39;l1&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lfire</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">simulate_corner</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exploitation_exploration</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_init</span>     <span class="o">=</span> <span class="n">n_init</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">tol</span>        <span class="o">=</span> <span class="n">tol</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_m</span>        <span class="o">=</span> <span class="n">n_m</span> 
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span>    <span class="o">=</span> <span class="n">n_theta</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span> <span class="o">=</span> <span class="n">n_grid_out</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">shrink_CI</span> <span class="o">=</span> <span class="n">shrink_CI</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span>  <span class="o">=</span> <span class="p">[</span><span class="n">max_iter</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shrink_CI</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_iter</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">))</span> <span class="k">else</span> <span class="n">max_iter</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">max_iter_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>   <span class="o">=</span> <span class="n">verbose</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">penalty</span>   <span class="o">=</span> <span class="n">penalty</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span>  <span class="o">=</span> <span class="n">observation</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">prior</span>  <span class="o">=</span> <span class="n">prior</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span> <span class="o">=</span> <span class="n">thetas</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">clfy</span>   <span class="o">=</span> <span class="n">clfy</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">exploitation_exploration</span> <span class="o">=</span> <span class="n">exploitation_exploration</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">lfire</span> <span class="o">=</span> <span class="n">LFIRE</span> <span class="k">if</span> <span class="n">lfire</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">lfire</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span> <span class="o">=</span> <span class="n">GaussianProcessRegressor</span><span class="p">()</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">lfi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfire</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">sim_out_den</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_m</span><span class="p">,</span> <span class="n">n_theta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_theta</span><span class="p">,</span> <span class="n">n_grid_out</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_grid_out</span><span class="p">,</span> <span class="n">thetas</span><span class="o">=</span><span class="n">thetas</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">clfy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clfy</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span>
+
+		<span class="n">params_corner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corner_to_theta</span><span class="p">()</span> <span class="k">if</span> <span class="n">simulate_corner</span> <span class="k">else</span> <span class="kc">None</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">params</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">sample_prior</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span> <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">param_names</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_init</span> <span class="k">if</span> <span class="n">params_corner</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_init</span><span class="o">-</span><span class="n">params_corner</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+		<span class="k">if</span> <span class="n">params_corner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">params_corner</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">JS_dist</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt_ShrinkSpace.corner_to_theta">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt_ShrinkSpace.corner_to_theta">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">corner_to_theta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">pa</span> <span class="o">=</span> <span class="n">_grid_bounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_grid</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">pa</span></div>
+
+
+	<span class="k">def</span><span class="w"> </span><span class="nf">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">abc</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">abc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">abc</span><span class="o">.</span><span class="n">ndim</span><span class="o">==</span><span class="mi">1</span> <span class="k">else</span> <span class="n">abc</span>
+
+<div class="viewcode-block" id="LFIRE_BayesianOpt_ShrinkSpace.run">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt_ShrinkSpace.run">[docs]</a>
+	<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">max_iter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+		<span class="k">if</span> <span class="n">tol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
+		<span class="c1"># Initial grid</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c1">#start_iter&lt;self.n_init:</span>
+			<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing in a coarse parameter space.&#39;</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">):</span>
+				<span class="n">r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r0</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+					<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="n">theta</span> <span class="o">=</span> <span class="p">[</span><span class="n">theta</span><span class="p">]</span>
+					<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">])</span> 
+					<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r0</span><span class="p">))</span>
+					<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter_tot</span><span class="p">))</span>
+
+		<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+		<span class="n">posterior_theta_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span><span class="p">))</span>
+		<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posterior_theta_next</span><span class="p">)</span>
+
+		<span class="c1"># Next points</span>
+		<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Further sampling the parameter space with Bayesian Optimisation.&#39;</span><span class="p">)</span>
+		<span class="n">start_iter</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+		<span class="n">condition1</span> <span class="o">=</span> <span class="kc">False</span>
+		<span class="k">for</span> <span class="n">n_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_iter</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+			<span class="k">if</span> <span class="n">condition1</span><span class="p">:</span> <span class="k">break</span>
+			<span class="c1">#X_next = bopt.propose_location(bopt.expected_improvement, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10).T</span>
+			<span class="n">X_next</span> <span class="o">=</span> <span class="n">bopt</span><span class="o">.</span><span class="n">propose_location</span><span class="p">(</span><span class="n">bopt</span><span class="o">.</span><span class="n">GP_UCB_posterior_space</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">n_restarts</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exploitation_exploration</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="n">X_next</span><span class="p">))</span>
+			<span class="n">r_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">ratio</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span><span class="p">,</span> <span class="n">r_next</span><span class="p">))</span>
+	
+			<span class="n">posterior_theta_old</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+			<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_params</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+			<span class="n">posterior_theta_next</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjust_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span><span class="p">))</span>
+			<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+			<span class="n">posterior_theta_next</span><span class="p">[</span><span class="n">posterior_theta_next</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posterior_theta_next</span><span class="p">)</span>
+			<span class="n">js</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">jensenshannon</span><span class="p">(</span><span class="n">posterior_theta_old</span><span class="p">,</span> <span class="n">posterior_theta_next</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">JS_dist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">js</span><span class="p">)</span>
+
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+				<span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{0:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">th</span><span class="p">)</span> <span class="k">for</span> <span class="n">th</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> 
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pr(</span><span class="si">{0:}</span><span class="s1">) = </span><span class="si">{1:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">r_next</span><span class="p">))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;JS = </span><span class="si">{0:.5f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">js</span><span class="p">))</span>
+				<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Completed: </span><span class="si">{0:.2f}</span><span class="s1"> %&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="p">(</span><span class="n">n_iter</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter_tot</span><span class="p">))</span>
+
+			<span class="n">condition1</span> <span class="o">=</span> <span class="n">js</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">tol</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">posterior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">posterior_theta</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">thetas</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_out</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lfi</span><span class="o">.</span><span class="n">param_names</span></div>
+</div>
+
+
+
+
+<span class="c1"># LFIRE = LFIRE_core</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">emcee</span>
+    <span class="n">_emcee_EnsembleSampler</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">EnsembleSampler</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">emcee</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">_emcee_EnsembleSampler</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="LFIRE">
+<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.lfire.LFIRE">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFIRE</span><span class="p">(</span><span class="n">_emcee_EnsembleSampler</span><span class="p">):</span>
+<span class="w">	</span><span class="sd">&quot;&quot;&quot;docstring for LFIRE&quot;&quot;&quot;</span>
+	<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">arg</span><span class="p">):</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">LFIRE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">arg</span><span class="p">)</span></div>
+
+		<span class="c1">#self.arg = arg</span>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

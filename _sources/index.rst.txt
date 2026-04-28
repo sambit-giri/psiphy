@@ -13,6 +13,12 @@ simulation-based inference (SBI), MCMC sampling, Fisher forecasting, and
 posterior diagnostics.
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Tutorials
+
+   tutorials
+
+.. toctree::
    :maxdepth: 2
    :caption: API Reference
 

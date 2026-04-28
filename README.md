@@ -1,6 +1,6 @@
-<img src="docs/logo_cropped.png" alt="psiphy logo" width="220" align="right"/>
-
 # psiphy — Package for Statistical Inference of Physics
+
+<img src="docs/logo_cropped.png" alt="psiphy logo" width="120" align="right"/>
 
 [![License](https://img.shields.io/github/license/sambit-giri/psiphy.svg)](https://github.com/sambit-giri/psiphy/blob/master/LICENSE)
 [![GitHub Repository](https://img.shields.io/github/repo-size/sambit-giri/psiphy)](https://github.com/sambit-giri/psiphy)

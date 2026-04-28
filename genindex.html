@@ -94,13 +94,11 @@
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
- | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#W"><strong>W</strong></a>
- | <a href="#X"><strong>X</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -111,6 +109,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.add_modelling_error">add_modelling_error() (psiphy.forecasting.fisher.FisherMatrix method)</a>
+</li>
+      <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.analytic_posterior">analytic_posterior() (psiphy.toy_models.gaussian.GaussianSignal method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -288,14 +288,14 @@
 </li>
       <li><a href="api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt_ShrinkSpace">LFIRE_BayesianOpt_ShrinkSpace (class in psiphy.sbi.lfire)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/sbi.html#psiphy.sbi.lfire.LFIRE_core">LFIRE_core (class in psiphy.sbi.lfire)</a>
 </li>
       <li><a href="api/sbi.html#psiphy.sbi.lfire.LFIRE_TrainingSetAuto">LFIRE_TrainingSetAuto (class in psiphy.sbi.lfire)</a>
 </li>
       <li><a href="api/utils.html#psiphy.utils.sampling_space.LH_sampling">LH_sampling() (in module psiphy.utils.sampling_space)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/utils.html#psiphy.utils.sampling_space.LHS_nsphere">LHS_nsphere() (in module psiphy.utils.sampling_space)</a>
 </li>
       <li><a href="api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.load">load() (psiphy.forecasting.fisher.FisherMatrix class method)</a>
@@ -306,12 +306,28 @@
 </li>
       <li><a href="api/utils.html#psiphy.utils.helpers.loading_verbose">loading_verbose() (in module psiphy.utils.helpers)</a>
 </li>
+      <li><a href="api/toy_models.html#psiphy.toy_models.cosmological.PowerLawSpectrum.log_prob">log_prob() (psiphy.toy_models.cosmological.PowerLawSpectrum method)</a>
+
+      <ul>
+        <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.log_prob">(psiphy.toy_models.gaussian.GaussianSignal method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.log_prob">(psiphy.toy_models.line_fitting.NoisyLine method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra.log_prob">(psiphy.toy_models.lotka_volterra.LotkaVolterra method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model.log_prob">(psiphy.toy_models.ma2.MA2Model method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra">LotkaVolterra (class in psiphy.toy_models.lotka_volterra)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model">MA2Model (class in psiphy.toy_models.ma2)</a>
+</li>
       <li><a href="api/utils.html#psiphy.utils.sampling_space.MC_sampling">MC_sampling() (in module psiphy.utils.sampling_space)</a>
 </li>
       <li><a href="api/utils.html#psiphy.utils.sampling_space.MCS_nsphere">MCS_nsphere() (in module psiphy.utils.sampling_space)</a>
@@ -346,9 +362,15 @@
 </li>
         <li><a href="api/toy_models.html#module-psiphy.toy_models">psiphy.toy_models</a>
 </li>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.cosmological">psiphy.toy_models.cosmological</a>
+</li>
         <li><a href="api/toy_models.html#module-psiphy.toy_models.gaussian">psiphy.toy_models.gaussian</a>
 </li>
         <li><a href="api/toy_models.html#module-psiphy.toy_models.line_fitting">psiphy.toy_models.line_fitting</a>
+</li>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.lotka_volterra">psiphy.toy_models.lotka_volterra</a>
+</li>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.ma2">psiphy.toy_models.ma2</a>
 </li>
         <li><a href="api/utils.html#module-psiphy.utils">psiphy.utils</a>
 </li>
@@ -367,30 +389,32 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra.noiseless">noiseless() (psiphy.toy_models.lotka_volterra.LotkaVolterra method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.noisy_line">noisy_line (in module psiphy.toy_models.line_fitting)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine">NoisyLine (class in psiphy.toy_models.line_fitting)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="O">O</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.observation">observation() (psiphy.toy_models.gaussian.GaussianSignal method)</a>
-
-      <ul>
-        <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.observation">(psiphy.toy_models.line_fitting.NoisyLine method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/toy_models.html#psiphy.toy_models.cosmological.PowerLawSpectrum.param_names">param_names (psiphy.toy_models.cosmological.PowerLawSpectrum attribute)</a>
+
+      <ul>
+        <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.param_names">(psiphy.toy_models.gaussian.GaussianSignal attribute)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.param_names">(psiphy.toy_models.line_fitting.NoisyLine attribute)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra.param_names">(psiphy.toy_models.lotka_volterra.LotkaVolterra attribute)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model.param_names">(psiphy.toy_models.ma2.MA2Model attribute)</a>
+</li>
+      </ul></li>
       <li><a href="api/plotting.html#psiphy.plotting.corner.plot_1Dmarginal">plot_1Dmarginal() (in module psiphy.plotting.corner)</a>
 </li>
       <li><a href="api/plotting.html#psiphy.plotting.corner.plot_1Dmarginal_lfire">plot_1Dmarginal_lfire() (in module psiphy.plotting.corner)</a>
@@ -414,6 +438,8 @@
       <li><a href="api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.plot_ellipses">plot_ellipses() (psiphy.forecasting.fisher.FisherMatrix method)</a>
 </li>
       <li><a href="api/plotting.html#psiphy.plotting.corner.plot_lfire">plot_lfire() (in module psiphy.plotting.corner)</a>
+</li>
+      <li><a href="api/toy_models.html#psiphy.toy_models.cosmological.PowerLawSpectrum">PowerLawSpectrum (class in psiphy.toy_models.cosmological)</a>
 </li>
       <li><a href="api/sbi.html#psiphy.sbi.abc_gp.ABC_gpL.prepare_distance_model">prepare_distance_model() (psiphy.sbi.abc_gp.ABC_gpL method)</a>
 </li>
@@ -517,6 +543,13 @@
 </li>
       </ul></li>
       <li>
+    psiphy.toy_models.cosmological
+
+      <ul>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.cosmological">module</a>
+</li>
+      </ul></li>
+      <li>
     psiphy.toy_models.gaussian
 
       <ul>
@@ -528,6 +561,20 @@
 
       <ul>
         <li><a href="api/toy_models.html#module-psiphy.toy_models.line_fitting">module</a>
+</li>
+      </ul></li>
+      <li>
+    psiphy.toy_models.lotka_volterra
+
+      <ul>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.lotka_volterra">module</a>
+</li>
+      </ul></li>
+      <li>
+    psiphy.toy_models.ma2
+
+      <ul>
+        <li><a href="api/toy_models.html#module-psiphy.toy_models.ma2">module</a>
 </li>
       </ul></li>
       <li>
@@ -618,9 +665,15 @@
       <ul>
         <li><a href="api/sbi.html#psiphy.sbi.rejection_abc.rABC.sample_prior">(psiphy.sbi.rejection_abc.rABC method)</a>
 </li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.cosmological.PowerLawSpectrum.sample_prior">(psiphy.toy_models.cosmological.PowerLawSpectrum method)</a>
+</li>
         <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.sample_prior">(psiphy.toy_models.gaussian.GaussianSignal method)</a>
 </li>
         <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.sample_prior">(psiphy.toy_models.line_fitting.NoisyLine method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra.sample_prior">(psiphy.toy_models.lotka_volterra.LotkaVolterra method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model.sample_prior">(psiphy.toy_models.ma2.MA2Model method)</a>
 </li>
       </ul></li>
       <li><a href="api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.save">save() (psiphy.forecasting.fisher.FisherMatrix method)</a>
@@ -629,10 +682,10 @@
 </li>
       <li><a href="api/utils.html#psiphy.utils.helpers.save_model">save_model() (in module psiphy.utils.helpers)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/sbi.html#psiphy.sbi.bolfi.sequential_importance_sampling">sequential_importance_sampling() (in module psiphy.sbi.bolfi)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/sbi.html#psiphy.sbi.sre.emceeSRE.set_obs">set_obs() (psiphy.sbi.sre.emceeSRE method)</a>
 </li>
       <li><a href="api/sbi.html#psiphy.sbi.sre.emceeSRE.set_simulator">set_simulator() (psiphy.sbi.sre.emceeSRE method)</a>
@@ -647,12 +700,20 @@
 </li>
       <li><a href="api/sbi.html#psiphy.sbi.lfire.LFIRE_core.sim_numerator">sim_numerator() (psiphy.sbi.lfire.LFIRE_core method)</a>
 </li>
-      <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.simulate">simulate() (psiphy.toy_models.gaussian.GaussianSignal method)</a>
+      <li><a href="api/toy_models.html#psiphy.toy_models.cosmological.PowerLawSpectrum.simulate">simulate() (psiphy.toy_models.cosmological.PowerLawSpectrum method)</a>
 
       <ul>
+        <li><a href="api/toy_models.html#psiphy.toy_models.gaussian.GaussianSignal.simulate">(psiphy.toy_models.gaussian.GaussianSignal method)</a>
+</li>
         <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.simulate">(psiphy.toy_models.line_fitting.NoisyLine method)</a>
 </li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.lotka_volterra.LotkaVolterra.simulate">(psiphy.toy_models.lotka_volterra.LotkaVolterra method)</a>
+</li>
+        <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model.simulate">(psiphy.toy_models.ma2.MA2Model method)</a>
+</li>
       </ul></li>
+      <li><a href="api/toy_models.html#psiphy.toy_models.ma2.MA2Model.simulate_raw">simulate_raw() (psiphy.toy_models.ma2.MA2Model method)</a>
+</li>
       <li><a href="api/sbi.html#psiphy.sbi.bolfi.SMC_sampling">SMC_sampling() (in module psiphy.sbi.bolfi)</a>
 </li>
       <li><a href="api/utils.html#psiphy.utils.helpers.spherical_to_cartesian">spherical_to_cartesian() (in module psiphy.utils.helpers)</a>
@@ -693,14 +754,6 @@
         <li><a href="api/plotting.html#psiphy.plotting.mcmc_chains.walk_parameter">(in module psiphy.plotting.mcmc_chains)</a>
 </li>
       </ul></li>
-  </ul></td>
-</tr></table>
-
-<h2 id="X">X</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.xs">xs() (psiphy.toy_models.line_fitting.NoisyLine method)</a>
-</li>
   </ul></td>
 </tr></table>
 

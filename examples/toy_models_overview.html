@@ -23,8 +23,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="psiphy.utils" href="../api/utils.html" />
-    <link rel="prev" title="Fisher Matrix Forecasting with psiphy" href="fisher_analysis.html" /> 
+    <link rel="next" title="Fisher Matrix Forecasting with psiphy" href="fisher_analysis.html" />
+    <link rel="prev" title="Tutorials" href="../tutorials.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,7 +49,6 @@
               <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="fisher_analysis.html">Fisher Matrix Forecasting with psiphy</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Toy Models Overview</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#1-GaussianSignal">1 GaussianSignal</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#2-NoisyLine">2 NoisyLine</a></li>
@@ -59,6 +58,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Summary">Summary</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="fisher_analysis.html">Fisher Matrix Forecasting with psiphy</a></li>
 </ul>
 </li>
 </ul>
@@ -115,7 +115,7 @@
 <li><p><strong>LotkaVolterra</strong> — predator-prey ODE, analytic Gaussian likelihood</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -135,8 +135,8 @@
 <p>Parameterised 1-D Gaussian: <span class="math notranslate nohighlight">\(x_i \sim \mathcal{N}(\mu, \sigma^2)\)</span>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[mean,</span> <span class="pre">sigma]</span></code>.</p>
 <p>Analytic likelihood makes this suitable for <strong>MCMC</strong>, Fisher forecasting, and SBI sanity checks.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span> <span class="o">=</span> <span class="n">GaussianSignal</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
@@ -149,8 +149,18 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+theta_true : [1.5 0.8]
+x_obs      : mean=1.325, std=0.753
+log_prob   : -46.49
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Analytic posterior on mean (sigma plugged in)</span>
@@ -175,8 +185,15 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_4_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_4_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Log-likelihood surface over (mean, sigma)</span>
@@ -200,6 +217,13 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_5_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_5_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="2-NoisyLine">
@@ -207,8 +231,8 @@
 <p>Linear model: <span class="math notranslate nohighlight">\(y_i = m\,x_i + c + \varepsilon_i\)</span>, <span class="math notranslate nohighlight">\(\varepsilon_i \sim \mathcal{N}(0,\sigma^2)\)</span>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[slope,</span> <span class="pre">intercept]</span></code>.</p>
 <p>Analytic likelihood suitable for <strong>MCMC</strong> and Fisher matrix tutorials.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span> <span class="o">=</span> <span class="n">NoisyLine</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
@@ -220,8 +244,17 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+theta_true : [-0.8  5. ]
+log_prob   : -36.25
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Log-likelihood surface</span>
@@ -253,6 +286,13 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_8_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_8_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="3-MA2Model">
@@ -260,8 +300,8 @@
 <p>Moving Average(2) process: <span class="math notranslate nohighlight">\(x_t = w_t + \theta_1 w_{t-1} + \theta_2 w_{t-2}\)</span>.</p>
 <p>Standard LFI benchmark because the likelihood is intractable — use with ABC, SBI, or ABC-MCMC (likelihood-free MCMC) methods. Summary statistics: <code class="docutils literal notranslate"><span class="pre">[mean,</span> <span class="pre">variance,</span> <span class="pre">lag-1</span> <span class="pre">autocov,</span> <span class="pre">lag-2</span> <span class="pre">autocov]</span></code>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[theta_1,</span> <span class="pre">theta_2]</span></code> (constrained to the MA(2) invertibility region).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ma2</span> <span class="o">=</span> <span class="n">MA2Model</span><span class="p">(</span><span class="n">n_obs</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
@@ -275,8 +315,18 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+theta_true   : [0.6 0.2]
+summary stats: [0.0664 1.4959 0.8529 0.2542]  (mean, var, lag-1, lag-2)
+log_prob     : None  (intractable)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Theoretical lag-k autocov of MA(2): c(0)=1+t1^2+t2^2, c(1)=t1+t1*t2, c(2)=t2</span>
@@ -307,8 +357,15 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_11_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_11_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Distribution of summary statistics across prior samples</span>
@@ -329,6 +386,13 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_12_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_12_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="4-PowerLawSpectrum">
@@ -339,8 +403,8 @@
 <p>with independent Gaussian noise on each band power.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[A_s,</span> <span class="pre">n_s]</span></code>.</p>
 <p>Analytic likelihood suitable for <strong>MCMC</strong> and cosmological Fisher forecasting.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ps</span> <span class="o">=</span> <span class="n">PowerLawSpectrum</span><span class="p">(</span><span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
@@ -352,8 +416,17 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+theta_true : [1.    0.965]
+log_prob   : 31.30
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Log-likelihood surface</span>
@@ -387,6 +460,13 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_15_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_15_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="5-LotkaVolterra">
@@ -397,8 +477,8 @@
 \frac{dy}{dt} = \delta x y - \gamma y\]</div>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[alpha,</span> <span class="pre">beta,</span> <span class="pre">delta,</span> <span class="pre">gamma]</span></code>.</p>
 <p>Analytic Gaussian likelihood enables <strong>MCMC</strong> sampling and Fisher forecasting. Non-linear dynamics also make it a useful SBI benchmark.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.toy_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">LotkaVolterra</span>
@@ -413,8 +493,17 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+theta_true : [1.    0.1   0.075 1.5  ]
+log_prob   : -18.09
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n_obs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lv</span><span class="o">.</span><span class="n">t_obs</span><span class="p">)</span>
@@ -445,8 +534,15 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_18_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_18_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prior predictive: how much do trajectories vary across the prior?</span>
@@ -467,6 +563,13 @@
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_19_0.png" src="../_build/html/.doctrees/nbsphinx/examples_toy_models_overview_19_0.png" />
 </div>
 </div>
 </section>
@@ -516,8 +619,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="fisher_analysis.html" class="btn btn-neutral float-left" title="Fisher Matrix Forecasting with psiphy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../api/utils.html" class="btn btn-neutral float-right" title="psiphy.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fisher_analysis.html" class="btn btn-neutral float-right" title="Fisher Matrix Forecasting with psiphy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

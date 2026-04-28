@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.utils.kernel_density &mdash; PSI  documentation</title>
+  <title>psiphy.utils.kernel_density &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.utils.kernel_density</li>
+      <li class="breadcrumb-item active">psiphy.utils.kernel_density</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,7 +73,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.utils.kernel_density</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.utils.kernel_density</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Kernel Density Estimation</span>
 <span class="sd">-------------------------</span>
@@ -85,7 +85,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">cross_val_score</span>
 
 <div class="viewcode-block" id="bandwidth_kde_silverman">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.kernel_density.bandwidth_kde_silverman">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.kernel_density.bandwidth_kde_silverman">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">bandwidth_kde_silverman</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	h_ii = (4/(d+2))**(1/(d+4)) n**(-1/(d+4)) sigma_i </span>
@@ -96,7 +96,7 @@
 
 
 <div class="viewcode-block" id="bandwidth_kde_scott">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.kernel_density.bandwidth_kde_scott">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.kernel_density.bandwidth_kde_scott">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">bandwidth_kde_scott</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	h_ii = n**(-1/(d+4)) sigma_i </span>
@@ -108,7 +108,7 @@
 
 
 <div class="viewcode-block" id="bandwidth_kdeCV">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.kernel_density.bandwidth_kdeCV">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.kernel_density.bandwidth_kdeCV">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">bandwidth_kdeCV</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">kde</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">10</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">cv</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leaf_size</span><span class="o">=</span><span class="mi">40</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Estimate the bandwidth using cross validation.</span>
@@ -130,7 +130,7 @@
 
 
 <div class="viewcode-block" id="cross_val_loss_kdeCV_loo">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.kernel_density.cross_val_loss_kdeCV_loo">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.kernel_density.cross_val_loss_kdeCV_loo">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cross_val_loss_kdeCV_loo</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">kde</span><span class="p">,</span> <span class="n">fx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	J(h) = \int \hat{f}^2_n(x)dx - 2\int \hat{f}(x)f(x)dx</span>
@@ -160,7 +160,7 @@
 
 
 <div class="viewcode-block" id="cross_val_loss_kdeCV_kFold">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.kernel_density.cross_val_loss_kdeCV_kFold">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.kernel_density.cross_val_loss_kdeCV_kFold">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">cross_val_loss_kdeCV_kFold</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">kde</span><span class="p">,</span> <span class="n">fx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_splits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	J(h) = \int \hat{f}^2_n(x)dx - 2\int \hat{f}(x)f(x)dx</span>

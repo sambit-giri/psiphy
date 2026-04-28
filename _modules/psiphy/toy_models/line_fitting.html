@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.toy_models.line_fitting &mdash; PSI  documentation</title>
+  <title>psiphy.toy_models.line_fitting &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.toy_models.line_fitting</li>
+      <li class="breadcrumb-item active">psiphy.toy_models.line_fitting</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,12 +73,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.toy_models.line_fitting</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.toy_models.line_fitting</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 
 <div class="viewcode-block" id="NoisyLine">
-<a class="viewcode-back" href="../../../api/toy_models.html#psi.toy_models.line_fitting.NoisyLine">[docs]</a>
+<a class="viewcode-back" href="../../../api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NoisyLine</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Noisy linear model with slope and intercept as parameters.&quot;&quot;&quot;</span>
 
@@ -92,27 +92,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yerr_param</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yerr_param</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NoisyLine.xs">
-<a class="viewcode-back" href="../../../api/toy_models.html#psi.toy_models.line_fitting.NoisyLine.xs">[docs]</a>
+<a class="viewcode-back" href="../../../api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.xs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">xs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span></div>
 
 
 <div class="viewcode-block" id="NoisyLine.observation">
-<a class="viewcode-back" href="../../../api/toy_models.html#psi.toy_models.line_fitting.NoisyLine.observation">[docs]</a>
+<a class="viewcode-back" href="../../../api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.observation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">observation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">ys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_slope</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_intercept</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yerr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ys</span></div>
 
 
 <div class="viewcode-block" id="NoisyLine.simulate">
-<a class="viewcode-back" href="../../../api/toy_models.html#psi.toy_models.line_fitting.NoisyLine.simulate">[docs]</a>
+<a class="viewcode-back" href="../../../api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.simulate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span><span class="p">):</span>
         <span class="n">ys</span> <span class="o">=</span> <span class="n">slope</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">intercept</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yerr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ys</span></div>
 
 
 <div class="viewcode-block" id="NoisyLine.sample_prior">
-<a class="viewcode-back" href="../../../api/toy_models.html#psi.toy_models.line_fitting.NoisyLine.sample_prior">[docs]</a>
+<a class="viewcode-back" href="../../../api/toy_models.html#psiphy.toy_models.line_fitting.NoisyLine.sample_prior">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slope_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">intercept_range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)):</span>
         <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">*</span><span class="n">slope_range</span><span class="p">)</span>
         <span class="n">intercept</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">*</span><span class="n">intercept_range</span><span class="p">)</span>

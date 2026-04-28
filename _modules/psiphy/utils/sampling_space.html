@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.utils.sampling_space &mdash; PSI  documentation</title>
+  <title>psiphy.utils.sampling_space &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.utils.sampling_space</li>
+      <li class="breadcrumb-item active">psiphy.utils.sampling_space</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,13 +73,13 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.utils.sampling_space</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.utils.sampling_space</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats.qmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">LatinHypercube</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">helpers</span> <span class="k">as</span> <span class="n">hf</span>
 
 <div class="viewcode-block" id="LH_sampling">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.sampling_space.LH_sampling">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.sampling_space.LH_sampling">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">LH_sampling</span><span class="p">(</span><span class="n">n_params</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Parameters:</span>
@@ -103,7 +103,7 @@
 
 
 <div class="viewcode-block" id="MC_sampling">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.sampling_space.MC_sampling">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.sampling_space.MC_sampling">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">MC_sampling</span><span class="p">(</span><span class="n">n_params</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Parameters:</span>
@@ -127,7 +127,7 @@
 
 
 <div class="viewcode-block" id="MCS_nsphere">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.sampling_space.MCS_nsphere">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.sampling_space.MCS_nsphere">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">MCS_nsphere</span><span class="p">(</span><span class="n">n_params</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Parameters:</span>
@@ -157,7 +157,7 @@
 
 
 <div class="viewcode-block" id="LHS_nsphere">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.sampling_space.LHS_nsphere">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.sampling_space.LHS_nsphere">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">LHS_nsphere</span><span class="p">(</span><span class="n">n_params</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Parameters:</span>

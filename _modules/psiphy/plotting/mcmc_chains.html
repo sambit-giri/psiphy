@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.plotting.mcmc_chains &mdash; PSI  documentation</title>
+  <title>psiphy.plotting.mcmc_chains &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.plotting.mcmc_chains</li>
+      <li class="breadcrumb-item active">psiphy.plotting.mcmc_chains</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,7 +73,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.plotting.mcmc_chains</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.plotting.mcmc_chains</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -84,7 +84,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter</span>
 
 <div class="viewcode-block" id="plot_dist_corner_getdist">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.plot_dist_corner_getdist">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.plot_dist_corner_getdist">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_dist_corner_getdist</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span><span class="nb">tuple</span><span class="p">)):</span>
 		<span class="k">if</span> <span class="n">sample_labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">sample_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;samples </span><span class="si">{0:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">))]</span>
@@ -101,7 +101,7 @@
 
 
 <div class="viewcode-block" id="walk_parameter">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.walk_parameter">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.walk_parameter">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">walk_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">param_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_ticks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">ndim</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
 		<span class="k">if</span> <span class="n">param_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">param_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">theta&#39;</span>
@@ -119,7 +119,7 @@
 
 
 <div class="viewcode-block" id="plot_corner_dist">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.plot_corner_dist">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.plot_corner_dist">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_corner_dist</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="n">bins_1d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">bins_2d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">viridis</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span><span class="mi">95</span><span class="p">],</span> <span class="n">CI_plotparam</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="n">n_samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 	<span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">theta_</span><span class="si">%d</span><span class="s1">$&#39;</span><span class="o">%</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)]</span>
@@ -159,7 +159,7 @@
 
 
 <div class="viewcode-block" id="plot_corner_multiple_dist">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.plot_corner_multiple_dist">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.plot_corner_multiple_dist">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_corner_multiple_dist</span><span class="p">(</span><span class="n">multi_samples</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="n">bins_1d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">bins_2d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span><span class="mi">95</span><span class="p">],</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">multi_samples</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span><span class="nb">tuple</span><span class="p">))</span>
 
@@ -213,7 +213,7 @@
 
 
 <div class="viewcode-block" id="print_CI_samples">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.print_CI_samples">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.print_CI_samples">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_CI_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">bins_1d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span><span class="mi">95</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">theta_</span><span class="si">%d</span><span class="s1">$&#39;</span><span class="o">%</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)]</span>
 	<span class="n">n_samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -231,7 +231,7 @@
 
 	
 <div class="viewcode-block" id="density_1D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.density_1D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.density_1D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">density_1D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_std</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_title</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="n">ht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
 	<span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
@@ -256,7 +256,7 @@
 
 
 <div class="viewcode-block" id="contour_2D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.contour_2D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.contour_2D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">contour_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span><span class="mi">95</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="n">plt</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hex&#39;</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="s1">&#39;scott&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">BuGn_r</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">,</span> <span class="n">CI_plotparam</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="k">if</span> <span class="n">CI_plotparam</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">CI_plotparam</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cmap&#39;</span><span class="p">:</span> <span class="s1">&#39;Reds&#39;</span><span class="p">,</span> <span class="s1">&#39;colors&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 	<span class="k">if</span> <span class="n">flavor</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;scatter&#39;</span><span class="p">:</span>
@@ -335,7 +335,7 @@
 
 
 <div class="viewcode-block" id="density_2D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.density_2D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.density_2D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">density_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span><span class="mi">95</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="n">plt</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hex&#39;</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="s1">&#39;scott&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">BuGn_r</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">,</span> <span class="n">CI_plotparam</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 	<span class="k">if</span> <span class="n">CI_plotparam</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">CI_plotparam</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cmap&#39;</span><span class="p">:</span> <span class="s1">&#39;Reds&#39;</span><span class="p">,</span> <span class="s1">&#39;colors&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
 	<span class="k">if</span> <span class="n">flavor</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;scatter&#39;</span><span class="p">:</span>
@@ -407,7 +407,7 @@
 
 		
 <div class="viewcode-block" id="plot_2d_power">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.plot_2d_power">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.plot_2d_power">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_2d_power</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">xticks</span><span class="p">,</span> <span class="n">yticks</span><span class="p">,</span> <span class="n">axes</span><span class="p">):</span>
 	<span class="n">xticks</span><span class="p">,</span> <span class="n">yticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">xticks</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">yticks</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 	<span class="n">im</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
@@ -425,7 +425,7 @@
 
 
 <div class="viewcode-block" id="get_CI_HDR_2D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.get_CI_HDR_2D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.get_CI_HDR_2D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_CI_HDR_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">95.</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Hyndman (1996)</span>
@@ -448,7 +448,7 @@
 
 
 <div class="viewcode-block" id="get_CI_HDR_1D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.get_CI_HDR_1D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.get_CI_HDR_1D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_CI_HDR_1D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">95.</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">smooth_dist</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
 <span class="w">	</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Hyndman (1996)</span>
@@ -467,7 +467,7 @@
 
 
 <div class="viewcode-block" id="find_intervals">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.mcmc_chains.find_intervals">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.mcmc_chains.find_intervals">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_intervals</span><span class="p">(</span><span class="n">xax</span><span class="p">,</span> <span class="n">yax</span><span class="p">,</span> <span class="n">y0</span><span class="p">):</span>
 	<span class="n">min_interval</span> <span class="o">=</span> <span class="p">[]</span>
 	<span class="n">max_interval</span> <span class="o">=</span> <span class="p">[]</span>

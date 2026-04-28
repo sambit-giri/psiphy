@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.plotting.corner &mdash; PSI  documentation</title>
+  <title>psiphy.plotting.corner &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.plotting.corner</li>
+      <li class="breadcrumb-item active">psiphy.plotting.corner</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,7 +73,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.plotting.corner</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.plotting.corner</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
@@ -84,7 +84,7 @@
 <span class="c1"># ── LFIRE grid-posterior plots ───────────────────────────────────────────────</span>
 
 <div class="viewcode-block" id="credible_limit">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.credible_limit">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.credible_limit">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">credible_limit</span><span class="p">(</span><span class="n">zi</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;naive&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;naive&#39;</span><span class="p">:</span>
         <span class="n">zbins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">zi</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">zi</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">2000</span><span class="p">)</span>
@@ -98,7 +98,7 @@
 
 
 <div class="viewcode-block" id="plot_lfire">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.plot_lfire">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.plot_lfire">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_lfire</span><span class="p">(</span><span class="n">lfi</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">95</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">,</span> <span class="n">CI_param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">)):</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -141,7 +141,7 @@
 
 
 <div class="viewcode-block" id="plot_1Dmarginal">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.plot_1Dmarginal">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.plot_1Dmarginal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_1Dmarginal</span><span class="p">(</span><span class="n">thetas</span><span class="p">,</span> <span class="n">posterior</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
                     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -170,7 +170,7 @@
 
 
 <div class="viewcode-block" id="plot_2Dmarginal">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.plot_2Dmarginal">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.plot_2Dmarginal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_2Dmarginal</span><span class="p">(</span><span class="n">thetas</span><span class="p">,</span> <span class="n">posterior</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">idy</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
                     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">95</span><span class="p">]):</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -214,7 +214,7 @@
 
 
 <div class="viewcode-block" id="plot_1Dmarginal_lfire">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.plot_1Dmarginal_lfire">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.plot_1Dmarginal_lfire">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_1Dmarginal_lfire</span><span class="p">(</span><span class="n">lfi</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">N</span> <span class="o">=</span> <span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">thetas</span> <span class="o">=</span> <span class="n">lfi</span><span class="o">.</span><span class="n">thetas</span>
@@ -242,7 +242,7 @@
 
 
 <div class="viewcode-block" id="plot_2Dmarginal_lfire">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.plot_2Dmarginal_lfire">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.plot_2Dmarginal_lfire">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_2Dmarginal_lfire</span><span class="p">(</span><span class="n">lfi</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">idy</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                           <span class="n">true_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">95</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">,</span> <span class="n">CI_param</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">CI_param</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -302,7 +302,7 @@
 <span class="c1"># ── Sample-based corner plots with HDR credible intervals ────────────────────</span>
 
 <div class="viewcode-block" id="walk_parameter">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.walk_parameter">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.walk_parameter">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">walk_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">param_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step_ticks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">linestyle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -328,7 +328,7 @@
 
 
 <div class="viewcode-block" id="corner_density">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.corner_density">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.corner_density">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">corner_density</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="n">bins_1d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">bins_2d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
                    <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">viridis</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
                    <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">]):</span>
@@ -374,7 +374,7 @@
 
 
 <div class="viewcode-block" id="print_CI_samples">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.print_CI_samples">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.print_CI_samples">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">print_CI_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">bins_1d</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">]):</span>
     <span class="n">n_samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bins_1d</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -392,7 +392,7 @@
 
 
 <div class="viewcode-block" id="density_1D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.density_1D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.density_1D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">density_1D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">show_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_std</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_title</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">ht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
@@ -419,7 +419,7 @@
 
 
 <div class="viewcode-block" id="density_2D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.density_2D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.density_2D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">density_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="p">[</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="n">plt</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;hex&#39;</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="s1">&#39;scott&#39;</span><span class="p">,</span>
                <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">BuGn_r</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;gouraud&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">flavor</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;scatter&#39;</span><span class="p">:</span>
@@ -476,7 +476,7 @@
 
 
 <div class="viewcode-block" id="get_CI_HDR_2D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.get_CI_HDR_2D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.get_CI_HDR_2D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_CI_HDR_2D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">95.</span><span class="p">,</span> <span class="n">nbins</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Hyndman (1996) highest density region for 2D.&quot;&quot;&quot;</span>
     <span class="n">ht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -495,7 +495,7 @@
 
 
 <div class="viewcode-block" id="get_CI_HDR_1D">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.get_CI_HDR_1D">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.get_CI_HDR_1D">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_CI_HDR_1D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">95.</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Hyndman (1996) highest density region for 1D.&quot;&quot;&quot;</span>
     <span class="n">ht</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
@@ -513,7 +513,7 @@
 
 
 <div class="viewcode-block" id="find_intervals">
-<a class="viewcode-back" href="../../../api/plotting.html#psi.plotting.corner.find_intervals">[docs]</a>
+<a class="viewcode-back" href="../../../api/plotting.html#psiphy.plotting.corner.find_intervals">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_intervals</span><span class="p">(</span><span class="n">xax</span><span class="p">,</span> <span class="n">yax</span><span class="p">,</span> <span class="n">y0</span><span class="p">):</span>
     <span class="n">min_interval</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">max_interval</span> <span class="o">=</span> <span class="p">[]</span>

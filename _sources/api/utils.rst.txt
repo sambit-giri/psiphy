@@ -1,23 +1,23 @@
-psi.utils
+psiphy.utils
 =========
 
-.. automodule:: psi.utils
+.. automodule:: psiphy.utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: psi.utils.distances
+.. automodule:: psiphy.utils.distances
    :members:
    :undoc-members:
 
-.. automodule:: psi.utils.kernel_density
+.. automodule:: psiphy.utils.kernel_density
    :members:
    :undoc-members:
 
-.. automodule:: psi.utils.helpers
+.. automodule:: psiphy.utils.helpers
    :members:
    :undoc-members:
 
-.. automodule:: psi.utils.sampling_space
+.. automodule:: psiphy.utils.sampling_space
    :members:
    :undoc-members:

@@ -1,15 +1,15 @@
-psi.plotting
+psiphy.plotting
 ============
 
-.. automodule:: psi.plotting
+.. automodule:: psiphy.plotting
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: psi.plotting.corner
+.. automodule:: psiphy.plotting.corner
    :members:
    :undoc-members:
 
-.. automodule:: psi.plotting.mcmc_chains
+.. automodule:: psiphy.plotting.mcmc_chains
    :members:
    :undoc-members:

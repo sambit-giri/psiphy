@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psi.utils.distances &mdash; PSI  documentation</title>
+  <title>psiphy.utils.distances &mdash; PSI  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -41,12 +41,12 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psi.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psi.sbi</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psi.mcmc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psi.forecasting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psi.plotting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psi.toy_models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
 </ul>
 
         </div>
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">psi.utils.distances</li>
+      <li class="breadcrumb-item active">psiphy.utils.distances</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,12 +73,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for psi.utils.distances</h1><div class="highlight"><pre>
+  <h1>Source code for psiphy.utils.distances</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.distance</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
 <div class="viewcode-block" id="kl_divergence">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.distances.kl_divergence">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.distances.kl_divergence">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">kl_divergence</span><span class="p">(</span><span class="n">p_probs</span><span class="p">,</span> <span class="n">q_probs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;KL (p || q)&quot;&quot;&quot;</span>
     <span class="n">kl_div</span> <span class="o">=</span> <span class="n">p_probs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_probs</span> <span class="o">/</span> <span class="n">q_probs</span><span class="p">)</span>
@@ -86,7 +86,7 @@
 
 
 <div class="viewcode-block" id="js_distance">
-<a class="viewcode-back" href="../../../api/utils.html#psi.utils.distances.js_distance">[docs]</a>
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.distances.js_distance">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">js_distance</span><span class="p">(</span><span class="n">p_probs</span><span class="p">,</span> <span class="n">q_probs</span><span class="p">):</span>
 	<span class="n">kl1</span> <span class="o">=</span> <span class="n">kl_divergence</span><span class="p">(</span><span class="n">p_probs</span><span class="p">,</span> <span class="n">q_probs</span><span class="p">)</span>
 	<span class="n">kl2</span> <span class="o">=</span> <span class="n">kl_divergence</span><span class="p">(</span><span class="n">q_probs</span><span class="p">,</span> <span class="n">p_probs</span><span class="p">)</span>

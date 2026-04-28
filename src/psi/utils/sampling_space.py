@@ -38,7 +38,8 @@ def MC_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	An array containing the parameter values.
 	"""
 	mcd = np.random.uniform(size=(samples,n_params))
-	#print(mcd.shape)
+	if np.array(mins).size==1: mins = [mins for i in range(n_params)]
+	if np.array(maxs).size==1: maxs = [maxs for i in range(n_params)]
 	for i,[mn,mx] in enumerate(zip(mins,maxs)): mcd[:,i] = mn + (mx-mn)*mcd[:,i]
 	if outfile is not None:	np.savetxt(outfile.split('.txt')[0]+'.txt', mcd)
 	return mcd

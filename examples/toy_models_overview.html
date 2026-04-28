@@ -99,18 +99,20 @@
              
   <section id="Toy-Models-Overview">
 <h1>Toy Models Overview<a class="headerlink" href="#Toy-Models-Overview" title="Link to this heading"></a></h1>
-<p>This notebook demonstrates all four toy models available in <code class="docutils literal notranslate"><span class="pre">psiphy.toy_models</span></code>. Each model exposes the same minimal interface:</p>
+<p>This notebook demonstrates all five toy models available in <code class="docutils literal notranslate"><span class="pre">psiphy.toy_models</span></code>. Each model exposes the same minimal interface:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">theta</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample_prior</span><span class="p">()</span>       <span class="c1"># draw from prior</span>
 <span class="n">x</span>     <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>      <span class="c1"># forward simulation</span>
 <span class="n">lp</span>    <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>   <span class="c1"># log-likelihood (None if intractable)</span>
 </pre></div>
 </div>
+<p>Models with an analytic likelihood (<code class="docutils literal notranslate"><span class="pre">log_prob</span></code> is not None) can be used directly with MCMC samplers (e.g. emcee, dynesty) as well as Fisher forecasting. Models with an intractable likelihood are intended for likelihood-free / SBI methods.</p>
 <p>Models covered:</p>
 <ol class="arabic simple">
 <li><p><strong>GaussianSignal</strong> — 1-D Gaussian, analytic posterior</p></li>
 <li><p><strong>NoisyLine</strong> — linear model with Gaussian noise, analytic likelihood</p></li>
 <li><p><strong>MA2Model</strong> — Moving Average(2) process, standard LFI benchmark</p></li>
 <li><p><strong>PowerLawSpectrum</strong> — CMB-like power-law spectrum, analytic likelihood</p></li>
+<li><p><strong>LotkaVolterra</strong> — predator-prey ODE, analytic Gaussian likelihood</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -132,6 +134,7 @@
 <h2>1 GaussianSignal<a class="headerlink" href="#1-GaussianSignal" title="Link to this heading"></a></h2>
 <p>Parameterised 1-D Gaussian: <span class="math notranslate nohighlight">\(x_i \sim \mathcal{N}(\mu, \sigma^2)\)</span>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[mean,</span> <span class="pre">sigma]</span></code>.</p>
+<p>Analytic likelihood makes this suitable for <strong>MCMC</strong>, Fisher forecasting, and SBI sanity checks.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -201,8 +204,9 @@
 <hr class="docutils" />
 <section id="2-NoisyLine">
 <h2>2 NoisyLine<a class="headerlink" href="#2-NoisyLine" title="Link to this heading"></a></h2>
-<p>Linear model: <span class="math notranslate nohighlight">\(y_i = m \, x_i + c + \varepsilon_i\)</span>, <span class="math notranslate nohighlight">\(\varepsilon_i \sim \mathcal{N}(0, \sigma^2)\)</span>.</p>
+<p>Linear model: <span class="math notranslate nohighlight">\(y_i = m\,x_i + c + \varepsilon_i\)</span>, <span class="math notranslate nohighlight">\(\varepsilon_i \sim \mathcal{N}(0,\sigma^2)\)</span>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[slope,</span> <span class="pre">intercept]</span></code>.</p>
+<p>Analytic likelihood suitable for <strong>MCMC</strong> and Fisher matrix tutorials.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -254,7 +258,7 @@
 <section id="3-MA2Model">
 <h2>3 MA2Model<a class="headerlink" href="#3-MA2Model" title="Link to this heading"></a></h2>
 <p>Moving Average(2) process: <span class="math notranslate nohighlight">\(x_t = w_t + \theta_1 w_{t-1} + \theta_2 w_{t-2}\)</span>.</p>
-<p>Standard benchmark for likelihood-free inference because the likelihood is intractable. Summary statistics: <code class="docutils literal notranslate"><span class="pre">[mean,</span> <span class="pre">variance,</span> <span class="pre">lag-1</span> <span class="pre">autocov,</span> <span class="pre">lag-2</span> <span class="pre">autocov]</span></code>.</p>
+<p>Standard LFI benchmark because the likelihood is intractable — use with ABC, SBI, or ABC-MCMC (likelihood-free MCMC) methods. Summary statistics: <code class="docutils literal notranslate"><span class="pre">[mean,</span> <span class="pre">variance,</span> <span class="pre">lag-1</span> <span class="pre">autocov,</span> <span class="pre">lag-2</span> <span class="pre">autocov]</span></code>.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[theta_1,</span> <span class="pre">theta_2]</span></code> (constrained to the MA(2) invertibility region).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
@@ -334,6 +338,7 @@
 \[C_\ell = A_s \left(\frac{\ell}{\ell_\text{pivot}}\right)^{n_s - 1}\]</div>
 <p>with independent Gaussian noise on each band power.</p>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[A_s,</span> <span class="pre">n_s]</span></code>.</p>
+<p>Analytic likelihood suitable for <strong>MCMC</strong> and cosmological Fisher forecasting.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -391,7 +396,7 @@
 \[\frac{dx}{dt} = \alpha x - \beta x y, \qquad
 \frac{dy}{dt} = \delta x y - \gamma y\]</div>
 <p>Parameters: <code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">[alpha,</span> <span class="pre">beta,</span> <span class="pre">delta,</span> <span class="pre">gamma]</span></code>.</p>
-<p>The likelihood is analytic (Gaussian noise model), making this suitable for both Fisher forecasting and as an SBI benchmark with non-trivial dynamics.</p>
+<p>Analytic Gaussian likelihood enables <strong>MCMC</strong> sampling and Fisher forecasting. Non-linear dynamics also make it a useful SBI benchmark.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -480,27 +485,27 @@
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GaussianSignal</span></code></p></td>
 <td><p>mean, sigma</p></td>
 <td><p>yes</p></td>
-<td><p>sanity checks, SBI benchmarks</p></td>
+<td><p>MCMC, Fisher, SBI sanity checks</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NoisyLine</span></code></p></td>
 <td><p>slope, intercept</p></td>
 <td><p>yes</p></td>
-<td><p>Fisher matrix tutorials</p></td>
+<td><p>MCMC, Fisher matrix tutorials</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MA2Model</span></code></p></td>
 <td><p>theta_1, theta_2</p></td>
 <td><p>no (intractable)</p></td>
-<td><p>LFI / SBI benchmarks</p></td>
+<td><p>ABC-MCMC, LFI / SBI benchmarks</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PowerLawSpectrum</span></code></p></td>
 <td><p>A_s, n_s</p></td>
 <td><p>yes</p></td>
-<td><p>cosmological Fisher forecasts</p></td>
+<td><p>MCMC, cosmological Fisher forecasts</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LotkaVolterra</span></code></p></td>
 <td><p>alpha, beta, delta, gamma</p></td>
 <td><p>yes</p></td>
-<td><p>dynamical-system SBI / Fisher</p></td>
+<td><p>MCMC, dynamical-system SBI / Fisher</p></td>
 </tr>
 </tbody>
 </table>

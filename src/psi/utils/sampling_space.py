@@ -1,5 +1,5 @@
 import numpy as np
-from pyDOE import lhs
+from scipy.stats.qmc import LatinHypercube
 from . import helpers as hf
 
 def LH_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
@@ -16,8 +16,7 @@ def LH_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	-------
 	An array containing the parameter values.
 	"""
-	#lhs(n, [samples, criterion, iterations])
-	lhd = lhs(n_params, samples=samples)
+	lhd = LatinHypercube(d=n_params).random(n=samples)
 	if np.array(mins).size==1: mins = [mins for i in range(n_params)]
 	if np.array(maxs).size==1: maxs = [maxs for i in range(n_params)]
 	for i,[mn,mx] in enumerate(zip(mins,maxs)): lhd[:,i] = mn + (mx-mn)*lhd[:,i]

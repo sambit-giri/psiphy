@@ -1,0 +1,410 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Importance Sampling and SMC\n",
+    "\n",
+    "This notebook demonstrates the importance sampling (IS) and Sequential Monte Carlo (SMC)\n",
+    "tools in `psiphy.mcmc.importance_sampling`, applied to the built-in toy models.\n",
+    "\n",
+    "## What is importance sampling?\n",
+    "\n",
+    "We want to draw samples from a target $p(\\theta | x)$ but can only evaluate it up to a constant.\n",
+    "IS draws samples from a tractable proposal $q(\\theta)$ and corrects with weights:\n",
+    "\n",
+    "$$w_i = \\frac{p(\\theta_i | x)}{q(\\theta_i)}, \\qquad \\theta_i \\sim q$$\n",
+    "\n",
+    "The **effective sample size** (ESS) measures how much information the weighted set carries:\n",
+    "\n",
+    "$$\\text{ESS} = \\frac{1}{\\sum_i w_i^2} \\in [1, N]$$\n",
+    "\n",
+    "Low ESS means the proposal is a poor match for the posterior — most weight falls on very few particles.\n",
+    "\n",
+    "**SMC** fixes this by annealing from the prior to the posterior through a sequence of tempered targets,\n",
+    "resampling and applying MCMC moves when ESS drops too low."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "from scipy.stats import norm\n",
+    "\n",
+    "from psiphy.mcmc import (\n",
+    "    UniformPrior,\n",
+    "    eff_sample_size,\n",
+    "    importance_sampling,\n",
+    "    sequential_importance_sampling,\n",
+    "    SMC,\n",
+    ")\n",
+    "from psiphy.toy_models import GaussianSignal, NoisyLine\n",
+    "\n",
+    "np.random.seed(42)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 1  UniformPrior helper\n",
+    "\n",
+    "`UniformPrior` wraps a box prior and provides `sample(n)` and `log_prob(theta)`\n",
+    "— the two methods expected by `importance_sampling` and `SMC`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "prior = UniformPrior({'mean': (-5, 5), 'sigma': (0.1, 5)})\n",
+    "print('ndim  :', prior.ndim)\n",
+    "print('sample:', prior.sample(3))\n",
+    "print('log_prob in support  :', prior.log_prob([0.0, 1.0]))\n",
+    "print('log_prob out of support:', prior.log_prob([10.0, 1.0]))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 2  Importance Sampling — GaussianSignal\n",
+    "\n",
+    "Target: posterior $p(\\mu, \\sigma \\mid x)$ for a Gaussian signal with $N=40$ observations."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "gs = GaussianSignal(N=40)\n",
+    "theta_true = np.array([1.5, 0.8])\n",
+    "x_obs = gs.simulate(theta_true)\n",
+    "\n",
+    "print(f'x_obs  mean={x_obs.mean():.3f}  std={x_obs.std():.3f}  (true: {theta_true})')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Broad uniform prior — deliberate mismatch to show ESS degradation\n",
+    "prior_broad = UniformPrior([(-5, 5), (0.1, 5)])\n",
+    "log_posterior = lambda t: gs.log_prob(t, x_obs) + prior_broad.log_prob(t)\n",
+    "\n",
+    "proposal_broad = prior_broad.sample(5000)\n",
+    "s_broad, w_broad = importance_sampling(log_posterior, proposal_broad)\n",
+    "ess_broad = eff_sample_size(w_broad)\n",
+    "print(f'Broad proposal  — ESS = {ess_broad:.1f} / 5000 ({100*ess_broad/5000:.1f}%)')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Tighter prior centred near the posterior — higher ESS\n",
+    "prior_tight = UniformPrior([(0.0, 3.0), (0.3, 2.0)])\n",
+    "log_posterior_tight = lambda t: gs.log_prob(t, x_obs) + prior_tight.log_prob(t)\n",
+    "\n",
+    "proposal_tight = prior_tight.sample(5000)\n",
+    "s_tight, w_tight = importance_sampling(log_posterior_tight, proposal_tight)\n",
+    "ess_tight = eff_sample_size(w_tight)\n",
+    "print(f'Tight proposal  — ESS = {ess_tight:.1f} / 5000 ({100*ess_tight/5000:.1f}%)')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Analytic posterior on mean for comparison (sigma plugged in as sample std)\n",
+    "post_mean, post_sigma = gs.analytic_posterior(x_obs)\n",
+    "\n",
+    "fig, axes = plt.subplots(1, 2, figsize=(11, 4))\n",
+    "\n",
+    "mu_grid = np.linspace(0.5, 2.5, 300)\n",
+    "\n",
+    "for ax, samples, w, label, color in [\n",
+    "    (axes[0], proposal_broad, w_broad, 'broad prior', 'C0'),\n",
+    "    (axes[1], proposal_tight, w_tight, 'tight prior', 'C1'),\n",
+    "]:\n",
+    "    ess = eff_sample_size(w)\n",
+    "    ax.hist(samples[:, 0], weights=w, bins=40, density=True,\n",
+    "            alpha=0.6, color=color, label=f'IS ({label}, ESS={ess:.0f})')\n",
+    "    ax.plot(mu_grid, norm.pdf(mu_grid, post_mean, post_sigma),\n",
+    "            'k--', lw=1.5, label='analytic posterior')\n",
+    "    ax.axvline(theta_true[0], c='red', lw=1.5, ls=':', label='true mean')\n",
+    "    ax.set(xlabel=r'$\\mu$', title=f'IS — {label}')\n",
+    "    ax.legend(fontsize=8)\n",
+    "\n",
+    "plt.suptitle('Importance Sampling: posterior on mean', y=1.01)\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**Key takeaway:** the broad uniform proposal samples mostly from regions of low likelihood,\n",
+    "yielding very few effective samples. A tighter proposal that overlaps the posterior better\n",
+    "gives a far higher ESS and more accurate estimate."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 3  Effective Sample Size as a diagnostic"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Show how ESS changes with proposal width\n",
+    "half_widths = np.linspace(0.3, 5.0, 20)\n",
+    "ess_list = []\n",
+    "\n",
+    "for hw in half_widths:\n",
+    "    p = UniformPrior([\n",
+    "        (theta_true[0] - hw, theta_true[0] + hw),\n",
+    "        (max(0.1, theta_true[1] - hw), theta_true[1] + hw),\n",
+    "    ])\n",
+    "    prop = p.sample(2000)\n",
+    "    _, w = importance_sampling(lambda t: gs.log_prob(t, x_obs) + p.log_prob(t), prop)\n",
+    "    ess_list.append(eff_sample_size(w) / 2000 * 100)\n",
+    "\n",
+    "fig, ax = plt.subplots(figsize=(7, 3.5))\n",
+    "ax.plot(half_widths, ess_list, 'o-', c='steelblue')\n",
+    "ax.set(xlabel='Proposal half-width', ylabel='ESS / N  (%)',\n",
+    "       title='ESS vs proposal width (N=2000 particles)')\n",
+    "ax.axhline(100, ls='--', c='k', lw=0.8, label='perfect (ESS=N)')\n",
+    "ax.legend()\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 4  Importance Sampling — NoisyLine\n",
+    "\n",
+    "Two parameters: slope and intercept."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "nl = NoisyLine(Nx=40, noise_sigma=0.5)\n",
+    "theta_nl = np.array([-0.8, 5.0])\n",
+    "y_obs = nl.simulate(theta_nl)\n",
+    "\n",
+    "prior_nl = UniformPrior([(-3, 3), (0, 10)])\n",
+    "log_post_nl = lambda t: nl.log_prob(t, y_obs) + prior_nl.log_prob(t)\n",
+    "\n",
+    "prop_nl = prior_nl.sample(8000)\n",
+    "s_nl, w_nl = importance_sampling(log_post_nl, prop_nl)\n",
+    "ess_nl = eff_sample_size(w_nl)\n",
+    "print(f'NoisyLine IS  ESS={ess_nl:.1f}/8000  '\n",
+    "      f'slope={s_nl[:,0].mean():.3f} (true {theta_nl[0]})  '\n",
+    "      f'intercept={s_nl[:,1].mean():.3f} (true {theta_nl[1]})')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig, axes = plt.subplots(1, 2, figsize=(10, 4))\n",
+    "\n",
+    "for ax, idx, name, true_val in [\n",
+    "    (axes[0], 0, 'slope', theta_nl[0]),\n",
+    "    (axes[1], 1, 'intercept', theta_nl[1]),\n",
+    "]:\n",
+    "    ax.hist(s_nl[:, idx], weights=w_nl, bins=40, density=True, alpha=0.6, label='IS posterior')\n",
+    "    ax.axvline(true_val, c='red', lw=1.5, ls='--', label='true value')\n",
+    "    ax.set(xlabel=name, title=f'NoisyLine IS — {name}')\n",
+    "    ax.legend()\n",
+    "\n",
+    "plt.suptitle(f'NoisyLine: IS posterior marginals  (ESS={ess_nl:.0f}/8000)', y=1.01)\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 5  SMC — annealing from prior to posterior\n",
+    "\n",
+    "SMC overcomes the low-ESS problem by bridging from the prior to the\n",
+    "posterior through tempered targets $p_t \\propto \\text{prior} \\times \\mathcal{L}^{\\beta_t}$.\n",
+    "When ESS drops below a threshold, particles are resampled and a Gaussian\n",
+    "random-walk MCMC move is applied to maintain diversity."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# GaussianSignal with broad prior — compare IS vs SMC\n",
+    "prior_broad2 = UniformPrior([(-5, 5), (0.1, 5)])\n",
+    "\n",
+    "# IS baseline\n",
+    "prop = prior_broad2.sample(1000)\n",
+    "s_is, w_is = importance_sampling(\n",
+    "    lambda t: gs.log_prob(t, x_obs) + prior_broad2.log_prob(t), prop\n",
+    ")\n",
+    "print(f'IS  ESS={eff_sample_size(w_is):.1f}/1000')\n",
+    "\n",
+    "# SMC\n",
+    "s_smc, w_smc = SMC(\n",
+    "    lambda t: gs.log_prob(t, x_obs),\n",
+    "    prior_broad2,\n",
+    "    n_particles=1000,\n",
+    "    n_steps=10,\n",
+    "    verbose=True,\n",
+    ")\n",
+    "print(f'SMC ESS={eff_sample_size(w_smc):.1f}/1000')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig, axes = plt.subplots(1, 2, figsize=(11, 4))\n",
+    "\n",
+    "for ax, name, idx, true_val in [\n",
+    "    (axes[0], r'$\\mu$', 0, theta_true[0]),\n",
+    "    (axes[1], r'$\\sigma$', 1, theta_true[1]),\n",
+    "]:\n",
+    "    ax.hist(s_is[:, idx], weights=w_is, bins=30, density=True,\n",
+    "            alpha=0.5, label=f'IS (ESS={eff_sample_size(w_is):.0f})', color='C0')\n",
+    "    ax.hist(s_smc[:, idx], weights=w_smc, bins=30, density=True,\n",
+    "            alpha=0.5, label=f'SMC (ESS={eff_sample_size(w_smc):.0f})', color='C2')\n",
+    "    ax.axvline(true_val, c='red', lw=1.5, ls='--', label='true value')\n",
+    "    ax.set(xlabel=name, title=f'IS vs SMC — {name}')\n",
+    "    ax.legend(fontsize=8)\n",
+    "\n",
+    "plt.suptitle('Broad prior: IS (poor ESS) vs SMC (annealed, high ESS)', y=1.01)\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## 6  2-D posterior scatter: SMC on NoisyLine"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "prior_nl2 = UniformPrior([(-3, 3), (0, 10)])\n",
+    "\n",
+    "smc_nl, w_nl2 = SMC(\n",
+    "    lambda t: nl.log_prob(t, y_obs),\n",
+    "    prior_nl2,\n",
+    "    n_particles=1000,\n",
+    "    n_steps=10,\n",
+    "    verbose=True,\n",
+    ")\n",
+    "print(f'NoisyLine SMC  ESS={eff_sample_size(w_nl2):.1f}/1000')\n",
+    "print(f'slope     = {smc_nl[:,0].mean():.3f} ± {smc_nl[:,0].std():.3f}  (true {theta_nl[0]})')\n",
+    "print(f'intercept = {smc_nl[:,1].mean():.3f} ± {smc_nl[:,1].std():.3f}  (true {theta_nl[1]})')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig, axes = plt.subplots(1, 2, figsize=(11, 4))\n",
+    "\n",
+    "sc = axes[0].scatter(smc_nl[:, 0], smc_nl[:, 1],\n",
+    "                     c=w_nl2, cmap='viridis', s=8, alpha=0.7)\n",
+    "axes[0].scatter(*theta_nl, c='red', s=100, zorder=5, label='true theta')\n",
+    "plt.colorbar(sc, ax=axes[0], label='weight')\n",
+    "axes[0].set(xlabel='slope', ylabel='intercept',\n",
+    "            title='SMC posterior — NoisyLine')\n",
+    "axes[0].legend()\n",
+    "\n",
+    "axes[1].plot(nl.x, y_obs, '.', alpha=0.6, label='data')\n",
+    "for s, i in smc_nl[np.random.choice(len(smc_nl), 80)]:\n",
+    "    axes[1].plot(nl.x, s * nl.x + i, alpha=0.05, c='C1', lw=0.8)\n",
+    "axes[1].plot(nl.x, theta_nl[0] * nl.x + theta_nl[1], 'r-', lw=2, label='true line')\n",
+    "axes[1].set(xlabel='x', ylabel='y', title='Posterior predictive draws')\n",
+    "axes[1].legend()\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "## Summary\n",
+    "\n",
+    "| Method | When to use | ESS behaviour |\n",
+    "|---|---|---|\n",
+    "| `importance_sampling` | Proposal already close to posterior | Degrades quickly if proposal is too broad |\n",
+    "| `sequential_importance_sampling` | Moderate mismatch, iterative refinement | Better than plain IS; no annealing schedule |\n",
+    "| `SMC` | Broad prior, multi-modal, or expensive likelihood | Maintains high ESS via annealing + MCMC move |\n",
+    "\n",
+    "All three accept any `log_target_fn` / `log_likelihood_fn` and a `UniformPrior` (or any object with `.sample(n)` and `.log_prob(theta)`)."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "name": "python",
+   "version": "3.11.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

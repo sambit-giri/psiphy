@@ -1,5 +1,10 @@
-import numpy as np 
-from tqdm import tqdm
+import numpy as np
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 class rABC:
 	def __init__(self, simulator, distance, observation, prior, bounds, N=100, eps=0.1):

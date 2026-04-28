@@ -1,5 +1,5 @@
 psiphy.sbi
-=======
+==========
 
 .. automodule:: psiphy.sbi
    :members:

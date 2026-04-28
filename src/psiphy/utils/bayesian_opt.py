@@ -290,17 +290,31 @@ def ExpIntVar(X, model, y_opt=0.0, xi=0.01, return_grad=False):
     return values
 
 
-from GPyOpt.methods import BayesianOptimization
-from GPyOpt.util.arguments_manager import ArgumentsManager
-
-from GPyOpt.core.task.space import Design_space, bounds_to_space
-from GPyOpt.core.task.objective import SingleObjective
-from GPyOpt.core.task.cost import CostModel
-from GPyOpt.optimization.acquisition_optimizer import AcquisitionOptimizer
-
-from GPyOpt.acquisitions import AcquisitionEI, AcquisitionMPI, AcquisitionLCB, AcquisitionEI_MCMC, AcquisitionMPI_MCMC, AcquisitionLCB_MCMC, AcquisitionLP, AcquisitionEntropySearch
-from GPyOpt.acquisitions import AcquisitionBase
-from GPyOpt.util.general import get_quantiles
+try:
+    from GPyOpt.methods import BayesianOptimization
+    from GPyOpt.util.arguments_manager import ArgumentsManager
+    from GPyOpt.core.task.space import Design_space, bounds_to_space
+    from GPyOpt.core.task.objective import SingleObjective
+    from GPyOpt.core.task.cost import CostModel
+    from GPyOpt.optimization.acquisition_optimizer import AcquisitionOptimizer
+    from GPyOpt.acquisitions import AcquisitionEI, AcquisitionMPI, AcquisitionLCB, AcquisitionEI_MCMC, AcquisitionMPI_MCMC, AcquisitionLCB_MCMC, AcquisitionLP, AcquisitionEntropySearch
+    from GPyOpt.acquisitions import AcquisitionBase
+    from GPyOpt.util.general import get_quantiles
+    _gpyopt_available = True
+except ImportError:
+    _gpyopt_available = False
+    BayesianOptimization = ArgumentsManager = Design_space = bounds_to_space = None
+    SingleObjective = CostModel = AcquisitionOptimizer = None
+    AcquisitionEI = AcquisitionMPI = AcquisitionLCB = None
+    AcquisitionEI_MCMC = AcquisitionMPI_MCMC = AcquisitionLCB_MCMC = None
+    AcquisitionLP = AcquisitionEntropySearch = None
+    get_quantiles = None
+    class AcquisitionBase:  # dummy bases so subclasses below don't fail at definition
+        pass
+    class ArgumentsManager:
+        pass
+    class BayesianOptimization:
+        pass
 
 class AcquisitionEIV(AcquisitionBase):
     """

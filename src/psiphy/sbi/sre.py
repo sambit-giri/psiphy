@@ -1,6 +1,10 @@
-import numpy as np 
-import emcee
+import numpy as np
 from scipy.special import logit
+
+try:
+    import emcee
+except ImportError:
+    emcee = None
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler

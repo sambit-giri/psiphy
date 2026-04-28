@@ -1,5 +1,5 @@
 psiphy.mcmc
-========
+===========
 
 .. automodule:: psiphy.mcmc
    :members:

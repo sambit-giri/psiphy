@@ -1,6 +1,9 @@
 import numpy as np
 from sklearn.model_selection import KFold
-from scipy.integrate import simps
+try:
+    from scipy.integrate import simpson as simps
+except ImportError:
+    from scipy.integrate import simps
 import warnings 
 warnings.filterwarnings("ignore")
 from ..utils import distances
@@ -359,9 +362,15 @@ class LFIRE_BayesianOpt_ShrinkSpace:
 
 
 # LFIRE = LFIRE_core
-import emcee
+try:
+    import emcee
+    _emcee_EnsembleSampler = emcee.EnsembleSampler
+except ImportError:
+    emcee = None
+    class _emcee_EnsembleSampler:
+        pass
 
-class LFIRE(emcee.EnsembleSampler):
+class LFIRE(_emcee_EnsembleSampler):
 	"""docstring for LFIRE"""
 	def __init__(self, **arg):
 		super(LFIRE, self).__init__(**arg)

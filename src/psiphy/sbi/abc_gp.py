@@ -1,9 +1,17 @@
-import numpy as np 
+import numpy as np
 import pickle
-from tqdm import tqdm
-from time import time 
+from time import time
 
-import emcee
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+try:
+    import emcee
+except ImportError:
+    emcee = None
 from sklearn.gaussian_process import GaussianProcessRegressor
 
 class ABC_gpL:

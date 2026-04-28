@@ -20,8 +20,8 @@ class FisherMatrix:
     Parameters
     ----------
     simulator : callable
-        Function with signature:
-            simulator(theta, initial_seed, noise_seed, **sim_kwargs) -> np.ndarray
+        Function with signature
+        ``simulator(theta, initial_seed, noise_seed, **sim_kwargs) -> np.ndarray``.
         Must return a 1D array (the summary statistic).
     theta_fid : array-like, shape (n_params,)
         Fiducial parameter values.

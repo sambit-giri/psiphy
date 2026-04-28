@@ -1,5 +1,5 @@
 psiphy.utils
-=========
+============
 
 .. automodule:: psiphy.utils
    :members:

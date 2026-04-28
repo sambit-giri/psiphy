@@ -2,26 +2,40 @@ import numpy as np
 import warnings, random
 warnings.filterwarnings("ignore")
 
-import pickle, emcee
+import pickle
 from multiprocessing import Pool, cpu_count
 from glob import glob
 from time import time, sleep
 from scipy.stats import gaussian_kde
 
-from dynesty import NestedSampler, DynamicNestedSampler
-from dynesty.utils import resample_equal
-from dynesty import plotting as dyplot
+try:
+    import emcee
+except ImportError:
+    emcee = None
+
+try:
+    from dynesty import NestedSampler, DynamicNestedSampler
+    from dynesty.utils import resample_equal
+    from dynesty import plotting as dyplot
+except ImportError:
+    NestedSampler = DynamicNestedSampler = resample_equal = dyplot = None
 
 from ..utils import distances
 from ..utils import bayesian_opt as bopt
 from ..utils import helpers as hf
 
-from skopt import gp_minimize
-from skopt import dump, load
-from skopt import callbacks
-from skopt.callbacks import CheckpointSaver
+try:
+    from skopt import gp_minimize
+    from skopt import dump, load
+    from skopt import callbacks
+    from skopt.callbacks import CheckpointSaver
+except ImportError:
+    gp_minimize = dump = load = callbacks = CheckpointSaver = None
 
-from GPyOpt.methods import BayesianOptimization
+try:
+    from GPyOpt.methods import BayesianOptimization
+except ImportError:
+    BayesianOptimization = None
 # BayesianOptimization = bopt.BayesianOptimization_GPyOpt
 
 def dict_get_remove(a, key, default=None, remove=True):

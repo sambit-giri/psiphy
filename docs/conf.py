@@ -20,3 +20,6 @@ html_theme = "sphinx_rtd_theme"
 autodoc_member_order = "bysource"
 numpydoc_show_class_members = False
 nbsphinx_execute = "never"   # notebooks are pre-rendered; don't re-execute during build
+nbsphinx_allow_errors = True  # don't fail on error cells in pre-executed notebooks
+
+exclude_patterns = ["_build", "examples/line_fitting.ipynb"]

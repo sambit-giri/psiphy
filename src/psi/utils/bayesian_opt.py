@@ -2,8 +2,8 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
 from scipy import integrate
-from . import sampling_space as smp 
-from . import helper_functions as hf
+from . import sampling_space as smp
+from . import helpers as hf
 
 def expected_improvement(X, X_sample, Y_sample, gpr, xi=0.01):
     '''

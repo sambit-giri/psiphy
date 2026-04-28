@@ -3,9 +3,9 @@ from sklearn.model_selection import KFold
 from scipy.integrate import simps
 import warnings 
 warnings.filterwarnings("ignore")
-from . import distances
-from . import helper_functions as hf
-from . import bayesian_optimisation as bopt
+from ..utils import distances
+from ..utils import helpers as hf
+from ..utils import bayesian_opt as bopt
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern

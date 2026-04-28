@@ -1,6 +1,6 @@
 import numpy as np
 from pyDOE import lhs
-from . import helper_functions as hf
+from . import helpers as hf
 
 def LH_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	"""

@@ -12,9 +12,9 @@ from dynesty import NestedSampler, DynamicNestedSampler
 from dynesty.utils import resample_equal
 from dynesty import plotting as dyplot
 
-from . import distances
-from . import bayesian_optimisation as bopt
-from . import helper_functions as hf 
+from ..utils import distances
+from ..utils import bayesian_opt as bopt
+from ..utils import helpers as hf
 
 from skopt import gp_minimize
 from skopt import dump, load

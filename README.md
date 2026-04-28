@@ -1,21 +1,26 @@
-Package for Statistical Inference (PSI)
-=======================================
+# PSI — Parameter and Statistical Inference
 
-A python package containing tools for statistical inference.
+[![License](https://img.shields.io/github/license/sambit-giri/PSI.svg)](https://github.com/sambit-giri/PSI/blob/master/LICENSE)
+[![GitHub Repository](https://img.shields.io/github/repo-size/sambit-giri/PSI)](https://github.com/sambit-giri/PSI)
+[![CI status](https://github.com/sambit-giri/PSI/actions/workflows/ci.yml/badge.svg)](https://github.com/sambit-giri/PSI/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/Documentation-here-blue)](https://sambit-giri.github.io/PSI)
 
+A Python package for cosmological parameter inference, providing tools for
+simulation-based inference (SBI), MCMC sampling, Fisher forecasting, and
+posterior diagnostics.
 
-INSTALLATION
-------------
-To install the package in the standard location, run the following in the root directory::
+## Installation
 
-    python setup.py install
-
-In order to install it in a separate directory::
-
-    python setup.py install --home=directory
-
-One can also install it using pip by running the following command::
+Install directly from GitHub:
 
     pip install git+https://github.com/sambit-giri/PSI.git
 
-The dependencies should be installed automatically during the installation process. If they fail for some reason, you can install them manually before installing tools21cm. The list of required packages can be found in the requirements.txt file present in the root directory.
+To include optional dependencies (e.g. MCMC samplers):
+
+    pip install "git+https://github.com/sambit-giri/PSI.git#egg=psi[mcmc]"
+
+For a local editable install (recommended for development):
+
+    git clone https://github.com/sambit-giri/PSI.git
+    cd PSI
+    pip install -e ".[dev]"

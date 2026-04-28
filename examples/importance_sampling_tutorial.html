@@ -114,10 +114,10 @@
 <p>Low ESS means the proposal is a poor match for the posterior — most weight falls on very few particles.</p>
 <p><strong>SMC</strong> fixes this by annealing from the prior to the posterior through a sequence of tempered targets, resampling and applying MCMC moves when ESS drops too low.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
@@ -139,11 +139,11 @@
 <section id="1-UniformPrior-helper">
 <h2>1 UniformPrior helper<a class="headerlink" href="#1-UniformPrior-helper" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">UniformPrior</span></code> wraps a box prior and provides <code class="docutils literal notranslate"><span class="pre">sample(n)</span></code> and <code class="docutils literal notranslate"><span class="pre">log_prob(theta)</span></code> — the two methods expected by <code class="docutils literal notranslate"><span class="pre">importance_sampling</span></code> and <code class="docutils literal notranslate"><span class="pre">SMC</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)})</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)})</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ndim  :&#39;</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;sample:&#39;</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;log_prob in support  :&#39;</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]))</span>
@@ -151,16 +151,29 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+ndim  : 2
+sample: [[-1.25459881  4.7585001 ]
+ [ 2.31993942  3.03342657]
+ [-3.4398136   0.86437315]]
+log_prob in support  : -3.891820298110627
+log_prob out of support: -inf
+</pre></div></div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="2-Importance-Sampling-—-GaussianSignal">
 <h2>2 Importance Sampling — GaussianSignal<a class="headerlink" href="#2-Importance-Sampling-—-GaussianSignal" title="Link to this heading"></a></h2>
 <p>Target: posterior <span class="math notranslate nohighlight">\(p(\mu, \sigma \mid x)\)</span> for a Gaussian signal with <span class="math notranslate nohighlight">\(N=40\)</span> observations.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span> <span class="o">=</span> <span class="n">GaussianSignal</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gs</span> <span class="o">=</span> <span class="n">GaussianSignal</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
 <span class="n">theta_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">])</span>
 <span class="n">x_obs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_true</span><span class="p">)</span>
 
@@ -168,11 +181,19 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+x_obs  mean=1.250  std=0.734  (true: [1.5 0.8])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Broad uniform prior — deliberate mismatch to show ESS degradation</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Broad uniform prior — deliberate mismatch to show ESS degradation</span>
 <span class="n">prior_broad</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)])</span>
 <span class="n">log_posterior</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_obs</span><span class="p">)</span> <span class="o">+</span> <span class="n">prior_broad</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -183,11 +204,19 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Broad proposal  — ESS = 11.4 / 5000 (0.2%)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Tighter prior centred near the posterior — higher ESS</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Tighter prior centred near the posterior — higher ESS</span>
 <span class="n">prior_tight</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)])</span>
 <span class="n">log_posterior_tight</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_obs</span><span class="p">)</span> <span class="o">+</span> <span class="n">prior_tight</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
@@ -198,11 +227,19 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Tight proposal  — ESS = 114.1 / 5000 (2.3%)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Analytic posterior on mean for comparison (sigma plugged in as sample std)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Analytic posterior on mean for comparison (sigma plugged in as sample std)</span>
 <span class="n">post_mean</span><span class="p">,</span> <span class="n">post_sigma</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">analytic_posterior</span><span class="p">(</span><span class="n">x_obs</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -228,16 +265,23 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_8_0.png" src="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_8_0.png" />
+</div>
+</div>
 <p><strong>Key takeaway:</strong> the broad uniform proposal samples mostly from regions of low likelihood, yielding very few effective samples. A tighter proposal that overlaps the posterior better gives a far higher ESS and more accurate estimate.</p>
 </section>
 <hr class="docutils" />
 <section id="3-Effective-Sample-Size-as-a-diagnostic">
 <h2>3 Effective Sample Size as a diagnostic<a class="headerlink" href="#3-Effective-Sample-Size-as-a-diagnostic" title="Link to this heading"></a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show how ESS changes with proposal width</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show how ESS changes with proposal width</span>
 <span class="n">half_widths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
 <span class="n">ess_list</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -261,16 +305,23 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_11_0.png" src="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_11_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="4-Importance-Sampling-—-NoisyLine">
 <h2>4 Importance Sampling — NoisyLine<a class="headerlink" href="#4-Importance-Sampling-—-NoisyLine" title="Link to this heading"></a></h2>
 <p>Two parameters: slope and intercept.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span> <span class="o">=</span> <span class="n">NoisyLine</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nl</span> <span class="o">=</span> <span class="n">NoisyLine</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="n">theta_nl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
 <span class="n">y_obs</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_nl</span><span class="p">)</span>
 
@@ -286,11 +337,19 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+NoisyLine IS  ESS=4.2/8000  slope=-0.832 (true -0.8)  intercept=5.280 (true 5.0)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">true_val</span> <span class="ow">in</span> <span class="p">[</span>
     <span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;slope&#39;</span><span class="p">,</span> <span class="n">theta_nl</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
@@ -307,16 +366,23 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_14_0.png" src="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_14_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="5-SMC-—-annealing-from-prior-to-posterior">
 <h2>5 SMC — annealing from prior to posterior<a class="headerlink" href="#5-SMC-—-annealing-from-prior-to-posterior" title="Link to this heading"></a></h2>
 <p>SMC overcomes the low-ESS problem by bridging from the prior to the posterior through tempered targets <span class="math notranslate nohighlight">\(p_t \propto \text{prior} \times \mathcal{L}^{\beta_t}\)</span>. When ESS drops below a threshold, particles are resampled and a Gaussian random-walk MCMC move is applied to maintain diversity.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># GaussianSignal with broad prior — compare IS vs SMC</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># GaussianSignal with broad prior — compare IS vs SMC</span>
 <span class="n">prior_broad2</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)])</span>
 
 <span class="c1"># IS baseline</span>
@@ -338,11 +404,33 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+IS  ESS=1.5/1000
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "d6e52c707f6049dca20bb490a2fc7c13", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+SMC ESS=755.7/1000
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">true_val</span> <span class="ow">in</span> <span class="p">[</span>
     <span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$\mu$&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">theta_true</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
@@ -362,15 +450,22 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_17_0.png" src="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_17_0.png" />
+</div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="6-2-D-posterior-scatter:-SMC-on-NoisyLine">
 <h2>6 2-D posterior scatter: SMC on NoisyLine<a class="headerlink" href="#6-2-D-posterior-scatter:-SMC-on-NoisyLine" title="Link to this heading"></a></h2>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prior_nl2</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_nl2</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
 
 <span class="n">smc_nl</span><span class="p">,</span> <span class="n">w_nl2</span> <span class="o">=</span> <span class="n">SMC</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">nl</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">),</span>
@@ -385,11 +480,27 @@
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "6304d2f106e44252b840afffc3dd1a99", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+NoisyLine SMC  ESS=818.2/1000
+slope     = -0.825 ± 0.028  (true -0.8)
+intercept = 5.224 ± 0.175  (true 5.0)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="n">sc</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">smc_nl</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">smc_nl</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
                      <span class="n">c</span><span class="o">=</span><span class="n">w_nl2</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
@@ -409,6 +520,13 @@
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_20_0.png" src="../_build/html/.doctrees/nbsphinx/examples_importance_sampling_tutorial_20_0.png" />
 </div>
 </div>
 </section>

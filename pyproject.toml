@@ -41,6 +41,8 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser",
     "numpydoc",
+    "nbsphinx",
+    "ipykernel",
 ]
 dev = [
     "pytest",

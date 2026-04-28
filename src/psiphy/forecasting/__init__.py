@@ -1,1 +1,1 @@
-# Forecasting tools — FisherMatrix implementation coming in issue #8.
+from .fisher import FisherMatrix

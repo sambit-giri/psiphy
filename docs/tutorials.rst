@@ -6,3 +6,4 @@ Tutorials
 
    examples/toy_models_overview
    examples/fisher_analysis
+   examples/importance_sampling_tutorial

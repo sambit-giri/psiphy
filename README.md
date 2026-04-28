@@ -1,4 +1,4 @@
-# PSI — Parameter and Statistical Inference
+# psiphy — Package for Statistical Inference of Physics
 
 [![License](https://img.shields.io/github/license/sambit-giri/PSI.svg)](https://github.com/sambit-giri/PSI/blob/master/LICENSE)
 [![GitHub Repository](https://img.shields.io/github/repo-size/sambit-giri/PSI)](https://github.com/sambit-giri/PSI)
@@ -17,7 +17,7 @@ Install directly from GitHub:
 
 To include optional dependencies (e.g. MCMC samplers):
 
-    pip install "git+https://github.com/sambit-giri/PSI.git#egg=psi[mcmc]"
+    pip install "git+https://github.com/sambit-giri/PSI.git#egg=psiphy[mcmc]"
 
 For a local editable install (recommended for development):
 

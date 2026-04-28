@@ -1,15 +1,15 @@
-psi.toy_models
+psiphy.toy_models
 ==============
 
-.. automodule:: psi.toy_models
+.. automodule:: psiphy.toy_models
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: psi.toy_models.gaussian
+.. automodule:: psiphy.toy_models.gaussian
    :members:
    :undoc-members:
 
-.. automodule:: psi.toy_models.line_fitting
+.. automodule:: psiphy.toy_models.line_fitting
    :members:
    :undoc-members:

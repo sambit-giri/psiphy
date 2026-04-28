@@ -3,9 +3,9 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "psi"
+name = "psiphy"
 version = "0.1.1"
-description = "Parameter and Statistical Inference — cosmological parameter inference tools"
+description = "Package for Statistical Inference of Physics — cosmological parameter inference tools"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -46,7 +46,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
-    "psi[mcmc,sbi,hmc,docs]",
+    "psiphy[mcmc,sbi,hmc,docs]",
 ]
 
 [project.urls]

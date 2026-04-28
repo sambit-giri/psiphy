@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from psi.toy_models import NoisyLine, GaussianSignal
+from psiphy.toy_models import NoisyLine, GaussianSignal
 
 
 class TestNoisyLine:

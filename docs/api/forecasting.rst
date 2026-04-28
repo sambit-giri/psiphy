@@ -1,7 +1,7 @@
-psi.forecasting
+psiphy.forecasting
 ===============
 
-.. automodule:: psi.forecasting
+.. automodule:: psiphy.forecasting
    :members:
    :undoc-members:
    :show-inheritance:

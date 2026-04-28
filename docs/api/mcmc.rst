@@ -1,7 +1,7 @@
-psi.mcmc
+psiphy.mcmc
 ========
 
-.. automodule:: psi.mcmc
+.. automodule:: psiphy.mcmc
    :members:
    :undoc-members:
    :show-inheritance:

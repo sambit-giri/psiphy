@@ -1,27 +1,27 @@
-psi.sbi
+psiphy.sbi
 =======
 
-.. automodule:: psi.sbi
+.. automodule:: psiphy.sbi
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: psi.sbi.rejection_abc
+.. automodule:: psiphy.sbi.rejection_abc
    :members:
    :undoc-members:
 
-.. automodule:: psi.sbi.sre
+.. automodule:: psiphy.sbi.sre
    :members:
    :undoc-members:
 
-.. automodule:: psi.sbi.lfire
+.. automodule:: psiphy.sbi.lfire
    :members:
    :undoc-members:
 
-.. automodule:: psi.sbi.bolfi
+.. automodule:: psiphy.sbi.bolfi
    :members:
    :undoc-members:
 
-.. automodule:: psi.sbi.abc_gp
+.. automodule:: psiphy.sbi.abc_gp
    :members:
    :undoc-members:

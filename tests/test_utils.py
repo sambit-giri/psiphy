@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from psi.utils import sampling_space
+from psiphy.utils import sampling_space
 
 
 def test_lh_sampling_shape():

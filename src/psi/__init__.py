@@ -15,7 +15,12 @@ psi.toy_models : Example simulators for testing and benchmarking
 psi.utils      : Shared utilities (distances, KDE, sampling, helpers)
 """
 
-__version__ = "0.1.0"
+import importlib.metadata
+
+try:
+    __version__ = importlib.metadata.version("psi")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "unknown"
 
 import numpy
 numpy.seterr(all='ignore')

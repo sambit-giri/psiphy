@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psi"
+version = "0.1.1"
+description = "Parameter and Statistical Inference — cosmological parameter inference tools"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Sambit Giri", email = "sambit.giri@astro.su.se" },
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "scikit-learn",
+    "scikit-image",
+    "pyDOE",
+    "getdist",
+]
+
+[project.optional-dependencies]
+mcmc = [
+    "emcee",
+    "dynesty",
+    "nautilus-sampler",
+]
+sbi = [
+    "sbi",
+    "torch",
+]
+hmc = [
+    "blackjax",
+    "jax",
+    "jaxlib",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst-parser",
+    "numpydoc",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "psi[mcmc,sbi,hmc,docs]",
+]
+
+[project.urls]
+Homepage = "https://github.com/sambit-giri/PSI"
+Issues = "https://github.com/sambit-giri/PSI/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]

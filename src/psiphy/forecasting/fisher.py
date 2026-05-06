@@ -10,6 +10,12 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
+try:
+    from joblib import Parallel, delayed as _jdelayed
+    _JOBLIB_AVAILABLE = True
+except ImportError:
+    _JOBLIB_AVAILABLE = False
+
 
 class FisherMatrix:
     """
@@ -82,6 +88,20 @@ class FisherMatrix:
         self.F_inv = None
         self.F_std = None
         self.compute_method = None
+
+    # ---- Parallel worker helpers ----
+
+    @staticmethod
+    def _run_seed_jobs(seed, noise_seeds, simulator, theta, sim_kwargs):
+        """Worker: run all noise_seeds for one IC seed. In-memory coeval cache reused within job."""
+        return [(seed, ns, np.asarray(simulator(theta, seed, ns, **sim_kwargs)))
+                for ns in noise_seeds]
+
+    @staticmethod
+    def _run_theta_seed_jobs(theta_step, seed, noise_seeds, simulator, sim_kwargs):
+        """Worker: run all noise_seeds for one (theta_step, IC seed) pair."""
+        return [(seed, ns, np.asarray(simulator(theta_step, seed, ns, **sim_kwargs)))
+                for ns in noise_seeds]
 
     # ---- Internals ----
 
@@ -221,7 +241,7 @@ class FisherMatrix:
 
     # ---- Covariance ----
 
-    def estimate_covariance(self, seeds=range(1, 11), noise_seeds=range(10)):
+    def estimate_covariance(self, seeds=range(1, 11), noise_seeds=range(10), n_jobs=1):
         """
         Estimate the data covariance matrix at the fiducial point.
 
@@ -234,6 +254,10 @@ class FisherMatrix:
             Initial condition / cosmic variance seeds.
         noise_seeds : iterable
             Instrument noise seeds.
+        n_jobs : int
+            Number of parallel workers (joblib). -1 uses all CPUs.
+            Each worker handles all noise_seeds for one IC seed, so the
+            simulator's in-memory coeval cache is reused within each job.
 
         Returns
         -------
@@ -246,6 +270,31 @@ class FisherMatrix:
         self._print(f"\n{'='*50}")
         self._print(f"  Estimating covariance matrix")
         self._print(f"{'='*50}")
+
+        if n_jobs != 1 and _JOBLIB_AVAILABLE:
+            # One job per IC seed; each job runs all noise_seeds so that the
+            # simulator's in-memory coeval cache is reused across noise realisations.
+            seeds_to_run = [s for s in seeds if any(
+                self._cache_key(self.theta_fid, s, ns) not in self._cache
+                for ns in noise_seeds
+            )]
+            n_skip = len(seeds) - len(seeds_to_run)
+            self._print(f"  Parallel mode (n_jobs={n_jobs}): "
+                        f"{len(seeds_to_run)} seeds to run, {n_skip} already cached")
+            if seeds_to_run:
+                all_results = Parallel(n_jobs=n_jobs)(
+                    _jdelayed(FisherMatrix._run_seed_jobs)(
+                        s, noise_seeds, self.simulator, self.theta_fid, self.sim_kwargs
+                    )
+                    for s in tqdm(seeds_to_run, desc="Simulating realisations")
+                )
+                for seed_results in all_results:
+                    for seed, ns, x in seed_results:
+                        key = self._cache_key(self.theta_fid, seed, ns)
+                        if key not in self._cache:
+                            self._cache[key] = x
+                if self.cache_file is not None:
+                    self._save_cache()
 
         fid_str = "[" + ", ".join(f"{v:.3g}" for v in self.theta_fid) + "]"
         for seed in (pbar := tqdm(seeds, desc="Simulating realisations")):
@@ -315,6 +364,7 @@ class FisherMatrix:
         noise_seed=0,
         n_stencil=2,
         use_crn=False,
+        n_jobs=1,
     ):
         """
         Estimate dmu/dtheta via central finite differences.
@@ -331,6 +381,9 @@ class FisherMatrix:
             Stencil order: 2, 4, or 6. Higher order reduces truncation error O(h^n).
         use_crn : bool
             Use Common Random Numbers to cancel cosmic variance in the subtraction.
+        n_jobs : int
+            Number of parallel workers (joblib). -1 uses all CPUs.
+            Each worker handles all noise_seeds for one (theta_step, IC seed) pair.
 
         Returns
         -------
@@ -361,6 +414,41 @@ class FisherMatrix:
         self._print(f"\n{'='*50}")
         self._print(f"  Computing derivatives ({n_stencil}-point stencil{crn_tag})")
         self._print(f"{'='*50}")
+
+        if n_jobs != 1 and _JOBLIB_AVAILABLE:
+            # Pre-run all required (theta_step, seed) pairs in parallel.
+            # One job per (theta_step, seed); each job runs all noise_seeds_deriv
+            # so the simulator's in-memory coeval cache is reused within the job.
+            pairs_to_run = {}  # (theta_tuple, seed) → (theta_step_array, seed)
+            for j in range(self.n_params):
+                h = delta_frac * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else delta_frac
+                for s_step in steps:
+                    theta_step = self.theta_fid.copy()
+                    theta_step[j] += s_step * h
+                    theta_key = tuple(np.round(theta_step, 10))
+                    for seed in seeds:
+                        pair_key = (theta_key, seed)
+                        if pair_key not in pairs_to_run and any(
+                            self._cache_key(theta_step, seed, ns) not in self._cache
+                            for ns in noise_seeds_deriv
+                        ):
+                            pairs_to_run[pair_key] = (theta_step.copy(), seed)
+            if pairs_to_run:
+                self._print(f"  Parallel mode (n_jobs={n_jobs}): "
+                            f"{len(pairs_to_run)} (theta,seed) pairs to run")
+                all_results = Parallel(n_jobs=n_jobs)(
+                    _jdelayed(FisherMatrix._run_theta_seed_jobs)(
+                        t, s, noise_seeds_deriv, self.simulator, self.sim_kwargs
+                    )
+                    for t, s in tqdm(pairs_to_run.values(), desc="Computing derivatives")
+                )
+                for (t, s), triplets in zip(pairs_to_run.values(), all_results):
+                    for seed, ns, x in triplets:
+                        key = self._cache_key(t, seed, ns)
+                        if key not in self._cache:
+                            self._cache[key] = x
+                if self.cache_file is not None:
+                    self._save_cache()
 
         for j, pname in enumerate(self.param_names):
             h = delta_frac * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else delta_frac

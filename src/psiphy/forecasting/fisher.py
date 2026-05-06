@@ -110,6 +110,7 @@ class FisherMatrix:
             return
         import pickle, tempfile
         tmp_dir = os.path.dirname(self.cache_file) or '.'
+        tmp_path = None
         try:
             with tempfile.NamedTemporaryFile(mode='wb', dir=tmp_dir, delete=False, suffix='.tmp') as tmp:
                 pickle.dump(self._cache, tmp)
@@ -117,6 +118,8 @@ class FisherMatrix:
             os.replace(tmp_path, self.cache_file)
         except Exception as e:
             self._print(f"  WARNING: Could not save cache: {e}")
+            if tmp_path is not None and os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
     def _simulate_cached(self, theta, seed, noise_seed):
         key = self._cache_key(theta, seed, noise_seed)
@@ -161,8 +164,10 @@ class FisherMatrix:
         self._print(f"  Running simulations — {n_total} total")
         self._print(f"{'='*50}")
 
-        for seed in tqdm(seeds, desc="Simulating"):
+        theta_str = "[" + ", ".join(f"{v:.3g}" for v in theta) + "]"
+        for seed in (pbar := tqdm(seeds, desc="Simulating")):
             for ns in noise_seeds:
+                pbar.set_postfix(seed=seed, noise=ns, theta=theta_str)
                 key = self._cache_key(theta, seed, ns)
                 if key in self._cache:
                     n_cached += 1
@@ -178,15 +183,24 @@ class FisherMatrix:
 
     def cache_info(self):
         """Print a summary of cached simulations grouped by theta."""
-        self._print(f"\n  Total cached simulations: {len(self._cache)}")
+        self._print(f"\n{'='*50}")
+        self._print(f"  Cache info")
+        self._print(f"{'='*50}")
+        self._print(f"  Total cached simulations: {len(self._cache)}")
+        if self.cache_file:
+            self._print(f"  Cache file: {self.cache_file}")
         theta_groups = {}
         for (theta_tuple, seed, ns) in self._cache.keys():
             theta_groups.setdefault(theta_tuple, []).append((seed, ns))
         for theta_tuple, entries in theta_groups.items():
+            seeds_set = {s for s, _ in entries}
+            noise_set = {n for _, n in entries}
+            theta_str = "[" + ", ".join(f"{v:.3g}" for v in theta_tuple) + "]"
             self._print(
-                f"  theta={np.array(theta_tuple)}: {len(entries)} sims, "
-                f"{len({s for s,_ in entries})} seeds, {len({n for _,n in entries})} noise seeds"
+                f"  theta={theta_str}: {len(entries)} sims, "
+                f"{len(seeds_set)} seeds, {len(noise_set)} noise seeds"
             )
+        self._print(f"{'='*50}\n")
 
     def test_simulator(self, seed=1, noise_seed=0):
         """
@@ -233,8 +247,10 @@ class FisherMatrix:
         self._print(f"  Estimating covariance matrix")
         self._print(f"{'='*50}")
 
-        for seed in tqdm(seeds, desc="Simulating realisations"):
+        fid_str = "[" + ", ".join(f"{v:.3g}" for v in self.theta_fid) + "]"
+        for seed in (pbar := tqdm(seeds, desc="Simulating realisations")):
             for ns in noise_seeds:
+                pbar.set_postfix(seed=seed, noise=ns, theta=fid_str)
                 x = self._simulate_cached(self.theta_fid, seed, ns)
                 new_realisations.append(self._normalise(x))
 
@@ -351,12 +367,14 @@ class FisherMatrix:
 
             if use_crn:
                 deriv_per_seed = []
-                for seed in tqdm(seeds, desc=f"d/d({pname}) CRN", leave=False):
+                for seed in (pbar := tqdm(seeds, desc=f"d/d({pname}) CRN", leave=False)):
                     for ns in noise_seeds_deriv:
                         deriv_i = np.zeros(n_data)
                         for w, s in zip(weights, steps):
                             theta_step = self.theta_fid.copy()
                             theta_step[j] += s * h
+                            step_str = "[" + ", ".join(f"{v:.3g}" for v in theta_step) + "]"
+                            pbar.set_postfix(seed=seed, noise=ns, theta=step_str)
                             x = self._normalise(self._simulate_cached(theta_step, seed, ns))
                             deriv_i += w * x
                         deriv_per_seed.append(deriv_i / h)
@@ -366,9 +384,11 @@ class FisherMatrix:
                 for w, s in zip(weights, steps):
                     theta_step = self.theta_fid.copy()
                     theta_step[j] += s * h
+                    step_str = "[" + ", ".join(f"{v:.3g}" for v in theta_step) + "]"
                     x_step_list = []
-                    for seed in tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False):
+                    for seed in (pbar := tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False)):
                         for ns in noise_seeds_deriv:
+                            pbar.set_postfix(seed=seed, noise=ns, theta=step_str)
                             x_raw = self._simulate_cached(theta_step, seed, ns)
                             x_step_list.append(self._normalise(x_raw))
                     deriv_sum += w * np.mean(x_step_list, axis=0)
@@ -448,7 +468,12 @@ class FisherMatrix:
 
         if restore:
             self.dmu_dtheta = dmu_saved
-            self.F = self.F_inv = None
+            if self.compute_method is not None and dmu_saved is not None and self.C_inv is not None:
+                self.F = self.dmu_dtheta @ self.C_inv @ self.dmu_dtheta.T
+                self.F_inv = np.linalg.inv(self.F)
+            else:
+                self.F = self.F_inv = None
+            self._print("  Restored original dmu_dtheta.")
 
         if plot:
             has_sigma = self.C_inv is not None
@@ -592,20 +617,29 @@ class FisherMatrix:
 
     def _print_summary(self):
         sigma_1d   = self.sigma_1d()
+        sigma_2d   = self.sigma_2d()
         sigma_cond = self.sigma_conditional()
         corr       = self.correlation_matrix()
 
         self._print(f"\n{'='*50}")
         self._print(f"  Fisher Matrix Results  [{self.compute_method}]")
         self._print(f"{'='*50}")
+        self._print(f"\n{self.F}")
+
         self._print(f"\n  --- 1D marginal errors ---")
         for j, p in enumerate(self.param_names):
             frac = sigma_1d[j] / abs(self.theta_fid[j]) * 100 if self.theta_fid[j] != 0 else float('inf')
             self._print(f"    {p}: {sigma_1d[j]:.4f}  ({frac:.1f}%)")
 
-        self._print(f"\n  --- Conditional errors ---")
+        self._print(f"\n  --- 2D marginal errors ---")
+        for (i, j), (si, sj) in sigma_2d.items():
+            pi, pj = self.param_names[i], self.param_names[j]
+            self._print(f"    ({pi}, {pj}): sigma_{pi}={si:.4f}, sigma_{pj}={sj:.4f}")
+
+        self._print(f"\n  --- Conditional errors (others fixed) ---")
         for j, p in enumerate(self.param_names):
-            self._print(f"    {p}: {sigma_cond[j]:.4f}")
+            frac = sigma_cond[j] / abs(self.theta_fid[j]) * 100 if self.theta_fid[j] != 0 else float('inf')
+            self._print(f"    {p}: {sigma_cond[j]:.4f}  ({frac:.1f}%)")
 
         self._print(f"\n  --- Correlations ---")
         for i in range(self.n_params):

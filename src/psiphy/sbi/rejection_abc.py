@@ -7,10 +7,10 @@ except ImportError:
         return iterable
 
 class rABC:
-	def __init__(self, simulator, distance, observation, prior, bounds, N=100, eps=0.1):
+	def __init__(self, simulator, distance, observation, prior, bounds, N=100, eps=0.1, verbose=True):
 		self.simulator = simulator
 		self.distance  = distance
-		#self.verbose = verbose
+		self.verbose = verbose
 		self.y_obs = observation
 		self.param_names = [kk for kk in prior]
 		self.param_bound = bounds
@@ -25,8 +25,8 @@ class rABC:
 	def run(self, N=None):
 		if N is not None: self.N = N
 		params  = np.array([[self.sample_prior(kk) for kk in self.param_names] for i in range(self.N)]).squeeze()
-		sim_out = np.array([self.simulator(i) for i in tqdm(params)])
-		dists   = np.array([self.distance(self.y_obs, ss) for ss in tqdm(sim_out)])
+		sim_out = np.array([self.simulator(i) for i in tqdm(params, disable=not self.verbose)])
+		dists   = np.array([self.distance(self.y_obs, ss) for ss in tqdm(sim_out, disable=not self.verbose)])
 		for pp,dd in zip(params,dists):
 			if dd<self.eps: self.accepted_param.append(pp)
 		#accepted_param = params[dists<self.eps]

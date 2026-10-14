@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Likelihood-free inference &mdash; psiphy  documentation</title>
+  <title>Likelihood-free inference &mdash; psiphy 0.1.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
@@ -14,7 +14,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -46,7 +46,12 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="toy_models_overview.html">Toy Models Overview</a></li>
@@ -77,6 +82,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../api/forecasting.html">psiphy.forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/plotting.html">psiphy.plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing and support</a></li>
 </ul>
 
         </div>
@@ -113,7 +122,6 @@
 <li><p><strong>LFIRE</strong> (<code class="docutils literal notranslate"><span class="pre">LFIRE</span></code>): estimate the likelihood-to-evidence ratio <span class="math notranslate nohighlight">\(p(x \mid \theta)/p(x)\)</span> with a classifier. No distance or tolerance to tune; the classifier learns how to weigh the summaries.</p></li>
 </ol>
 <p>Contents: the problem → exact reference → rejection ABC → BOLFI → LFIRE → acquisition functions and batch proposals → saving/resuming.</p>
-<p>Neural SBI methods are planned (issues #7, #9, #17).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -214,7 +222,7 @@ exact mean: [1.267 0.829]   std: [0.119 0.086]
     <span class="n">observation</span><span class="o">=</span><span class="n">x_obs</span><span class="p">,</span>
     <span class="n">prior</span><span class="o">=</span><span class="p">{</span><span class="s1">'mu'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'sigma'</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
     <span class="n">bounds</span><span class="o">=</span><span class="p">{</span><span class="s1">'mu'</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s1">'sigma'</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)},</span>
-    <span class="n">N</span><span class="o">=</span><span class="n">n_sims_abc</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">N</span><span class="o">=</span><span class="n">n_sims_abc</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">abc</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">s_abc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">accepted_param</span><span class="p">)</span>
@@ -223,30 +231,13 @@ exact mean: [1.267 0.829]   std: [0.119 0.086]
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-100%|██████████| 30000/30000 [00:00&lt;00:00, 682359.40it/s]
-100%|██████████| 30000/30000 [00:00&lt;00:00, 181135.36it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
+<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 accepted 227 / 30000 (0.8%)
 ABC mean: [1.253 0.834]   std: [0.147 0.095]
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-
 </pre></div></div>
 </div>
 </section>
@@ -316,7 +307,7 @@ BOLFI mean: [1.229 0.838]   std: [0.081 0.126]
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_11_0.png" src="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_11_0.png" />
+<img alt="../_images/examples_lfi_tutorial_11_0.png" src="../_images/examples_lfi_tutorial_11_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -345,7 +336,7 @@ BOLFI mean: [1.229 0.838]   std: [0.081 0.126]
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_12_0.png" src="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_12_0.png" />
+<img alt="../_images/examples_lfi_tutorial_12_0.png" src="../_images/examples_lfi_tutorial_12_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -357,6 +348,25 @@ method           simulations   mean (mu, sigma)    std (mu, sigma)
 exact                      —   [1.267 0.829]   [0.119 0.086]
 rejection ABC          30000   [1.253 0.834]   [0.147 0.095]
 BOLFI                    100   [1.229 0.838]   [0.081 0.126]
+</pre></div></div>
+</div>
+<p><strong>Why is every posterior, including the exact one, below the true :math:`mu`?</strong> The 50 observed values have a sample mean about two standard errors below the true mean (printed below). All methods correctly follow the data there; the comparison that matters is with the exact posterior, not with the true value. Calibration over many data sets is shown in Section 7 of the <em>Importance sampling and SMC</em> tutorial.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">se</span> <span class="o">=</span> <span class="n">s_obs</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'sample mean = </span><span class="si">{</span><span class="n">m_obs</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">, true mean = </span><span class="si">{</span><span class="n">theta_true</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">, standard error = </span><span class="si">{</span><span class="n">se</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">'</span>
+      <span class="sa">f</span><span class="s1">'  -&gt;  data offset = </span><span class="si">{</span><span class="p">(</span><span class="n">m_obs</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">theta_true</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">se</span><span class="si">:</span><span class="s1">+.1f</span><span class="si">}</span><span class="s1"> sigma'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+sample mean = 1.265, true mean = 1.5, standard error = 0.114  -&gt;  data offset = -2.1 sigma
 </pre></div></div>
 </div>
 <p>BOLFI finds the right region and gives a posterior of the right size with 300× fewer simulations than rejection ABC. It is less precise: because each <span class="math notranslate nohighlight">\(d(\theta)\)</span> comes from a single noisy simulation, the GP surrogate — and with it the posterior widths — varies from run to run (the means stay within about 1σ). Averaging several simulations per <span class="math notranslate nohighlight">\(\theta\)</span> with <code class="docutils literal notranslate"><span class="pre">n_repeats</span></code> is the most effective fix. Measured over 6 runs on this problem:</p>
@@ -395,7 +405,7 @@ BOLFI                    100   [1.229 0.838]   [0.081 0.126]
 <p>The log ratio is <strong>linear in the classifier features</strong>, so the <code class="docutils literal notranslate"><span class="pre">summary</span></code> must be rich enough: here the sample mean and log-std plus their squares and product (a change in <span class="math notranslate nohighlight">\(\sigma\)</span> changes the spread of the data, which a linear function of the mean alone cannot pick up). L1 regularisation drops features that don’t help.</p>
 <p>Each evaluation costs <code class="docutils literal notranslate"><span class="pre">n_theta</span></code> simulations, so — as with BOLFI — a GP surrogate of the log ratio is learned with Bayesian optimisation (<code class="docutils literal notranslate"><span class="pre">learn_posterior</span></code>) and then sampled. For one or two parameters <code class="docutils literal notranslate"><span class="pre">run_grid</span></code> evaluates a grid directly instead.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.sbi.lfire</span><span class="w"> </span><span class="kn">import</span> <span class="n">LFIRE</span>
@@ -428,7 +438,7 @@ at the truth: log r = 2.74, classifier accuracy = 0.98
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
@@ -454,7 +464,7 @@ at the truth: log r = 2.74, classifier accuracy = 0.98
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_16_0.png" src="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_16_0.png" />
+<img alt="../_images/examples_lfi_tutorial_18_0.png" src="../_images/examples_lfi_tutorial_18_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -500,7 +510,7 @@ LFIRE                  25500   [1.256 0.827]   [0.121 0.088]
 </table>
 <p><code class="docutils literal notranslate"><span class="pre">batch_size=q</span></code> proposes <span class="math notranslate nohighlight">\(q\)</span> points per round (kriging believer: each pick is added to the GP as a fake observation at its predicted mean, so the next pick goes elsewhere). The <span class="math notranslate nohighlight">\(q\)</span> simulations of a round are independent, so on a cluster they can run in parallel.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">runs</span> <span class="o">=</span> <span class="p">{</span>
@@ -528,7 +538,7 @@ LFIRE                  25500   [1.256 0.827]   [0.121 0.088]
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_19_0.png" src="../_build/html/.doctrees/nbsphinx/examples_lfi_tutorial_19_0.png" />
+<img alt="../_images/examples_lfi_tutorial_21_0.png" src="../_images/examples_lfi_tutorial_21_0.png" />
 </div>
 </div>
 <p>Colour shows the order of evaluation (dark = early). Grey: exact posterior samples.</p>
@@ -538,7 +548,7 @@ LFIRE                  25500   [1.256 0.827]   [0.121 0.088]
 <h2>7 Saving and resuming<a class="headerlink" href="#7-Saving-and-resuming" title="Link to this heading"></a></h2>
 <p>With <code class="docutils literal notranslate"><span class="pre">filename=</span></code>, the evaluated points are stored after learning. A later call with the same file continues from them, adding <code class="docutils literal notranslate"><span class="pre">n_calls</span></code> new simulations — so the expensive part can be split across jobs.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(),</span> <span class="s1">'bolfi.pkl'</span><span class="p">)</span>
@@ -605,7 +615,7 @@ evaluations after resume: 50
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Sambit Giri.</p>
+    <p>&#169; Copyright 2024-2026, Sambit Giri.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

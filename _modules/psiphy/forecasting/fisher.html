@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>psiphy.forecasting.fisher &mdash; psiphy  documentation</title>
+  <title>psiphy.forecasting.fisher &mdash; psiphy 0.1.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -40,7 +40,12 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
 </ul>
@@ -52,6 +57,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing and support</a></li>
 </ul>
 
         </div>
@@ -90,8 +99,17 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
 <div class="viewcode-block" id="tqdm">
 <a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.tqdm">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">tqdm</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">iterable</span></div>
+    <span class="k">class</span><span class="w"> </span><span class="nc">tqdm</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Minimal stand-in when tqdm is not installed (iteration and set_postfix only)."""</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_it</span> <span class="o">=</span> <span class="n">iterable</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_it</span><span class="p">)</span>
+<div class="viewcode-block" id="tqdm.set_postfix">
+<a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.tqdm.set_postfix">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">set_postfix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">pass</span></div>
+</div>
 
 
 <span class="k">try</span><span class="p">:</span>
@@ -214,7 +232,7 @@
             <span class="k">return</span> <span class="mi">0</span>
         <span class="n">all_results</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span>
             <span class="n">_jdelayed</span><span class="p">(</span><span class="n">FisherMatrix</span><span class="o">.</span><span class="n">_run_theta_seed_jobs</span><span class="p">)(</span><span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">noise_seeds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_kwargs</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">jobs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">jobs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">triplets</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">jobs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">all_results</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">triplets</span><span class="p">:</span>
@@ -314,7 +332,7 @@
         <span class="n">n_parallel</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_before</span>
 
         <span class="n">theta_str</span> <span class="o">=</span> <span class="s2">"["</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">theta</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"]"</span>
-        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating"</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)):</span>
             <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">noise_seeds</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">ns</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta_str</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_key</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span>
@@ -415,7 +433,7 @@
                               <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">)</span>
 
         <span class="n">fid_str</span> <span class="o">=</span> <span class="s2">"["</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"]"</span>
-        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)):</span>
             <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">noise_seeds</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">ns</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">fid_str</span><span class="p">)</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_cached</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span>
@@ -588,7 +606,7 @@
 
             <span class="k">if</span> <span class="n">use_crn</span><span class="p">:</span>
                 <span class="n">deriv_per_seed</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"d/d(</span><span class="si">{</span><span class="n">pname</span><span class="si">}</span><span class="s2">) CRN"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"d/d(</span><span class="si">{</span><span class="n">pname</span><span class="si">}</span><span class="s2">) CRN"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)):</span>
                     <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">noise_seeds_deriv</span><span class="p">:</span>
                         <span class="n">deriv_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_data</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
@@ -606,7 +624,7 @@
                     <span class="n">theta_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                     <span class="n">theta_step</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">h</span>
                     <span class="n">step_str</span> <span class="o">=</span> <span class="s2">"["</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">theta_step</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"]"</span>
-                    <span class="k">for</span> <span class="n">ki</span><span class="p">,</span> <span class="n">seed</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"d/d(</span><span class="si">{</span><span class="n">pname</span><span class="si">}</span><span class="s2">) step </span><span class="si">{</span><span class="n">s</span><span class="si">:</span><span class="s2">+d</span><span class="si">}</span><span class="s2">h"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">)):</span>
+                    <span class="k">for</span> <span class="n">ki</span><span class="p">,</span> <span class="n">seed</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"d/d(</span><span class="si">{</span><span class="n">pname</span><span class="si">}</span><span class="s2">) step </span><span class="si">{</span><span class="n">s</span><span class="si">:</span><span class="s2">+d</span><span class="si">}</span><span class="s2">h"</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)):</span>
                         <span class="k">for</span> <span class="n">ni</span><span class="p">,</span> <span class="n">ns</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">noise_seeds_deriv</span><span class="p">):</span>
                             <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">ns</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">step_str</span><span class="p">)</span>
                             <span class="n">x_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulate_cached</span><span class="p">(</span><span class="n">theta_step</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span>
@@ -695,7 +713,7 @@
         <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="p">{</span><span class="s1">'delta_fracs'</span><span class="p">:</span> <span class="n">delta_fracs</span><span class="p">,</span> <span class="s1">'norms'</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">'sigma_1d'</span><span class="p">:</span> <span class="p">[]}</span>
                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">}</span>
 
-        <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">delta_fracs</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"delta_frac sweep"</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">delta_fracs</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"delta_frac sweep"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span>
                 <span class="n">delta_frac</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="n">seeds</span><span class="p">,</span> <span class="n">noise_seed</span><span class="o">=</span><span class="n">noise_seed</span><span class="p">,</span>
                 <span class="n">noise_seeds</span><span class="o">=</span><span class="n">noise_seeds</span><span class="p">,</span> <span class="n">n_stencil</span><span class="o">=</span><span class="n">n_stencil</span><span class="p">,</span> <span class="n">use_crn</span><span class="o">=</span><span class="n">use_crn</span><span class="p">,</span>
@@ -909,7 +927,7 @@
         <span class="k">if</span> <span class="n">n_bootstrap</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">)</span>
             <span class="n">F_boots</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_bootstrap</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"LFIM bootstrap"</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_bootstrap</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"LFIM bootstrap"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">):</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">S_b</span> <span class="o">=</span> <span class="n">_scores</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
                 <span class="n">F_boots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">S_b</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">S_b</span> <span class="o">/</span> <span class="n">N</span><span class="p">)</span>
@@ -1402,7 +1420,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Sambit Giri.</p>
+    <p>&#169; Copyright 2024-2026, Sambit Giri.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

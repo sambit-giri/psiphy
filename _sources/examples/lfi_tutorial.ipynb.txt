@@ -23,9 +23,7 @@
     "   classifier learns how to weigh the summaries.\n",
     "\n",
     "Contents: the problem → exact reference → rejection ABC → BOLFI → LFIRE → acquisition\n",
-    "functions and batch proposals → saving/resuming.\n",
-    "\n",
-    "Neural SBI methods are planned (issues #7, #9, #17)."
+    "functions and batch proposals → saving/resuming."
    ]
   },
   {
@@ -34,10 +32,10 @@
    "id": "01ca1ebb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:26.209433Z",
-     "iopub.status.busy": "2026-10-14T12:30:26.209165Z",
-     "iopub.status.idle": "2026-10-14T12:30:27.699695Z",
-     "shell.execute_reply": "2026-10-14T12:30:27.699139Z"
+     "iopub.execute_input": "2026-10-14T14:29:23.022793Z",
+     "iopub.status.busy": "2026-10-14T14:29:23.022563Z",
+     "iopub.status.idle": "2026-10-14T14:29:24.089605Z",
+     "shell.execute_reply": "2026-10-14T14:29:24.089227Z"
     }
    },
    "outputs": [],
@@ -86,10 +84,10 @@
    "id": "939844a8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:27.701005Z",
-     "iopub.status.busy": "2026-10-14T12:30:27.700877Z",
-     "iopub.status.idle": "2026-10-14T12:30:27.703569Z",
-     "shell.execute_reply": "2026-10-14T12:30:27.703217Z"
+     "iopub.execute_input": "2026-10-14T14:29:24.091019Z",
+     "iopub.status.busy": "2026-10-14T14:29:24.090914Z",
+     "iopub.status.idle": "2026-10-14T14:29:24.093265Z",
+     "shell.execute_reply": "2026-10-14T14:29:24.092951Z"
     }
    },
    "outputs": [
@@ -135,10 +133,10 @@
    "id": "21435a96",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:27.704493Z",
-     "iopub.status.busy": "2026-10-14T12:30:27.704432Z",
-     "iopub.status.idle": "2026-10-14T12:30:28.591846Z",
-     "shell.execute_reply": "2026-10-14T12:30:28.591395Z"
+     "iopub.execute_input": "2026-10-14T14:29:24.094306Z",
+     "iopub.status.busy": "2026-10-14T14:29:24.094250Z",
+     "iopub.status.idle": "2026-10-14T14:29:24.966189Z",
+     "shell.execute_reply": "2026-10-14T14:29:24.965810Z"
     }
    },
    "outputs": [
@@ -178,73 +176,19 @@
    "id": "acf3fea0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:28.592953Z",
-     "iopub.status.busy": "2026-10-14T12:30:28.592886Z",
-     "iopub.status.idle": "2026-10-14T12:30:28.876749Z",
-     "shell.execute_reply": "2026-10-14T12:30:28.876290Z"
+     "iopub.execute_input": "2026-10-14T14:29:24.967377Z",
+     "iopub.status.busy": "2026-10-14T14:29:24.967315Z",
+     "iopub.status.idle": "2026-10-14T14:29:25.235427Z",
+     "shell.execute_reply": "2026-10-14T14:29:25.235033Z"
     }
    },
    "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\r",
-      "  0%|          | 0/30000 [00:00<?, ?it/s]"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\r",
-      "100%|██████████| 30000/30000 [00:00<00:00, 682359.40it/s]"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\r",
-      "  0%|          | 0/30000 [00:00<?, ?it/s]"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\r",
-      " 60%|█████▉    | 17929/30000 [00:00<00:00, 179281.19it/s]"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\r",
-      "100%|██████████| 30000/30000 [00:00<00:00, 181135.36it/s]"
-     ]
-    },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
       "accepted 227 / 30000 (0.8%)\n",
       "ABC mean: [1.253 0.834]   std: [0.147 0.095]\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "\n"
      ]
     }
    ],
@@ -256,7 +200,7 @@
     "    observation=x_obs,\n",
     "    prior={'mu': None, 'sigma': None},\n",
     "    bounds={'mu': (0, 3), 'sigma': (0.1, 2.5)},\n",
-    "    N=n_sims_abc, eps=2.0,\n",
+    "    N=n_sims_abc, eps=2.0, verbose=False,\n",
     ")\n",
     "abc.run()\n",
     "s_abc = np.array(abc.accepted_param)\n",
@@ -289,10 +233,10 @@
    "id": "8d1035e0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:28.877929Z",
-     "iopub.status.busy": "2026-10-14T12:30:28.877850Z",
-     "iopub.status.idle": "2026-10-14T12:30:35.276980Z",
-     "shell.execute_reply": "2026-10-14T12:30:35.276539Z"
+     "iopub.execute_input": "2026-10-14T14:29:25.236600Z",
+     "iopub.status.busy": "2026-10-14T14:29:25.236532Z",
+     "iopub.status.idle": "2026-10-14T14:29:31.463642Z",
+     "shell.execute_reply": "2026-10-14T14:29:31.463197Z"
     }
    },
    "outputs": [
@@ -329,10 +273,10 @@
    "id": "e4b25b97",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:35.278217Z",
-     "iopub.status.busy": "2026-10-14T12:30:35.278144Z",
-     "iopub.status.idle": "2026-10-14T12:30:35.478387Z",
-     "shell.execute_reply": "2026-10-14T12:30:35.477989Z"
+     "iopub.execute_input": "2026-10-14T14:29:31.464770Z",
+     "iopub.status.busy": "2026-10-14T14:29:31.464702Z",
+     "iopub.status.idle": "2026-10-14T14:29:31.626538Z",
+     "shell.execute_reply": "2026-10-14T14:29:31.626140Z"
     }
    },
    "outputs": [
@@ -379,10 +323,10 @@
    "id": "8316f5cd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:35.479483Z",
-     "iopub.status.busy": "2026-10-14T12:30:35.479391Z",
-     "iopub.status.idle": "2026-10-14T12:30:35.573467Z",
-     "shell.execute_reply": "2026-10-14T12:30:35.573052Z"
+     "iopub.execute_input": "2026-10-14T14:29:31.627547Z",
+     "iopub.status.busy": "2026-10-14T14:29:31.627468Z",
+     "iopub.status.idle": "2026-10-14T14:29:31.714835Z",
+     "shell.execute_reply": "2026-10-14T14:29:31.714541Z"
     }
    },
    "outputs": [
@@ -423,6 +367,45 @@
     "print(f\"{'method':15s} {'simulations':>12s}   mean (mu, sigma)    std (mu, sigma)\")\n",
     "for name, s, n in [('exact', s_exact, '—'), ('rejection ABC', s_abc, n_sims_abc), ('BOLFI', s_bolfi, len(bolfi.y))]:\n",
     "    print(f\"{name:15s} {str(n):>12s}   {np.round(s.mean(0), 3)}   {np.round(s.std(0), 3)}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "065e2582",
+   "metadata": {},
+   "source": [
+    "**Why is every posterior, including the exact one, below the true $\\mu$?** The 50\n",
+    "observed values have a sample mean about two standard errors below the true mean (printed\n",
+    "below). All methods correctly follow the data there; the comparison that matters is with\n",
+    "the exact posterior, not with the true value. Calibration over many data sets is shown\n",
+    "in Section 7 of the *Importance sampling and SMC* tutorial."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "bff0b7fb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-14T14:29:31.715945Z",
+     "iopub.status.busy": "2026-10-14T14:29:31.715865Z",
+     "iopub.status.idle": "2026-10-14T14:29:31.717442Z",
+     "shell.execute_reply": "2026-10-14T14:29:31.717141Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "sample mean = 1.265, true mean = 1.5, standard error = 0.114  ->  data offset = -2.1 sigma\n"
+     ]
+    }
+   ],
+   "source": [
+    "se = s_obs / np.sqrt(N)\n",
+    "print(f'sample mean = {m_obs:.3f}, true mean = {theta_true[0]}, standard error = {se:.3f}'\n",
+    "      f'  ->  data offset = {(m_obs - theta_true[0]) / se:+.1f} sigma')"
    ]
   },
   {
@@ -478,14 +461,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": 9,
    "id": "f964e190",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:35.574558Z",
-     "iopub.status.busy": "2026-10-14T12:30:35.574476Z",
-     "iopub.status.idle": "2026-10-14T12:30:45.841864Z",
-     "shell.execute_reply": "2026-10-14T12:30:45.841372Z"
+     "iopub.execute_input": "2026-10-14T14:29:31.718359Z",
+     "iopub.status.busy": "2026-10-14T14:29:31.718301Z",
+     "iopub.status.idle": "2026-10-14T14:29:41.388789Z",
+     "shell.execute_reply": "2026-10-14T14:29:41.388387Z"
     }
    },
    "outputs": [
@@ -520,14 +503,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 10,
    "id": "56a8b893",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:45.842973Z",
-     "iopub.status.busy": "2026-10-14T12:30:45.842905Z",
-     "iopub.status.idle": "2026-10-14T12:30:45.987602Z",
-     "shell.execute_reply": "2026-10-14T12:30:45.987284Z"
+     "iopub.execute_input": "2026-10-14T14:29:41.389845Z",
+     "iopub.status.busy": "2026-10-14T14:29:41.389778Z",
+     "iopub.status.idle": "2026-10-14T14:29:41.514311Z",
+     "shell.execute_reply": "2026-10-14T14:29:41.513964Z"
     }
    },
    "outputs": [
@@ -611,14 +594,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": 11,
    "id": "c70460eb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:45.988715Z",
-     "iopub.status.busy": "2026-10-14T12:30:45.988635Z",
-     "iopub.status.idle": "2026-10-14T12:30:55.030912Z",
-     "shell.execute_reply": "2026-10-14T12:30:55.030579Z"
+     "iopub.execute_input": "2026-10-14T14:29:41.515456Z",
+     "iopub.status.busy": "2026-10-14T14:29:41.515372Z",
+     "iopub.status.idle": "2026-10-14T14:29:50.189962Z",
+     "shell.execute_reply": "2026-10-14T14:29:50.189535Z"
     }
    },
    "outputs": [
@@ -677,14 +660,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": 12,
    "id": "87a27232",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2026-10-14T12:30:55.032176Z",
-     "iopub.status.busy": "2026-10-14T12:30:55.032100Z",
-     "iopub.status.idle": "2026-10-14T12:30:56.947486Z",
-     "shell.execute_reply": "2026-10-14T12:30:56.947071Z"
+     "iopub.execute_input": "2026-10-14T14:29:50.191172Z",
+     "iopub.status.busy": "2026-10-14T14:29:50.191100Z",
+     "iopub.status.idle": "2026-10-14T14:29:51.956647Z",
+     "shell.execute_reply": "2026-10-14T14:29:51.956359Z"
     }
    },
    "outputs": [

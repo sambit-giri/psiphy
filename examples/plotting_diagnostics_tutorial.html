@@ -22,7 +22,9 @@
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="psiphy.utils" href="../api/utils.html" />
+    <link rel="prev" title="Fisher Matrix Forecasting with psiphy" href="fisher_analysis.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,8 +47,58 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="toy_models_overview.html">Toy Models Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mcmc_tutorial.html">MCMC sampling and priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_sampling_tutorial.html">Nested sampling and Bayesian evidence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="importance_sampling_tutorial.html">Importance Sampling and SMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lfi_tutorial.html">Likelihood-free inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fisher_analysis.html">Fisher Matrix Forecasting with psiphy</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Posterior Diagnostics Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#What-is-covered">What is covered</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Diagnostic-metrics-available-on-every-distribution">Diagnostic metrics available on every distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#1-Generate-posteriors-from-toy-models">1 Generate posteriors from toy models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2-SampledDistribution">2 <code class="docutils literal notranslate"><span class="pre">SampledDistribution</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#2a-print_stats-—-mean,-std,-and-credible-intervals">2a <code class="docutils literal notranslate"><span class="pre">print_stats</span></code> — mean, std, and credible intervals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#2b-Scalar-metrics">2b Scalar metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#2c-KL-divergence-between-IS-and-SMC-posteriors">2c KL divergence between IS and SMC posteriors</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#3-GriddedProbabilities">3 <code class="docutils literal notranslate"><span class="pre">GriddedProbabilities</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#4-PosteriorComparison-—-side-by-side-diagnostics">4 <code class="docutils literal notranslate"><span class="pre">PosteriorComparison</span></code> — side-by-side diagnostics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#4a-Boxplot-—-box-=-68%-CI,-whiskers-=-95%-CI,-marker-=-median">4a Boxplot — box = 68% CI, whiskers = 95% CI, marker = median</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#4b-Forest-plot-—-errorbar-style">4b Forest plot — errorbar style</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#4c-Per-entry-styling:-marker,-markersize,-linewidth">4c Per-entry styling: <code class="docutils literal notranslate"><span class="pre">marker</span></code>, <code class="docutils literal notranslate"><span class="pre">markersize</span></code>, <code class="docutils literal notranslate"><span class="pre">linewidth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#4d-Legend-panel">4d Legend panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#4e-Metrics-table">4e Metrics table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#4f-Auto-colored-legend-(when-no-markers-are-set)">4f Auto-colored legend (when no markers are set)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#5-Comparing-many-posteriors-—-NoisyLine-with-varying-noise">5 Comparing many posteriors — NoisyLine with varying noise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#6-plot_triangle-—-corner-/-triangle-plot">6 <code class="docutils literal notranslate"><span class="pre">plot_triangle</span></code> — corner / triangle plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#7-print_chain_stats-—-standalone-summary">7 <code class="docutils literal notranslate"><span class="pre">print_chain_stats</span></code> — standalone summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#8-score()-on-GriddedProbabilities">8 <code class="docutils literal notranslate"><span class="pre">score()</span></code> on <code class="docutils literal notranslate"><span class="pre">GriddedProbabilities</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#9-Mixing-SampledDistribution-and-GriddedProbabilities-in-one-comparison">9 Mixing <code class="docutils literal notranslate"><span class="pre">SampledDistribution</span></code> and <code class="docutils literal notranslate"><span class="pre">GriddedProbabilities</span></code> in one comparison</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#10-Derived-(pseudo)-parameters-—-add_derived">10 Derived (pseudo) parameters — <code class="docutils literal notranslate"><span class="pre">add_derived</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#10a-Credible-intervals-on-the-derived-parameter">10a Credible intervals on the derived parameter</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#11-Single-panel-contour-plots">11 Single-panel contour plots</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#11e-Embedding-into-a-multi-panel-figure">11e Embedding into a multi-panel figure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#11f-PosteriorComparison-overlay">11f <code class="docutils literal notranslate"><span class="pre">PosteriorComparison</span></code> overlay</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Summary">Summary</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Styling-controls-for-PosteriorComparison.add()">Styling controls for <code class="docutils literal notranslate"><span class="pre">PosteriorComparison.add()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -72,6 +124,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../tutorials.html">Tutorials</a></li>
       <li class="breadcrumb-item active">Posterior Diagnostics Tutorial</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/examples/plotting_diagnostics_tutorial.ipynb.txt" rel="nofollow"> View page source</a>
@@ -144,7 +197,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -176,7 +229,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── GaussianSignal setup ──────────────────────────────────────────────────────</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── GaussianSignal setup ──────────────────────────────────────────────────────</span>
 <span class="n">gs</span> <span class="o">=</span> <span class="n">GaussianSignal</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
 <span class="n">theta_true_gs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">])</span>   <span class="c1"># [mean, sigma]</span>
 <span class="n">x_obs</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">)</span>
@@ -186,20 +239,22 @@
 
 <span class="c1"># IS posterior (tight proposal → good ESS)</span>
 <span class="n">prop_is</span> <span class="o">=</span> <span class="n">prior_gs</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">8000</span><span class="p">)</span>
-<span class="n">s_is</span><span class="p">,</span> <span class="n">w_is</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_post_gs</span><span class="p">,</span> <span class="n">prop_is</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_post_gs</span><span class="p">,</span> <span class="n">prop_is</span><span class="p">)</span>
+<span class="n">s_is</span><span class="p">,</span> <span class="n">w_is</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span>
 
 <span class="c1"># SMC posterior (broad prior)</span>
 <span class="n">prior_broad</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)])</span>
-<span class="n">s_smc</span><span class="p">,</span> <span class="n">w_smc</span> <span class="o">=</span> <span class="n">SMC</span><span class="p">(</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">SMC</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_obs</span><span class="p">),</span>
     <span class="n">prior_broad</span><span class="p">,</span>
     <span class="n">n_particles</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
     <span class="n">n_steps</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="n">s_smc</span><span class="p">,</span> <span class="n">w_smc</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;IS   particles=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">s_is</span><span class="p">)</span><span class="si">}</span><span class="s1">, true=</span><span class="si">{</span><span class="n">theta_true_gs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;SMC  particles=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">s_smc</span><span class="p">)</span><span class="si">}</span><span class="s1">, true=</span><span class="si">{</span><span class="n">theta_true_gs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'IS   particles=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">s_is</span><span class="p">)</span><span class="si">}</span><span class="s1">, true=</span><span class="si">{</span><span class="n">theta_true_gs</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'SMC  particles=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">s_smc</span><span class="p">)</span><span class="si">}</span><span class="s1">, true=</span><span class="si">{</span><span class="n">theta_true_gs</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -216,7 +271,7 @@ SMC  particles=2000, true=[1.5 0.8]
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── NoisyLine setup ───────────────────────────────────────────────────────────</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── NoisyLine setup ───────────────────────────────────────────────────────────</span>
 <span class="n">nl</span> <span class="o">=</span> <span class="n">NoisyLine</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
 <span class="n">theta_true_nl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>   <span class="c1"># [slope, intercept]</span>
 <span class="n">y_obs</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_true_nl</span><span class="p">)</span>
@@ -225,9 +280,10 @@ SMC  particles=2000, true=[1.5 0.8]
 <span class="n">log_post_nl</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">nl</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">)</span> <span class="o">+</span> <span class="n">prior_nl</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
 <span class="n">prop_nl</span> <span class="o">=</span> <span class="n">prior_nl</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">8000</span><span class="p">)</span>
-<span class="n">s_nl</span><span class="p">,</span> <span class="n">w_nl</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_post_nl</span><span class="p">,</span> <span class="n">prop_nl</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_post_nl</span><span class="p">,</span> <span class="n">prop_nl</span><span class="p">)</span>
+<span class="n">s_nl</span><span class="p">,</span> <span class="n">w_nl</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;NoisyLine IS  true=</span><span class="si">{</span><span class="n">theta_true_nl</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'NoisyLine IS  true=</span><span class="si">{</span><span class="n">theta_true_nl</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -248,21 +304,21 @@ NoisyLine IS  true=[-0.8  5. ]
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dist_is</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dist_is</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span>
     <span class="n">s_is</span><span class="p">,</span>
     <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span>
     <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
 <span class="p">)</span>
 
 <span class="n">dist_smc</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span>
     <span class="n">s_smc</span><span class="p">,</span>
     <span class="n">weights</span><span class="o">=</span><span class="n">w_smc</span><span class="p">,</span>
     <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;n_params:&#39;</span><span class="p">,</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">n_params</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'n_params:'</span><span class="p">,</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">n_params</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -280,11 +336,11 @@ n_params: 2
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;── IS posterior ──────────────────────────────&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">'── IS posterior ──────────────────────────────'</span><span class="p">)</span>
 <span class="n">dist_is</span><span class="o">.</span><span class="n">print_stats</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
 
 <span class="nb">print</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;── SMC posterior ─────────────────────────────&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'── SMC posterior ─────────────────────────────'</span><span class="p">)</span>
 <span class="n">dist_smc</span><span class="o">.</span><span class="n">print_stats</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -297,22 +353,22 @@ n_params: 2
 ── IS posterior ──────────────────────────────
 Parameter summary
 ==================================================
-  \mu:  mean = 1.3584,  std = 0.0956
-    68% CI: [1.2735, 1.4594]
-    95% CI: [1.1850, 1.5386]
-  \sigma:  mean = 0.7453,  std = 0.0651
-    68% CI: [0.6728, 0.8134]
-    95% CI: [0.6025, 0.8785]
+  \mu:  mean = 1.3756,  std = 0.0967
+    68% CI: [1.2738, 1.4780]
+    95% CI: [1.1927, 1.5487]
+  \sigma:  mean = 0.7522,  std = 0.0660
+    68% CI: [0.6928, 0.8176]
+    95% CI: [0.6297, 0.8968]
 
 ── SMC posterior ─────────────────────────────
 Parameter summary
 ==================================================
-  \mu:  mean = 1.3736,  std = 0.0876
-    68% CI: [1.2955, 1.4302]
-    95% CI: [1.2117, 1.5856]
-  \sigma:  mean = 0.7414,  std = 0.0779
-    68% CI: [0.6543, 0.8302]
-    95% CI: [0.6221, 0.9201]
+  \mu:  mean = 1.3680,  std = 0.0900
+    68% CI: [1.2955, 1.4297]
+    95% CI: [1.1958, 1.5856]
+  \sigma:  mean = 0.7392,  std = 0.0758
+    68% CI: [0.6781, 0.8302]
+    95% CI: [0.6253, 0.8969]
 </pre></div></div>
 </div>
 </section>
@@ -322,18 +378,18 @@ Parameter summary
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;IS posterior metrics&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  z-scores      :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  bias          :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  PIT           :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  Mahalanobis D :&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">'IS posterior metrics'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  z-scores      :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  bias          :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  PIT           :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  Mahalanobis D :'</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_is</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
 
 <span class="nb">print</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SMC posterior metrics&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  z-scores      :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  bias          :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  PIT           :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  Mahalanobis D :&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'SMC posterior metrics'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  z-scores      :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  bias          :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  PIT           :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  Mahalanobis D :'</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_smc</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -343,16 +399,16 @@ Parameter summary
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 IS posterior metrics
-  z-scores      : [1.481 0.841]
-  bias          : [-0.149 -0.051]
-  PIT           : [0.913 0.815]
-  Mahalanobis D : 1.552
+  z-scores      : [1.286 0.723]
+  bias          : [-0.123 -0.054]
+  PIT           : [0.908 0.789]
+  Mahalanobis D : 1.42
 
 SMC posterior metrics
-  z-scores      : [1.444 0.753]
-  bias          : [-0.124 -0.063]
-  PIT           : [0.928 0.72 ]
-  Mahalanobis D : 1.762
+  z-scores      : [1.466 0.802]
+  bias          : [-0.138 -0.071]
+  PIT           : [0.926 0.713]
+  Mahalanobis D : 1.748
 </pre></div></div>
 </div>
 </section>
@@ -362,10 +418,10 @@ SMC posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kl</span> <span class="o">=</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">kl_divergence</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">)</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\mu$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\sigma$&#39;</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">kl</span> <span class="o">=</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">kl_divergence</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">)</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">'$\mu$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\sigma$'</span><span class="p">]</span>
 <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">kl</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  KL(IS || SMC)  </span><span class="si">{</span><span class="n">lbl</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'  KL(IS || SMC)  </span><span class="si">{</span><span class="n">lbl</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -374,8 +430,8 @@ SMC posterior metrics
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-  KL(IS || SMC)  $\mu$ = 0.7429
-  KL(IS || SMC)  $\sigma$ = 0.6496
+  KL(IS || SMC)  $\mu$ = 0.1040
+  KL(IS || SMC)  $\sigma$ = 0.3703
 </pre></div></div>
 </div>
 </section>
@@ -389,12 +445,12 @@ SMC posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a 2-D log-posterior grid for GaussianSignal</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a 2-D log-posterior grid for GaussianSignal</span>
 <span class="n">n_grid</span> <span class="o">=</span> <span class="mi">80</span>
 <span class="n">mu_grid</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span>  <span class="mf">2.5</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
 <span class="n">sig_grid</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span>  <span class="mf">1.5</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
 
-<span class="n">MU</span><span class="p">,</span> <span class="n">SIG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">sig_grid</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;ij&#39;</span><span class="p">)</span>
+<span class="n">MU</span><span class="p">,</span> <span class="n">SIG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">sig_grid</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s1">'ij'</span><span class="p">)</span>
 <span class="n">log_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sig</span><span class="p">:</span> <span class="n">gs</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mu</span><span class="p">,</span> <span class="n">sig</span><span class="p">]),</span> <span class="n">x_obs</span><span class="p">)</span> <span class="o">+</span> <span class="n">prior_gs</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mu</span><span class="p">,</span> <span class="n">sig</span><span class="p">]))</span>
 <span class="p">)(</span><span class="n">MU</span><span class="p">,</span> <span class="n">SIG</span><span class="p">)</span>
@@ -405,12 +461,12 @@ SMC posterior metrics
     <span class="n">prob_grid</span><span class="p">,</span>
     <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">sig_grid</span><span class="p">],</span>
     <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
     <span class="n">true_ranges</span><span class="o">=</span><span class="p">[[</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.8</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span>   <span class="c1"># illustrative truth cube</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Grid shape:&#39;</span><span class="p">,</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;n_params  :&#39;</span><span class="p">,</span> <span class="n">dist_grid</span><span class="o">.</span><span class="n">n_params</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Grid shape:'</span><span class="p">,</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'n_params  :'</span><span class="p">,</span> <span class="n">dist_grid</span><span class="o">.</span><span class="n">n_params</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -427,12 +483,12 @@ n_params  : 2
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Grid posterior metrics&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  z-scores      :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  bias          :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  PIT           :&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  Mahalanobis D :&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  score         :&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">score</span><span class="p">(),</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">'Grid posterior metrics'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  z-scores      :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  bias          :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">bias</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  PIT           :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">pit</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  Mahalanobis D :'</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">mahalanobis</span><span class="p">(),</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'  score         :'</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">dist_grid</span><span class="o">.</span><span class="n">score</span><span class="p">(),</span> <span class="mi">4</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -453,41 +509,41 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the 2-D grid with marginals</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualise the 2-D grid with marginals</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="c1"># 2-D posterior</span>
 <span class="n">im</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">sig_grid</span><span class="p">,</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
-                         <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">theta_true_gs</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;truth&#39;</span><span class="p">)</span>
-<span class="n">rect</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">,</span>
-                       <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;true_ranges&#39;</span><span class="p">)</span>
+                         <span class="n">cmap</span><span class="o">=</span><span class="s1">'Blues'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">theta_true_gs</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'truth'</span><span class="p">)</span>
+<span class="n">rect</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'gray'</span><span class="p">,</span>
+                       <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'true_ranges'</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\mu$&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\sigma$&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;2-D grid posterior&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">'$\mu$'</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">'$\sigma$'</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'2-D grid posterior'</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
 <span class="c1"># Marginal mu</span>
 <span class="n">marg_mu</span> <span class="o">=</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">marg_mu</span> <span class="o">/</span> <span class="n">marg_mu</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;truth&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'truth'</span><span class="p">)</span>
 <span class="n">ci_mu</span> <span class="o">=</span> <span class="n">dist_grid</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_mu</span><span class="p">[</span><span class="s1">&#39;lo68&#39;</span><span class="p">],</span> <span class="n">ci_mu</span><span class="p">[</span><span class="s1">&#39;hi68&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;68% CI&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_mu</span><span class="p">[</span><span class="s1">&#39;lo95&#39;</span><span class="p">],</span> <span class="n">ci_mu</span><span class="p">[</span><span class="s1">&#39;hi95&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.07</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;95% CI&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\mu$&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Marginal $\mu$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_mu</span><span class="p">[</span><span class="s1">'lo68'</span><span class="p">],</span> <span class="n">ci_mu</span><span class="p">[</span><span class="s1">'hi68'</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'68% CI'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_mu</span><span class="p">[</span><span class="s1">'lo95'</span><span class="p">],</span> <span class="n">ci_mu</span><span class="p">[</span><span class="s1">'hi95'</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.07</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'95% CI'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">'$\mu$'</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s1">'Marginal $\mu$'</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 
 <span class="c1"># Marginal sigma</span>
 <span class="n">marg_sig</span> <span class="o">=</span> <span class="n">prob_grid</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig_grid</span><span class="p">,</span> <span class="n">marg_sig</span> <span class="o">/</span> <span class="n">marg_sig</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;truth&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'truth'</span><span class="p">)</span>
 <span class="n">ci_sig</span> <span class="o">=</span> <span class="n">dist_grid</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_sig</span><span class="p">[</span><span class="s1">&#39;lo68&#39;</span><span class="p">],</span> <span class="n">ci_sig</span><span class="p">[</span><span class="s1">&#39;hi68&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;68% CI&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_sig</span><span class="p">[</span><span class="s1">&#39;lo95&#39;</span><span class="p">],</span> <span class="n">ci_sig</span><span class="p">[</span><span class="s1">&#39;hi95&#39;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.07</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;95% CI&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\sigma$&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Marginal $\sigma$&#39;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_sig</span><span class="p">[</span><span class="s1">'lo68'</span><span class="p">],</span> <span class="n">ci_sig</span><span class="p">[</span><span class="s1">'hi68'</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'68% CI'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ci_sig</span><span class="p">[</span><span class="s1">'lo95'</span><span class="p">],</span> <span class="n">ci_sig</span><span class="p">[</span><span class="s1">'hi95'</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.07</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'95% CI'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">'$\sigma$'</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s1">'Marginal $\sigma$'</span><span class="p">)</span>
 <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;GriddedProbabilities — GaussianSignal posterior&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'GriddedProbabilities — GaussianSignal posterior'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -515,12 +571,12 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># marker=True (default) → auto-assigns from the marker cycle</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># marker=True (default) → auto-assigns from the marker cycle</span>
 <span class="c1"># color=None → auto-assigns from tab20 colour cycle</span>
 <span class="n">comp</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
-<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">&#39;IS&#39;</span><span class="p">,</span>   <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SMC&#39;</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
-<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Grid&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C3&#39;</span><span class="p">)</span>
+<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">'IS'</span><span class="p">,</span>   <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">)</span>
+<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">'SMC'</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">'C2'</span><span class="p">)</span>
+<span class="n">comp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Grid'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C3'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -531,8 +587,8 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">plot_boxplot</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Boxplot — auto markers from cycle (default)&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">plot_boxplot</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Boxplot — auto markers from cycle (default)'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -551,8 +607,8 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">plot_forest</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Forest plot — auto markers from cycle (default)&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">plot_forest</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Forest plot — auto markers from cycle (default)'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -590,17 +646,17 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comp_styled</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
-<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">&#39;IS (auto marker)&#39;</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>                          <span class="c1"># marker=True → cycle</span>
-<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SMC (square, lw3)&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># explicit marker</span>
-<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Grid (no marker)&#39;</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C3&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>              <span class="c1"># suppress marker</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">comp_styled</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
+<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">'IS (auto marker)'</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">)</span>                          <span class="c1"># marker=True → cycle</span>
+<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">'SMC (square, lw3)'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C2'</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'s'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># explicit marker</span>
+<span class="n">comp_styled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Grid (no marker)'</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">'C3'</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>              <span class="c1"># suppress marker</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">comp_styled</span><span class="o">.</span><span class="n">plot_boxplot</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Boxplot — auto / explicit / no marker&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Boxplot — auto / explicit / no marker'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">comp_styled</span><span class="o">.</span><span class="n">plot_forest</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Forest plot — auto / explicit / no marker&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Forest plot — auto / explicit / no marker'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -627,7 +683,7 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp_styled</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp_styled</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -646,7 +702,7 @@ Grid posterior metrics
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">metrics_table</span><span class="p">(</span><span class="n">sort_by</span><span class="o">=</span><span class="s1">&#39;mahalanobis&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">metrics_table</span><span class="p">(</span><span class="n">sort_by</span><span class="o">=</span><span class="s1">'mahalanobis'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -657,9 +713,9 @@ Grid posterior metrics
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 label  mahalanobis   z_1   z_2  score
+   IS        1.420 1.286 0.723    NaN
  Grid        1.517 1.282 0.813 0.9613
-   IS        1.552 1.481 0.841    NaN
-  SMC        1.762 1.444 0.753    NaN
+  SMC        1.748 1.466 0.802    NaN
 </pre></div></div>
 </div>
 </section>
@@ -669,7 +725,7 @@ label  mahalanobis   z_1   z_2  score
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -686,12 +742,12 @@ label  mahalanobis   z_1   z_2  score
 <hr class="docutils" />
 <section id="5-Comparing-many-posteriors-—-NoisyLine-with-varying-noise">
 <h2>5 Comparing many posteriors — NoisyLine with varying noise<a class="headerlink" href="#5-Comparing-many-posteriors-—-NoisyLine-with-varying-noise" title="Link to this heading"></a></h2>
-<p>A more realistic use-case: we have one true model but five different IS posteriors obtained with different proposal widths. The boxplot should show how uncertainty grows as the proposal degrades.</p>
+<p>A more realistic use-case: the same line observed with five different noise levels, each analysed with importance sampling. The boxplot should show the posterior widening as the noise grows. (At the lowest noise levels the posterior is so narrow that IS from the broad prior has a very small effective sample size — SMC is the better tool there.)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comp_nl</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">comp_nl</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
 
 <span class="n">noise_levels</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]</span>
 <span class="k">for</span> <span class="n">noise</span> <span class="ow">in</span> <span class="n">noise_levels</span><span class="p">:</span>
@@ -699,19 +755,20 @@ label  mahalanobis   z_1   z_2  score
     <span class="n">y_var</span>  <span class="o">=</span> <span class="n">nl_var</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_true_nl</span><span class="p">)</span>
     <span class="n">prior_var</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">)])</span>
     <span class="n">prop_var</span>  <span class="o">=</span> <span class="n">prior_var</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">6000</span><span class="p">)</span>
-    <span class="n">s_var</span><span class="p">,</span> <span class="n">w_var</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">_nl</span><span class="o">=</span><span class="n">nl_var</span><span class="p">,</span> <span class="n">_y</span><span class="o">=</span><span class="n">y_var</span><span class="p">,</span> <span class="n">_p</span><span class="o">=</span><span class="n">prior_var</span><span class="p">:</span> <span class="n">_nl</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">_p</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
         <span class="n">prop_var</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="n">s_var</span><span class="p">,</span> <span class="n">w_var</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span>
     <span class="n">d</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span>
         <span class="n">s_var</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w_var</span><span class="p">,</span>
         <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_nl</span><span class="p">,</span>
-        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;b&#39;</span><span class="p">],</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'m'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'b'</span><span class="p">],</span>
     <span class="p">)</span>
-    <span class="n">comp_nl</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;noise=</span><span class="si">{</span><span class="n">noise</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">comp_nl</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'noise=</span><span class="si">{</span><span class="n">noise</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">comp_nl</span><span class="o">.</span><span class="n">plot_boxplot</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;NoisyLine: posterior width grows with noise level&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'NoisyLine: posterior width grows with noise level'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -727,7 +784,7 @@ label  mahalanobis   z_1   z_2  score
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">comp_nl</span><span class="o">.</span><span class="n">metrics_table</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">comp_nl</span><span class="o">.</span><span class="n">metrics_table</span><span class="p">()</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -736,12 +793,12 @@ label  mahalanobis   z_1   z_2  score
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-    label  mahalanobis          z_1          z_2
-noise=0.8 4.060000e-01 2.110000e-01 3.860000e-01
-noise=3.0 4.320000e-01 2.760000e-01 4.080000e-01
-noise=1.5 2.173000e+00 5.020000e-01 5.500000e-01
-noise=0.2 1.035941e+14 1.025299e+14 1.447761e+13
-noise=0.4          NaN 2.508000e+00 5.160000e-01
+    label  mahalanobis   z_1   z_2
+noise=0.8        1.239 1.239 1.150
+noise=0.2        1.509 0.080 0.490
+noise=3.0        1.820 1.818 1.603
+noise=1.5        2.509 1.703 2.395
+noise=0.4        3.655 1.799 0.594
 </pre></div></div>
 </div>
 </section>
@@ -753,24 +810,24 @@ noise=0.4          NaN 2.508000e+00 5.160000e-01
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Standalone function — corner backend</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Standalone function — corner backend</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_triangle</span><span class="p">(</span>
         <span class="n">s_is</span><span class="p">,</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span>
-        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
         <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-        <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;corner&#39;</span><span class="p">,</span>
+        <span class="n">engine</span><span class="o">=</span><span class="s1">'corner'</span><span class="p">,</span>
         <span class="n">bins</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
         <span class="n">plot_datapoints</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">fill_contours</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">),</span>
-        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;plot_triangle (corner engine) — IS posterior&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'plot_triangle (corner engine) — IS posterior'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;corner not installed — skipping&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'corner not installed — skipping'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -785,20 +842,20 @@ noise=0.4          NaN 2.508000e+00 5.160000e-01
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Via the object method — same result</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Via the object method — same result</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">dist_smc</span><span class="o">.</span><span class="n">plot_triangle</span><span class="p">(</span>
-        <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;corner&#39;</span><span class="p">,</span>
+        <span class="n">engine</span><span class="o">=</span><span class="s1">'corner'</span><span class="p">,</span>
         <span class="n">bins</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
         <span class="n">plot_datapoints</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">fill_contours</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">),</span>
-        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">'C2'</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;SampledDistribution.plot_triangle — SMC posterior&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'SampledDistribution.plot_triangle — SMC posterior'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;corner not installed — skipping&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'corner not installed — skipping'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -813,19 +870,19 @@ noise=0.4          NaN 2.508000e+00 5.160000e-01
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># getdist backend</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># getdist backend</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">plot_triangle</span><span class="p">(</span>
         <span class="n">s_is</span><span class="p">,</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span>
-        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
         <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-        <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;getdist&#39;</span><span class="p">,</span>
+        <span class="n">engine</span><span class="o">=</span><span class="s1">'getdist'</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;plot_triangle (getdist engine) — IS posterior&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'plot_triangle (getdist engine) — IS posterior'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;getdist not installed — skipping&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'getdist not installed — skipping'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -861,9 +918,9 @@ Removed no burn in
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From raw weighted samples</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;── From samples ─────────────────────────────&#39;</span><span class="p">)</span>
-<span class="n">print_chain_stats</span><span class="p">(</span><span class="n">s_is</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># From raw weighted samples</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'── From samples ─────────────────────────────'</span><span class="p">)</span>
+<span class="n">print_chain_stats</span><span class="p">(</span><span class="n">s_is</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -875,25 +932,25 @@ Removed no burn in
 ── From samples ─────────────────────────────
 Parameter summary
 ==================================================
-  \mu:  mean = 1.3584,  std = 0.0952
-    68% CI: [1.2735, 1.4594]
-    95% CI: [1.1850, 1.5386]
-  \sigma:  mean = 0.7453,  std = 0.0648
-    68% CI: [0.6728, 0.8134]
-    95% CI: [0.6025, 0.8785]
+  \mu:  mean = 1.3756,  std = 0.0963
+    68% CI: [1.2738, 1.4780]
+    95% CI: [1.1927, 1.5487]
+  \sigma:  mean = 0.7522,  std = 0.0658
+    68% CI: [0.6928, 0.8176]
+    95% CI: [0.6297, 0.8968]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From precomputed statistics</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># From precomputed statistics</span>
 <span class="n">means_gs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">sigmas_gs</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">_weighted_stats</span><span class="p">()</span>
 <span class="n">cis_gs</span> <span class="o">=</span> <span class="n">dist_is</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;── From precomputed means / sigmas / CIs ────&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'── From precomputed means / sigmas / CIs ────'</span><span class="p">)</span>
 <span class="n">print_chain_stats</span><span class="p">(</span><span class="n">means_gs</span><span class="p">,</span> <span class="n">sigmas</span><span class="o">=</span><span class="n">sigmas_gs</span><span class="p">,</span> <span class="n">cis</span><span class="o">=</span><span class="n">cis_gs</span><span class="p">,</span>
-                  <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
+                  <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -905,12 +962,12 @@ Parameter summary
 ── From precomputed means / sigmas / CIs ────
 Parameter summary
 ==================================================
-  \mu:  mean = 1.3584,  std = 0.0956
-    68% CI: [1.2735, 1.4594]
-    95% CI: [1.1850, 1.5386]
-  \sigma:  mean = 0.7453,  std = 0.0651
-    68% CI: [0.6728, 0.8134]
-    95% CI: [0.6025, 0.8785]
+  \mu:  mean = 1.3756,  std = 0.0967
+    68% CI: [1.2738, 1.4780]
+    95% CI: [1.1927, 1.5487]
+  \sigma:  mean = 0.7522,  std = 0.0660
+    68% CI: [0.6928, 0.8176]
+    95% CI: [0.6297, 0.8968]
 </pre></div></div>
 </div>
 </section>
@@ -923,7 +980,7 @@ Parameter summary
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">half_widths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">half_widths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]</span>
 <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
 
 <span class="k">for</span> <span class="n">hw</span> <span class="ow">in</span> <span class="n">half_widths</span><span class="p">:</span>
@@ -937,13 +994,13 @@ Parameter summary
         <span class="p">],</span>
     <span class="p">)</span>
     <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">score</span><span class="p">())</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  half_width=</span><span class="si">{</span><span class="n">hw</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">  score=</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">score</span><span class="p">()</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'  half_width=</span><span class="si">{</span><span class="n">hw</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">  score=</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">score</span><span class="p">()</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">half_widths</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;steelblue&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Truth-cube half-width&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;Score&#39;</span><span class="p">,</span>
-       <span class="n">title</span><span class="o">=</span><span class="s1">&#39;GriddedProbabilities.score() vs truth-cube size&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;perfect (score=1)&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">half_widths</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="s1">'o-'</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'steelblue'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">'Truth-cube half-width'</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">'Score'</span><span class="p">,</span>
+       <span class="n">title</span><span class="o">=</span><span class="s1">'GriddedProbabilities.score() vs truth-cube size'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'perfect (score=1)'</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -978,13 +1035,13 @@ Parameter summary
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comp_mixed</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
-<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">&#39;IS samples&#39;</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
-<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SMC samples&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
-<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Grid&#39;</span><span class="p">,</span>        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C3&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;^&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">comp_mixed</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
+<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_is</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">'IS samples'</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc</span><span class="p">,</span>  <span class="n">label</span><span class="o">=</span><span class="s1">'SMC samples'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C2'</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'s'</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">comp_mixed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_grid</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Grid'</span><span class="p">,</span>        <span class="n">color</span><span class="o">=</span><span class="s1">'C3'</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'^'</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">comp_mixed</span><span class="o">.</span><span class="n">plot_boxplot</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">),</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Mixed posteriors: samples vs grid — GaussianSignal&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Mixed posteriors: samples vs grid — GaussianSignal'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">()</span>
@@ -1006,9 +1063,9 @@ Parameter summary
 <div class="highlight"><pre>
 
       label  mahalanobis   z_1   z_2  score
+ IS samples        1.420 1.286 0.723    NaN
        Grid        1.517 1.282 0.813 0.9613
- IS samples        1.552 1.481 0.841    NaN
-SMC samples        1.762 1.444 0.753    NaN
+SMC samples        1.748 1.466 0.802    NaN
 </pre></div></div>
 </div>
 </section>
@@ -1017,11 +1074,11 @@ SMC samples        1.762 1.444 0.753    NaN
 <h2>10 Derived (pseudo) parameters — <code class="docutils literal notranslate"><span class="pre">add_derived</span></code><a class="headerlink" href="#10-Derived-(pseudo)-parameters-—-add_derived" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">add_derived(func,</span> <span class="pre">label,</span> <span class="pre">true_value)</span></code> registers a parameter computed from the original samples. After that it appears everywhere: contour plots, triangle plots, and metric methods.</p>
 <p>A cosmology-style example: <span class="math notranslate nohighlight">\(S_8 = \sigma_8 \sqrt{\Omega_m / 0.3}\)</span>. Here we use the two GaussianSignal parameters <span class="math notranslate nohighlight">\((\mu, \sigma)\)</span> and define a pseudo-parameter <span class="math notranslate nohighlight">\(P = \mu \cdot \sqrt{|\sigma|}\)</span> to mimic the idea.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.plotting.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampledDistribution</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.plotting.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampledDistribution</span>
 
 <span class="c1"># Re-use the IS samples from Section 1</span>
 <span class="c1"># true_values = [mu_true, sigma_true] = theta</span>
@@ -1029,45 +1086,63 @@ SMC samples        1.762 1.444 0.753    NaN
     <span class="n">s_is</span><span class="p">,</span>
     <span class="n">weights</span><span class="o">=</span><span class="n">w_is</span><span class="p">,</span>
     <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span>
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
 <span class="p">)</span>
 
 <span class="c1"># Register a derived parameter:  P = mu * sqrt(|sigma|)</span>
 <span class="n">true_P</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">theta_true_gs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span>
 <span class="n">dist_derived</span><span class="o">.</span><span class="n">add_derived</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">,</span>
     <span class="n">true_value</span><span class="o">=</span><span class="n">true_P</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Full labels  :&#39;</span><span class="p">,</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">_full_labels</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Full truths  :&#39;</span><span class="p">,</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">_full_true_values</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Full labels  :'</span><span class="p">,</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">_full_labels</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Full truths  :'</span><span class="p">,</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">_full_true_values</span><span class="p">())</span>
 
 <span class="n">full_s</span><span class="p">,</span> <span class="n">full_w</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">get_full_samples</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sample shape :&#39;</span><span class="p">,</span> <span class="n">full_s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>   <span class="c1"># (N, 3)  — 2 original + 1 derived</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Sample shape :'</span><span class="p">,</span> <span class="n">full_s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>   <span class="c1"># (N, 3)  — 2 original + 1 derived</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Full labels  : [&#39;\\mu&#39;, &#39;\\sigma&#39;, &#39;P&#39;]
+Full truths  : [np.float64(1.5), np.float64(0.8), 1.3416407864998738]
+Sample shape : (8000, 3)
+</pre></div></div>
 </div>
 <section id="10a-Credible-intervals-on-the-derived-parameter">
 <h3>10a Credible intervals on the derived parameter<a class="headerlink" href="#10a-Credible-intervals-on-the-derived-parameter" title="Link to this heading"></a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cis</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">()</span>        <span class="c1"># original params only</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cis</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">()</span>        <span class="c1"># original params only</span>
 <span class="n">cis_full</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="c1"># credible_intervals() operates on get_samples(); for derived params, use</span>
 <span class="c1"># the full sample column directly via plot_contour_1d or a manual CI:</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.plotting.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampledDistribution</span> <span class="k">as</span> <span class="n">SD</span>
 <span class="c1"># Wrap derived column as its own 1-D posterior to get CI numbers:</span>
 <span class="n">derived_col</span> <span class="o">=</span> <span class="n">full_s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
-<span class="n">dist_P</span> <span class="o">=</span> <span class="n">SD</span><span class="p">(</span><span class="n">derived_col</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">full_w</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="p">[</span><span class="n">true_P</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">])</span>
+<span class="n">dist_P</span> <span class="o">=</span> <span class="n">SD</span><span class="p">(</span><span class="n">derived_col</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">full_w</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="p">[</span><span class="n">true_P</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">])</span>
 <span class="n">ci_P</span> <span class="o">=</span> <span class="n">dist_P</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;P  median=</span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">&quot;median&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span>
-      <span class="sa">f</span><span class="s1">&#39;  68% [</span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">&quot;lo68&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">&quot;hi68&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">]&#39;</span>
-      <span class="sa">f</span><span class="s1">&#39;  true=</span><span class="si">{</span><span class="n">true_P</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'P  median=</span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">"median"</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">'</span>
+      <span class="sa">f</span><span class="s1">'  68% [</span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">"lo68"</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">ci_P</span><span class="p">[</span><span class="s2">"hi68"</span><span class="p">]</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">]'</span>
+      <span class="sa">f</span><span class="s1">'  true=</span><span class="si">{</span><span class="n">true_P</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+P  median=1.1854  68% [1.0883, 1.2987]  true=1.3416
+</pre></div></div>
 </div>
 </section>
 </section>
@@ -1080,106 +1155,155 @@ SMC samples        1.762 1.444 0.753    NaN
 <li><p>Both methods accept an <code class="docutils literal notranslate"><span class="pre">ax=</span></code> argument for embedding into existing figures.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">PosteriorComparison</span></code> provides the same two methods to <strong>overlay</strong> all registered posteriors on a shared axes.</p></li>
 </ul>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11a  1-D marginal of an original parameter ────────────────────────────</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11a  1-D marginal of an original parameter ────────────────────────────</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>       <span class="c1"># mu</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;1-D marginal: $\mu$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'1-D marginal: $\mu$'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_50_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_50_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11b  1-D marginal of the derived parameter ────────────────────────────</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;1-D marginal: derived $P = \mu\,|\sigma|^{1/2}$&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11b  1-D marginal of the derived parameter ────────────────────────────</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'1-D marginal: derived $P = \mu\,|\sigma|^{1/2}$'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_51_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_51_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11c  2-D joint contour (original params) ──────────────────────────────</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11c  2-D joint contour (original params) ──────────────────────────────</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_2d</span><span class="p">(</span><span class="n">param1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">param2</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Joint: $\mu$ vs $\sigma$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'Joint: $\mu$ vs $\sigma$'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_52_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_52_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11d  2-D joint contour (original vs derived) ─────────────────────────</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_2d</span><span class="p">(</span><span class="n">param1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">param2</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Joint: $\mu$ vs derived $P$&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── 11d  2-D joint contour (original vs derived) ─────────────────────────</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_2d</span><span class="p">(</span><span class="n">param1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">param2</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'Joint: $\mu$ vs derived $P$'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_53_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_53_0.png" />
 </div>
 </div>
 <section id="11e-Embedding-into-a-multi-panel-figure">
 <h3>11e Embedding into a multi-panel figure<a class="headerlink" href="#11e-Embedding-into-a-multi-panel-figure" title="Link to this heading"></a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
-<span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$\mu$ marginal&#39;</span><span class="p">)</span>
+<span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'$\mu$ marginal'</span><span class="p">)</span>
 
-<span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C1&#39;</span><span class="p">)</span>
-<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Derived $P$ marginal&#39;</span><span class="p">)</span>
+<span class="n">dist_derived</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C1'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'Derived $P$ marginal'</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_55_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_55_0.png" />
+</div>
+</div>
 </section>
 <section id="11f-PosteriorComparison-overlay">
 <h3>11f <code class="docutils literal notranslate"><span class="pre">PosteriorComparison</span></code> overlay<a class="headerlink" href="#11f-PosteriorComparison-overlay" title="Link to this heading"></a></h3>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a comparison: IS vs SMC, both with the derived parameter</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build a comparison: IS vs SMC, both with the derived parameter</span>
 <span class="n">dist_smc_d</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span>
-    <span class="n">s_smc</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\mu&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\sigma&#39;</span><span class="p">],</span>
+    <span class="n">s_smc</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w_smc</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true_gs</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s1">'\mu'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'\sigma'</span><span class="p">],</span>
 <span class="p">)</span>
 <span class="n">dist_smc_d</span><span class="o">.</span><span class="n">add_derived</span><span class="p">(</span>
     <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="n">true_value</span><span class="o">=</span><span class="n">true_P</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">,</span> <span class="n">true_value</span><span class="o">=</span><span class="n">true_P</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.plotting.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosteriorComparison</span>
 <span class="n">comp_d</span> <span class="o">=</span> <span class="n">PosteriorComparison</span><span class="p">()</span>
-<span class="n">comp_d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_derived</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;IS&#39;</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-<span class="n">comp_d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc_d</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SMC&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">comp_d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_derived</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'IS'</span><span class="p">,</span>  <span class="n">color</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">)</span>
+<span class="n">comp_d</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dist_smc_d</span><span class="p">,</span>   <span class="n">label</span><span class="o">=</span><span class="s1">'SMC'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'C2'</span><span class="p">)</span>
 
 <span class="c1"># 1-D overlay</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">comp_d</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Overlay: derived $P$ — IS vs SMC&#39;</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">comp_d</span><span class="o">.</span><span class="n">plot_contour_1d</span><span class="p">(</span><span class="n">param</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'Overlay: derived $P$ — IS vs SMC'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_57_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_57_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
-<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2-D overlay (filled=False keeps colours readable)</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">comp_d</span><span class="o">.</span><span class="n">plot_contour_2d</span><span class="p">(</span><span class="n">param1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">param2</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="n">filled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Overlay: $\mu$ vs $P$ — IS vs SMC&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2-D overlay (filled=False keeps colours readable)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">comp_d</span><span class="o">.</span><span class="n">plot_contour_2d</span><span class="p">(</span><span class="n">param1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">param2</span><span class="o">=</span><span class="sa">r</span><span class="s1">'P'</span><span class="p">,</span> <span class="n">filled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">'Overlay: $\mu$ vs $P$ — IS vs SMC'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_58_0.png" src="../_build/html/.doctrees/nbsphinx/examples_plotting_diagnostics_tutorial_58_0.png" />
 </div>
 </div>
 </section>
@@ -1267,7 +1391,10 @@ SMC samples        1.762 1.444 0.753    NaN
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fisher_analysis.html" class="btn btn-neutral float-left" title="Fisher Matrix Forecasting with psiphy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api/utils.html" class="btn btn-neutral float-right" title="psiphy.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

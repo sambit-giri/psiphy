@@ -1,0 +1,561 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCMC sampling and priors &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Nested sampling and Bayesian evidence" href="nested_sampling_tutorial.html" />
+    <link rel="prev" title="Toy Models Overview" href="toy_models_overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="toy_models_overview.html">Toy Models Overview</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MCMC sampling and priors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#1-Priors">1 Priors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#2-Problem:-fitting-a-noisy-line">2 Problem: fitting a noisy line</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#3-Running-MHSampler">3 Running <code class="docutils literal notranslate"><span class="pre">MHSampler</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#4-Convergence-diagnostics">4 Convergence diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#5-Posterior-and-comparison-with-the-analytic-result">5 Posterior and comparison with the analytic result</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#6-Saving,-reloading-and-extending-a-chain">6 Saving, reloading and extending a chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#7-Informative-priors">7 Informative priors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="nested_sampling_tutorial.html">Nested sampling and Bayesian evidence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="importance_sampling_tutorial.html">Importance Sampling and SMC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lfi_tutorial.html">Likelihood-free inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fisher_analysis.html">Fisher Matrix Forecasting with psiphy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting_diagnostics_tutorial.html">Posterior Diagnostics Tutorial</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../tutorials.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">MCMC sampling and priors</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/mcmc_tutorial.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="MCMC-sampling-and-priors">
+<h1>MCMC sampling and priors<a class="headerlink" href="#MCMC-sampling-and-priors" title="Link to this heading"></a></h1>
+<p>This notebook covers the MCMC tools in <code class="docutils literal notranslate"><span class="pre">psiphy.mcmc</span></code> and the prior specifications in <code class="docutils literal notranslate"><span class="pre">psiphy.utils.prior</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Priors: uniform, log-uniform, Gaussian and mixtures</p></li>
+<li><p>Sampling a posterior with <code class="docutils literal notranslate"><span class="pre">MHSampler</span></code> (emcee backend)</p></li>
+<li><p>Convergence diagnostics: traces, autocorrelation time, burn-in</p></li>
+<li><p>Checking the result against the analytic posterior</p></li>
+<li><p>Saving, reloading and extending a chain</p></li>
+<li><p>Informative priors</p></li>
+</ol>
+<p>The test problem is <code class="docutils literal notranslate"><span class="pre">NoisyLine</span></code> (a straight line with Gaussian noise). Its posterior is Gaussian with a closed form, so every result can be checked exactly.</p>
+<p>Related notebooks: <em>Nested sampling and evidence</em> (posterior + Bayes factors), <em>Importance sampling and SMC</em>, <em>Likelihood-free inference</em> (simulator only).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MHSampler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.utils.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">UniformPrior</span><span class="p">,</span> <span class="n">LogUniformPrior</span><span class="p">,</span> <span class="n">GaussianPrior</span><span class="p">,</span> <span class="n">MixturePrior</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.toy_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoisyLine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.plotting.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">SampledDistribution</span><span class="p">,</span> <span class="n">plot_triangle</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<hr class="docutils" />
+<section id="1-Priors">
+<h2>1 Priors<a class="headerlink" href="#1-Priors" title="Link to this heading"></a></h2>
+<p>Every prior in <code class="docutils literal notranslate"><span class="pre">psiphy.utils.prior</span></code> shares one interface, so the same object works with MCMC, nested sampling, importance sampling/SMC and BOLFI:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sample(n)</span></code></p></td>
+<td><p>draws, shape <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">ndim)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">log_prob(theta)</span></code></p></td>
+<td><p>single point → float; batch <code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">ndim)</span></code> → <code class="docutils literal notranslate"><span class="pre">(n,)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prior_transform(u)</span></code></p></td>
+<td><p>unit cube → parameters (used by nested sampling)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">to_scipy()</span></code>, <code class="docutils literal notranslate"><span class="pre">to_torch()</span></code>, <code class="docutils literal notranslate"><span class="pre">to_sbi()</span></code></p></td>
+<td><p>conversion to other libraries</p></td>
+</tr>
+</tbody>
+</table>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">priors</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'Uniform(0, 10)'</span><span class="p">:</span>              <span class="n">UniformPrior</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]),</span>
+    <span class="s1">'LogUniform(0.1, 10)'</span><span class="p">:</span>         <span class="n">LogUniformPrior</span><span class="p">([(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]),</span>
+    <span class="s1">'Gaussian(5, 1.5²)'</span><span class="p">:</span>           <span class="n">GaussianPrior</span><span class="p">([</span><span class="mf">5.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.5</span><span class="o">**</span><span class="mi">2</span><span class="p">]),</span>
+    <span class="s1">'Mixture: 0.3 N(2,.5²) + 0.7 N(7,1²)'</span><span class="p">:</span> <span class="n">MixturePrior</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">GaussianPrior</span><span class="p">([</span><span class="mf">2.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">]),</span> <span class="n">GaussianPrior</span><span class="p">([</span><span class="mf">7.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">])],</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]),</span>
+<span class="p">}</span>
+
+<span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">500</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">priors</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">20000</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'samples'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">grid</span><span class="p">)),</span> <span class="s1">'k'</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'exp(log_prob)'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="sa">r</span><span class="s1">'$\theta$'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_3_0.png" src="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_3_0.png" />
+</div>
+</div>
+<p>Named bounds can be passed as a dict; the keys become <code class="docutils literal notranslate"><span class="pre">prior.names</span></code> and are picked up by the samplers. <code class="docutils literal notranslate"><span class="pre">prior_transform</span></code> maps uniform draws on <span class="math notranslate nohighlight">\([0,1]^d\)</span> to the prior, which is how nested samplers use it.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">({</span><span class="s1">'slope'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s1">'intercept'</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)})</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'names            :'</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'log_prob (inside):'</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'log_prob (batch) :'</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]])))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'prior_transform  :'</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">prior_transform</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+names            : [&#39;slope&#39;, &#39;intercept&#39;]
+log_prob (inside): -4.094344562222101
+log_prob (batch) : [-4.09434456        -inf]
+prior_transform  : [0. 5.]
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="2-Problem:-fitting-a-noisy-line">
+<h2>2 Problem: fitting a noisy line<a class="headerlink" href="#2-Problem:-fitting-a-noisy-line" title="Link to this heading"></a></h2>
+<p>Data: <span class="math notranslate nohighlight">\(y_i = m x_i + b + \varepsilon_i\)</span> with <span class="math notranslate nohighlight">\(\varepsilon_i \sim \mathcal{N}(0, \sigma^2)\)</span> and known <span class="math notranslate nohighlight">\(\sigma\)</span>. With a flat prior the posterior on <span class="math notranslate nohighlight">\((m, b)\)</span> is Gaussian with covariance <span class="math notranslate nohighlight">\(\sigma^2 (A^\top A)^{-1}\)</span>, where <span class="math notranslate nohighlight">\(A = [x, 1]\)</span>, centred on the least-squares fit.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">line</span> <span class="o">=</span> <span class="n">NoisyLine</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">theta_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">])</span>
+<span class="n">y_obs</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">theta_true</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">log_posterior</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">lp</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lp</span> <span class="o">+</span> <span class="n">line</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+<span class="c1"># analytic posterior (flat prior, posterior well inside the box)</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">line</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">x</span><span class="p">)])</span>
+<span class="n">post_cov</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">noise_sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">A</span><span class="p">)</span>
+<span class="n">post_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">A</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">y_obs</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'analytic posterior mean:'</span><span class="p">,</span> <span class="n">post_mean</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'analytic posterior std :'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">post_cov</span><span class="p">))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">,</span> <span class="s1">'.'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'data'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">theta_true</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">line</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">theta_true</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">'r-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'truth'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'x'</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'y'</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+analytic posterior mean: [-0.816  5.188]
+analytic posterior std : [0.043 0.248]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_7_1.png" src="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_7_1.png" />
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="3-Running-MHSampler">
+<h2>3 Running <code class="docutils literal notranslate"><span class="pre">MHSampler</span></code><a class="headerlink" href="#3-Running-MHSampler" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MHSampler</span></code> wraps <code class="docutils literal notranslate"><span class="pre">emcee.EnsembleSampler</span></code>. Starting from a single point, the walkers are spread into a small Gaussian ball (<code class="docutils literal notranslate"><span class="pre">init_scale</span></code>, relative). Starting from prior draws, pass an array of shape <code class="docutils literal notranslate"><span class="pre">(n_walkers,</span> <span class="pre">n_dim)</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sampler</span> <span class="o">=</span> <span class="n">MHSampler</span><span class="p">(</span><span class="n">log_posterior</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="n">prior</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">'chain shape (steps, walkers, dim):'</span><span class="p">,</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'mean acceptance fraction        :'</span><span class="p">,</span> <span class="n">sampler</span><span class="o">.</span><span class="n">acceptance_fraction</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+chain shape (steps, walkers, dim): (3000, 32, 2)
+mean acceptance fraction        : 0.712
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="4-Convergence-diagnostics">
+<h2>4 Convergence diagnostics<a class="headerlink" href="#4-Convergence-diagnostics" title="Link to this heading"></a></h2>
+<p>Walkers start spread over the whole prior and need some steps to reach the posterior. The integrated autocorrelation time <span class="math notranslate nohighlight">\(\tau\)</span> measures how many steps it takes for the chain to forget its state. Common practice: discard a few <span class="math notranslate nohighlight">\(\tau\)</span> as burn-in and run for at least ~50 <span class="math notranslate nohighlight">\(\tau\)</span>. <code class="docutils literal notranslate"><span class="pre">discard=&quot;auto&quot;</span></code> drops <span class="math notranslate nohighlight">\(3\,\max(\tau)\)</span> steps.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">()</span>
+<span class="n">tau</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">autocorr_time</span><span class="p">()</span>
+<span class="n">burn</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">tau</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'autocorrelation time:'</span><span class="p">,</span> <span class="n">tau</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="s1">' → auto burn-in ='</span><span class="p">,</span> <span class="n">burn</span><span class="p">,</span> <span class="s1">'steps'</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">names</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">chain</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">],</span> <span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">theta_true</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">burn</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">'C0'</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'auto burn-in'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">'upper right'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'step'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+autocorrelation time: [25.7 31.6]  → auto burn-in = 94 steps
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_11_1.png" src="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_11_1.png" />
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="5-Posterior-and-comparison-with-the-analytic-result">
+<h2>5 Posterior and comparison with the analytic result<a class="headerlink" href="#5-Posterior-and-comparison-with-the-analytic-result" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">discard</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+     param        mean         std      median      tau
+     slope     -0.8164     0.04297      -0.817     25.7
+ intercept       5.184      0.2475       5.186     31.6
+acceptance fraction = 0.712, n_samples = 92992
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'MCMC mean :'</span><span class="p">,</span> <span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="s1">'   analytic:'</span><span class="p">,</span> <span class="n">post_mean</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'MCMC std  :'</span><span class="p">,</span> <span class="n">samples</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="s1">'   analytic:'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">post_cov</span><span class="p">))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_triangle</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'m'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">],</span> <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">'corner'</span><span class="p">,</span>
+                    <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">plot_datapoints</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_contours</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">))</span>
+<span class="c1"># overlay the analytic 1σ/2σ ellipse in the 2-D panel</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">vals</span><span class="p">,</span> <span class="n">vecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">post_cov</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="n">ell</span> <span class="o">=</span> <span class="n">post_mean</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">vecs</span> <span class="o">@</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vals</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">ell</span><span class="p">,</span> <span class="s1">'C1--'</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'MHSampler vs analytic posterior (orange dashed: 1σ, 2σ)'</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+MCMC mean : [-0.816  5.184]    analytic: [-0.816  5.188]
+MCMC std  : [0.043 0.247]    analytic: [0.043 0.248]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_14_1.png" src="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_14_1.png" />
+</div>
+</div>
+<p>The same samples plug straight into the diagnostics tools (see the <em>Plotting diagnostics</em> tutorial) for z-scores, credible intervals and comparisons.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dist</span> <span class="o">=</span> <span class="n">SampledDistribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">true_values</span><span class="o">=</span><span class="n">theta_true</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'m'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ci</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">dist</span><span class="o">.</span><span class="n">credible_intervals</span><span class="p">(</span><span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">68</span><span class="p">,</span> <span class="mi">95</span><span class="p">))):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">10s</span><span class="si">}</span><span class="s2"> median=</span><span class="si">{</span><span class="n">ci</span><span class="p">[</span><span class="s1">'median'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  68% [</span><span class="si">{</span><span class="n">ci</span><span class="p">[</span><span class="s1">'lo68'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ci</span><span class="p">[</span><span class="s1">'hi68'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'z-scores:'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">z_scores</span><span class="p">(),</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+slope      median=-0.817  68% [-0.859, -0.774]
+intercept  median=5.185  68% [4.941, 5.429]
+z-scores: [0.38 0.75]
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="6-Saving,-reloading-and-extending-a-chain">
+<h2>6 Saving, reloading and extending a chain<a class="headerlink" href="#6-Saving,-reloading-and-extending-a-chain" title="Link to this heading"></a></h2>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">filename=</span></code> to store the chain in HDF5 (needs <code class="docutils literal notranslate"><span class="pre">h5py</span></code>). The file can be reloaded, and <code class="docutils literal notranslate"><span class="pre">run(n_steps=...)</span></code> without a starting point continues from the last state — useful for long jobs on a cluster with wall-time limits.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+<span class="n">fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">'line_chain.h5'</span><span class="p">)</span>
+
+<span class="n">s1</span> <span class="o">=</span> <span class="n">MHSampler</span><span class="p">(</span><span class="n">log_posterior</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+<span class="n">s1</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'first job :'</span><span class="p">,</span> <span class="n">s1</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span> <span class="s1">'steps'</span><span class="p">)</span>
+
+<span class="c1"># later, e.g. in a new job:</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">MHSampler</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">log_prob_fn</span><span class="o">=</span><span class="n">log_posterior</span><span class="p">)</span>
+<span class="n">s2</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'after resume:'</span><span class="p">,</span> <span class="n">s2</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span> <span class="s1">'steps stored in'</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fn</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+first job : 500 steps
+after resume: 1500 steps stored in line_chain.h5
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="7-Informative-priors">
+<h2>7 Informative priors<a class="headerlink" href="#7-Informative-priors" title="Link to this heading"></a></h2>
+<p>Swapping the prior is a one-line change. A Gaussian prior on the intercept (say from an earlier measurement) tightens the intercept and, through the correlation, the slope.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_inf</span> <span class="o">=</span> <span class="n">GaussianPrior</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">],</span> <span class="n">cov</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.15</span><span class="o">**</span><span class="mi">2</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">'slope'</span><span class="p">,</span> <span class="s1">'intercept'</span><span class="p">])</span>
+<span class="n">log_post_inf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">prior_inf</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">line</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">)</span>
+
+<span class="n">s_inf</span> <span class="o">=</span> <span class="n">MHSampler</span><span class="p">(</span><span class="n">log_post_inf</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span>
+<span class="n">samples_inf</span> <span class="o">=</span> <span class="n">s_inf</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">names</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'flat prior'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples_inf</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Gaussian prior on b'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">theta_true</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="s1">'r'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'std flat       :'</span><span class="p">,</span> <span class="n">samples</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'std informative:'</span><span class="p">,</span> <span class="n">samples_inf</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_20_0.png" src="../_build/html/.doctrees/nbsphinx/examples_mcmc_tutorial_20_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+std flat       : [0.043 0.247]
+std informative: [0.029 0.128]
+</pre></div></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="Summary">
+<h2>Summary<a class="headerlink" href="#Summary" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Task</p></th>
+<th class="head"><p>Code</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Define a prior</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UniformPrior({...})</span></code>, <code class="docutils literal notranslate"><span class="pre">LogUniformPrior</span></code>, <code class="docutils literal notranslate"><span class="pre">GaussianPrior</span></code>, <code class="docutils literal notranslate"><span class="pre">MixturePrior</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Run MCMC</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MHSampler(log_prob,</span> <span class="pre">n_walkers=32).run(theta_init,</span> <span class="pre">n_steps=...)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Diagnose</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">autocorr_time()</span></code>, <code class="docutils literal notranslate"><span class="pre">acceptance_fraction</span></code>, trace of <code class="docutils literal notranslate"><span class="pre">get_chain()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Samples</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_chain(flat=True,</span> <span class="pre">discard='auto',</span> <span class="pre">thin=...)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Summary</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">summary()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Checkpoint / resume</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">filename='chain.h5'</span></code>, <code class="docutils literal notranslate"><span class="pre">MHSampler.load(...)</span></code>, <code class="docutils literal notranslate"><span class="pre">run(n_steps=...)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Parallel evaluation: pass <code class="docutils literal notranslate"><span class="pre">pool=</span></code> (any object with <code class="docutils literal notranslate"><span class="pre">map</span></code>). GPU / JAX support and an HMC sampler are planned (issues #15, #20, #21).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="toy_models_overview.html" class="btn btn-neutral float-left" title="Toy Models Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nested_sampling_tutorial.html" class="btn btn-neutral float-right" title="Nested sampling and Bayesian evidence" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

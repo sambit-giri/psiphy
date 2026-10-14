@@ -88,23 +88,16 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.lfire.LFIRE"><code class="docutils literal notranslate"><span class="pre">LFIRE</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.dict_get_remove"><code class="docutils literal notranslate"><span class="pre">dict_get_remove()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.read_sampler_emcee"><code class="docutils literal notranslate"><span class="pre">read_sampler_emcee()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.get_chain_emcee"><code class="docutils literal notranslate"><span class="pre">get_chain_emcee()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI"><code class="docutils literal notranslate"><span class="pre">BOLFI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.predict_distance"><code class="docutils literal notranslate"><span class="pre">BOLFI.predict_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.log_likelihood"><code class="docutils literal notranslate"><span class="pre">BOLFI.log_likelihood()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.log_posterior"><code class="docutils literal notranslate"><span class="pre">BOLFI.log_posterior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.learn_likelihood"><code class="docutils literal notranslate"><span class="pre">BOLFI.learn_likelihood()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.save_likelihood_model"><code class="docutils literal notranslate"><span class="pre">BOLFI.save_likelihood_model()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.load_likelihood_model"><code class="docutils literal notranslate"><span class="pre">BOLFI.load_likelihood_model()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.cook_likelihood"><code class="docutils literal notranslate"><span class="pre">BOLFI.cook_likelihood()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.learn_likelihood"><code class="docutils literal notranslate"><span class="pre">BOLFI.learn_likelihood()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.sample_posterior"><code class="docutils literal notranslate"><span class="pre">BOLFI.sample_posterior()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.sample_MCMC"><code class="docutils literal notranslate"><span class="pre">BOLFI.sample_MCMC()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.sample_NestedSampling"><code class="docutils literal notranslate"><span class="pre">BOLFI.sample_NestedSampling()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.bolfi.BOLFI.sample_IS"><code class="docutils literal notranslate"><span class="pre">BOLFI.sample_IS()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.importance_sampling"><code class="docutils literal notranslate"><span class="pre">importance_sampling()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.sequential_importance_sampling"><code class="docutils literal notranslate"><span class="pre">sequential_importance_sampling()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.bolfi.SMC_sampling"><code class="docutils literal notranslate"><span class="pre">SMC_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.abc_gp.tqdm"><code class="docutils literal notranslate"><span class="pre">tqdm()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.sbi.abc_gp.ABC_gpL"><code class="docutils literal notranslate"><span class="pre">ABC_gpL</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.sbi.abc_gp.ABC_gpL.prepare_distance_model"><code class="docutils literal notranslate"><span class="pre">ABC_gpL.prepare_distance_model()</span></code></a></li>
@@ -274,29 +267,87 @@
 <dd><p>docstring for LFIRE</p>
 </dd></dl>
 
-<span class="target" id="module-psiphy.sbi.bolfi"></span><dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.dict_get_remove">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">dict_get_remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#dict_get_remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.dict_get_remove" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.read_sampler_emcee">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">read_sampler_emcee</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#read_sampler_emcee"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.read_sampler_emcee" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.get_chain_emcee">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">get_chain_emcee</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#get_chain_emcee"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.get_chain_emcee" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
+<p id="module-psiphy.sbi.bolfi">BOLFI — Bayesian Optimisation for Likelihood-Free Inference.</p>
+<p>A Gaussian-process surrogate of the discrepancy <code class="docutils literal notranslate"><span class="pre">d(theta)</span></code> between simulated
+and observed data is learned with Bayesian optimisation (Gutmann &amp; Corander
+2016). The synthetic log-likelihood <code class="docutils literal notranslate"><span class="pre">log</span> <span class="pre">K(d_hat(theta))</span></code> is then sampled with
+any of the psiphy samplers (emcee, nested sampling, importance sampling, SMC).</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bolfi</span> <span class="o">=</span> <span class="n">BOLFI</span><span class="p">(</span><span class="n">distance_fn</span><span class="p">,</span> <span class="p">{</span><span class="s1">'mu'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">'sigma'</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bolfi</span><span class="o">.</span><span class="n">learn_likelihood</span><span class="p">(</span><span class="n">n_calls</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">bolfi</span><span class="o">.</span><span class="n">sample_posterior</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'MCMC'</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py class">
 <dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">BOLFI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GPyOpt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learn_log_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI" title="Link to this definition"></a></dt>
-<dd><p>Bayesian optimisation for Likelihood-free Inference.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">BOLFI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LCB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learn_log_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI" title="Link to this definition"></a></dt>
+<dd><p>Bayesian Optimisation for Likelihood-Free Inference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>distance</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">distance(theta)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>: simulate at <em>theta</em> and return the
+discrepancy to the observed data.</p></li>
+<li><p><strong>prior</strong> (<em>list</em><em> of </em><em>(</em><em>low</em><em>, </em><em>high</em><em>)</em><em>, </em><em>dict name -&gt;</em><em> (</em><em>low</em><em>, </em><em>high</em><em>)</em><em>, or </em><em>prior object</em>) – Bounds are converted to a <a class="reference internal" href="utils.html#psiphy.utils.prior.UniformPrior" title="psiphy.utils.prior.UniformPrior"><code class="xref py py-class docutils literal notranslate"><span class="pre">UniformPrior</span></code></a>.
+A prior object must expose <code class="docutils literal notranslate"><span class="pre">mins</span></code>/<code class="docutils literal notranslate"><span class="pre">maxs</span></code> unless <em>bounds</em> is given.</p></li>
+<li><p><strong>distance_kernel</strong> (<em>{&quot;exp&quot;</em><em>, </em><em>&quot;gaussian&quot;}</em><em> or </em><em>callable</em>) – Maps the discrepancy to a log-likelihood. A callable must have
+signature <code class="docutils literal notranslate"><span class="pre">log_kernel(d)</span> <span class="pre">-&gt;</span> <span class="pre">log</span> <span class="pre">L</span></code>.</p></li>
+<li><p><strong>acquisition</strong> (<em>{&quot;LCB&quot;</em><em>, </em><em>&quot;EI&quot;</em><em>, </em><em>&quot;PI&quot;}</em><em> or </em><em>callable</em>) – Acquisition function choosing where to simulate next; see
+<a class="reference internal" href="utils.html#module-psiphy.utils.bayesian_opt" title="psiphy.utils.bayesian_opt"><code class="xref py py-mod docutils literal notranslate"><span class="pre">psiphy.utils.bayesian_opt</span></code></a>. <code class="docutils literal notranslate"><span class="pre">&quot;LCB&quot;</span></code> follows Gutmann &amp; Corander (2016).</p></li>
+<li><p><strong>learn_log_dist</strong> (<em>bool</em>) – Model <code class="docutils literal notranslate"><span class="pre">log</span> <span class="pre">d</span></code> instead of <code class="docutils literal notranslate"><span class="pre">d</span></code> (helps when d spans orders of magnitude).</p></li>
+<li><p><strong>bounds</strong> (<em>list</em><em> of </em><em>(</em><em>low</em><em>, </em><em>high</em><em>)</em><em>, </em><em>optional</em>) – Search space for the optimisation; defaults to the prior bounds.</p></li>
+<li><p><strong>param_names</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.predict_distance">
+<span class="sig-name descname"><span class="pre">predict_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.predict_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.predict_distance" title="Link to this definition"></a></dt>
+<dd><p>GP mean (and std) of the modelled discrepancy (<code class="docutils literal notranslate"><span class="pre">log</span> <span class="pre">d</span></code> if <code class="docutils literal notranslate"><span class="pre">learn_log_dist</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.log_likelihood">
+<span class="sig-name descname"><span class="pre">log_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.log_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.log_likelihood" title="Link to this definition"></a></dt>
+<dd><p>Synthetic log-likelihood <code class="docutils literal notranslate"><span class="pre">log</span> <span class="pre">K(d_hat(theta))</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.log_posterior">
+<span class="sig-name descname"><span class="pre">log_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.log_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.log_posterior" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.learn_likelihood">
+<span class="sig-name descname"><span class="pre">learn_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_calls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_initial_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_candidates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">acq_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.learn_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.learn_likelihood" title="Link to this definition"></a></dt>
+<dd><p>Learn the discrepancy surrogate with Bayesian optimisation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_calls</strong> (<em>int</em>) – Number of new distance evaluations (including initial design points).</p></li>
+<li><p><strong>n_initial_points</strong> (<em>int</em><em>, </em><em>optional</em>) – Size of the Latin-hypercube initial design; default <code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">n_dim</span></code>.
+Points already loaded from <em>filename</em> count towards it.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – Points proposed per optimisation round (kriging believer). The
+points of one batch are independent, so their simulations can run
+in parallel; they are currently evaluated in sequence.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>optional</em>) – Pickle file to resume from (unless <em>reset_model</em>) and save to.</p></li>
+<li><p><strong>reset_model</strong> (<em>bool</em>) – Ignore an existing <em>filename</em>.</p></li>
+<li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>n_candidates</strong> (<em>int</em><em>, </em><em>optional</em>) – Random candidates scored per pick (default <code class="docutils literal notranslate"><span class="pre">1000</span> <span class="pre">*</span> <span class="pre">n_dim</span></code>).</p></li>
+<li><p><strong>**acq_kwargs</strong> – Acquisition options, e.g. <code class="docutils literal notranslate"><span class="pre">kappa</span></code> (LCB) or <code class="docutils literal notranslate"><span class="pre">xi</span></code> (EI/PI).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.save_likelihood_model">
 <span class="sig-name descname"><span class="pre">save_likelihood_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.save_likelihood_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.save_likelihood_model" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Store the evaluated points; the GP is refitted on load.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.load_likelihood_model">
@@ -304,51 +355,30 @@
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.cook_likelihood">
-<span class="sig-name descname"><span class="pre">cook_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gpmodel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.cook_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.cook_likelihood" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.learn_likelihood">
-<span class="sig-name descname"><span class="pre">learn_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpmodel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_calls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_random_starts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_initial_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_point_generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EI'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_restarts_optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.96</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_queue_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_optimizer_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lbfgs'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.learn_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.learn_likelihood" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.sample_posterior">
 <span class="sig-name descname"><span class="pre">sample_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MCMC'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.sample_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.sample_posterior" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.sample_MCMC">
-<span class="sig-name descname"><span class="pre">sample_MCMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs_emcee</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.sample_MCMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.sample_MCMC" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.sample_NestedSampling">
-<span class="sig-name descname"><span class="pre">sample_NestedSampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.sample_NestedSampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.sample_NestedSampling" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.BOLFI.sample_IS">
-<span class="sig-name descname"><span class="pre">sample_IS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#BOLFI.sample_IS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.BOLFI.sample_IS" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
+<dd><p>Draw equal-weight posterior samples from the synthetic likelihood.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<em>int</em>)</p></li>
+<li><p><strong>method</strong> (<em>{&quot;MCMC&quot;</em><em>, </em><em>&quot;NestedSampling&quot;</em><em>, </em><em>&quot;IS&quot;</em><em>, </em><em>&quot;SMC&quot;}</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;MCMC&quot;</span></code> uses <code class="xref py py-class docutils literal notranslate"><span class="pre">MHSampler</span></code> (kwargs: <code class="docutils literal notranslate"><span class="pre">n_walkers</span></code>,
+<code class="docutils literal notranslate"><span class="pre">n_burn</span></code>, <code class="docutils literal notranslate"><span class="pre">filename</span></code>, plus sampler options);
+<code class="docutils literal notranslate"><span class="pre">&quot;NestedSampling&quot;</span></code> uses <code class="xref py py-class docutils literal notranslate"><span class="pre">NestedSampler</span></code>
+(kwargs: <code class="docutils literal notranslate"><span class="pre">backend</span></code>, <code class="docutils literal notranslate"><span class="pre">n_live</span></code>, <code class="docutils literal notranslate"><span class="pre">dlogz</span></code>, …);
+<code class="docutils literal notranslate"><span class="pre">&quot;IS&quot;</span></code> uses importance sampling with the prior as proposal;
+<code class="docutils literal notranslate"><span class="pre">&quot;SMC&quot;</span></code> uses likelihood-tempered <code class="xref py py-func docutils literal notranslate"><span class="pre">SMC()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full sampler output is kept in <code class="docutils literal notranslate"><span class="pre">self.sampler_info</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_samples, n_dim)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.importance_sampling">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.importance_sampling" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.sequential_importance_sampling">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">sequential_importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#sequential_importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.sequential_importance_sampling" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="psiphy.sbi.bolfi.SMC_sampling">
-<span class="sig-prename descclassname"><span class="pre">psiphy.sbi.bolfi.</span></span><span class="sig-name descname"><span class="pre">SMC_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/sbi/bolfi.html#SMC_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.sbi.bolfi.SMC_sampling" title="Link to this definition"></a></dt>
-<dd><p>UNDER CONSTRUCTION</p>
 </dd></dl>
 
 <span class="target" id="module-psiphy.sbi.abc_gp"></span><dl class="py function">

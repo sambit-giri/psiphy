@@ -1,0 +1,359 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psiphy.mcmc.mh_sampler &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">psiphy.mcmc.mh_sampler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for psiphy.mcmc.mh_sampler</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">Ensemble Metropolis-Hastings style sampling with a pluggable backend.</span>
+
+<span class="sd">Currently supported backends: ``"emcee"``.</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">&gt;&gt;&gt; sampler = MHSampler(log_prob_fn, n_walkers=32, backend="emcee")</span>
+<span class="sd">&gt;&gt;&gt; sampler.run(theta_init, n_steps=1000)</span>
+<span class="sd">&gt;&gt;&gt; chain = sampler.get_chain(flat=True, discard=200, thin=10)</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">_BACKENDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"emcee"</span><span class="p">,)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_import_emcee</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">emcee</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">"MHSampler with backend='emcee' requires emcee: pip install 'psiphy[mcmc]'"</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+    <span class="k">return</span> <span class="n">emcee</span>
+
+
+<div class="viewcode-block" id="MHSampler">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MHSampler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Wrapper around ensemble MCMC samplers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    log_prob_fn : callable</span>
+<span class="sd">        ``log_prob_fn(theta) -&gt; float``; return ``-np.inf`` outside the support.</span>
+<span class="sd">    n_walkers : int</span>
+<span class="sd">        Number of walkers in the ensemble.</span>
+<span class="sd">    backend : str</span>
+<span class="sd">        Sampling library. Only ``"emcee"`` is available.</span>
+<span class="sd">    filename : str or None</span>
+<span class="sd">        If given, the chain is stored in this HDF5 file (requires ``h5py``) and</span>
+<span class="sd">        can be reloaded with :meth:`load` or extended with further :meth:`run` calls.</span>
+<span class="sd">    param_names : list of str, optional</span>
+<span class="sd">        Names used by :meth:`summary`.</span>
+<span class="sd">    moves : emcee move or list, optional</span>
+<span class="sd">        Proposal moves forwarded to ``emcee.EnsembleSampler``.</span>
+<span class="sd">    pool : object with a ``map`` method, optional</span>
+<span class="sd">        For parallel log-prob evaluation.</span>
+<span class="sd">    **kwargs :</span>
+<span class="sd">        Extra keyword arguments forwarded to ``emcee.EnsembleSampler``.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_prob_fn</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"emcee"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">moves</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_BACKENDS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown backend </span><span class="si">{</span><span class="n">backend</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_BACKENDS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span> <span class="o">=</span> <span class="n">log_prob_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_walkers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">param_names</span><span class="p">)</span> <span class="k">if</span> <span class="n">param_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moves</span> <span class="o">=</span> <span class="n">moves</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># ---- construction ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">reset</span><span class="p">):</span>
+        <span class="n">emcee</span> <span class="o">=</span> <span class="n">_import_emcee</span><span class="p">()</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">store</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">HDFBackend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">reset</span> <span class="ow">or</span> <span class="n">store</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">store</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">store</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Existing chain in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> has shape </span><span class="si">{</span><span class="n">store</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, "</span>
+                                 <span class="sa">f</span><span class="s2">"expected </span><span class="si">{</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">,</span><span class="w"> </span><span class="n">n_dim</span><span class="p">)</span><span class="si">}</span><span class="s2">. Pass reset=True."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">EnsembleSampler</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob_fn</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">store</span><span class="p">,</span>
+            <span class="n">moves</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">moves</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta_init</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">):</span>
+        <span class="n">theta_init</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta_init</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">theta_init</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="n">init_scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">theta_init</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">theta_init</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">,</span> <span class="n">theta_init</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">theta_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"theta_init has </span><span class="si">{</span><span class="n">theta_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> rows, expected n_walkers=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_walkers</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">theta_init</span>
+
+    <span class="c1"># ---- running ----</span>
+
+<div class="viewcode-block" id="MHSampler.run">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta_init</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">init_scale</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Advance the chain by *n_steps* iterations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        theta_init : array-like, shape (n_dim,) or (n_walkers, n_dim), or None</span>
+<span class="sd">            Starting point. A single point is jittered into a small Gaussian</span>
+<span class="sd">            ball of relative width *init_scale*. ``None`` continues from the</span>
+<span class="sd">            last state (of this run, or of the chain stored in ``filename``).</span>
+<span class="sd">        n_steps : int</span>
+<span class="sd">            Number of iterations to add.</span>
+<span class="sd">        reset : bool</span>
+<span class="sd">            Discard any chain already stored in ``filename``.</span>
+<span class="sd">        progress : bool</span>
+<span class="sd">            Show emcee's progress bar.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
+<span class="sd">        """</span>
+        <span class="n">n_stored</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_stored</span><span class="p">(</span><span class="n">reset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">theta_init</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">n_stored</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"theta_init is required for a fresh run."</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">theta_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_state</span><span class="p">(</span><span class="n">theta_init</span><span class="p">,</span> <span class="n">init_scale</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_stored</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reset</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> already holds </span><span class="si">{</span><span class="n">n_stored</span><span class="si">}</span><span class="s2"> iterations; "</span>
+                                 <span class="s2">"pass theta_init=None to continue or reset=True to restart."</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_make_sampler</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_make_sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stored_shape</span><span class="p">()[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># emcee resumes from the last stored sample</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_steps</span><span class="p">),</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_n_stored</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reset</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">_import_emcee</span><span class="p">()</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">HDFBackend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">iteration</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_stored_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_import_emcee</span><span class="p">()</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">HDFBackend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+
+<div class="viewcode-block" id="MHSampler.load">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.load">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">log_prob_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Reload a chain saved to an HDF5 file.</span>
+
+<span class="sd">        Pass *log_prob_fn* to be able to continue sampling with ``run(None, n_steps)``.</span>
+<span class="sd">        """</span>
+        <span class="n">emcee</span> <span class="o">=</span> <span class="n">_import_emcee</span><span class="p">()</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">HDFBackend</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">store</span><span class="o">.</span><span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No samples stored in </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">n_walkers</span><span class="p">,</span> <span class="n">n_dim</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">log_prob_fn</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="n">n_walkers</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_make_sampler</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+    <span class="c1"># ---- outputs ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_require_sampler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No chain available. Call run() or load() first."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_discard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">discard</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">discard</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">autocorr_time</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">discard</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_sampler</span><span class="p">()</span><span class="o">.</span><span class="n">iteration</span>
+
+<div class="viewcode-block" id="MHSampler.get_chain">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.get_chain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Chain of shape (n_steps, n_walkers, n_dim), or (n_samples, n_dim) if *flat*.</span>
+
+<span class="sd">        ``discard="auto"`` drops three times the longest autocorrelation time.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_sampler</span><span class="p">()</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span>
+            <span class="n">flat</span><span class="o">=</span><span class="n">flat</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolve_discard</span><span class="p">(</span><span class="n">discard</span><span class="p">),</span> <span class="n">thin</span><span class="o">=</span><span class="n">thin</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MHSampler.get_log_prob">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.get_log_prob">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_sampler</span><span class="p">()</span><span class="o">.</span><span class="n">get_log_prob</span><span class="p">(</span>
+            <span class="n">flat</span><span class="o">=</span><span class="n">flat</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolve_discard</span><span class="p">(</span><span class="n">discard</span><span class="p">),</span> <span class="n">thin</span><span class="o">=</span><span class="n">thin</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MHSampler.autocorr_time">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.autocorr_time">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">autocorr_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Integrated autocorrelation time per parameter."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_sampler</span><span class="p">()</span><span class="o">.</span><span class="n">get_autocorr_time</span><span class="p">(</span><span class="n">quiet</span><span class="o">=</span><span class="n">quiet</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acceptance_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_sampler</span><span class="p">()</span><span class="o">.</span><span class="n">acceptance_fraction</span>
+
+<div class="viewcode-block" id="MHSampler.summary">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="s2">"auto"</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">print_out</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Per-parameter posterior summary.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            ``name -&gt; {mean, std, median, lo68, hi68, tau}`` plus</span>
+<span class="sd">            ``"acceptance_fraction"`` and ``"n_samples"``.</span>
+<span class="sd">        """</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="n">discard</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="n">thin</span><span class="p">)</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">autocorr_time</span><span class="p">()</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="ow">or</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"p</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">84</span><span class="p">])</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">std</span><span class="o">=</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span>
+                             <span class="n">median</span><span class="o">=</span><span class="n">med</span><span class="p">,</span> <span class="n">lo68</span><span class="o">=</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi68</span><span class="o">=</span><span class="n">hi</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">out</span><span class="p">[</span><span class="s2">"acceptance_fraction"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acceptance_fraction</span><span class="p">))</span>
+        <span class="n">out</span><span class="p">[</span><span class="s2">"n_samples"</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">print_out</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'param'</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'mean'</span><span class="si">:</span><span class="s2">&gt;11</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'std'</span><span class="si">:</span><span class="s2">&gt;11</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'median'</span><span class="si">:</span><span class="s2">&gt;11</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'tau'</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">]</span><span class="si">:</span><span class="s2">11.4g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'std'</span><span class="p">]</span><span class="si">:</span><span class="s2">11.4g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'median'</span><span class="p">]</span><span class="si">:</span><span class="s2">11.4g</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'tau'</span><span class="p">]</span><span class="si">:</span><span class="s2">8.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"acceptance fraction = </span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="s1">'acceptance_fraction'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, "</span>
+                  <span class="sa">f</span><span class="s2">"n_samples = </span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="s1">'n_samples'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -79,10 +79,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for psiphy.mcmc.importance_sampling</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_random</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_kde</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">UniformPrior</span>  <span class="c1"># re-exported for backwards compatibility</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
@@ -98,63 +99,10 @@
 <span class="c1"># Helpers</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="UniformPrior">
-<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.UniformPrior">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">UniformPrior</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Box-uniform prior for use with importance sampling and SMC.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    bounds : list of (low, high) tuples, or dict mapping name -&gt; (low, high)</span>
-
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; prior = UniformPrior([(0, 1), (-2, 2)])</span>
-<span class="sd">    &gt;&gt;&gt; prior = UniformPrior({&#39;mu&#39;: (-5, 5), &#39;sigma&#39;: (0.1, 5)})</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">bounds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">bounds</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maxs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_log_vol</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins</span><span class="p">)))</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mins</span><span class="p">)</span>
-
-<div class="viewcode-block" id="UniformPrior.sample">
-<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.UniformPrior.sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw *n* samples; returns shape (n, ndim).&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="UniformPrior.log_prob">
-<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.UniformPrior.log_prob">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">theta</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">theta</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxs</span><span class="p">):</span>
-            <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="k">return</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_vol</span></div>
-
-
-<div class="viewcode-block" id="UniformPrior.in_support">
-<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.UniformPrior.in_support">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">in_support</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">theta</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mins</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">theta</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxs</span><span class="p">))</span></div>
-</div>
-
-
-
 <div class="viewcode-block" id="eff_sample_size">
 <a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.eff_sample_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">eff_sample_size</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Effective sample size (ESS) of a weighted particle set.</span>
 
 <span class="sd">    ESS = 1 / sum(w_i^2)  for normalised weights w_i.</span>
@@ -168,11 +116,24 @@
 <span class="sd">    -------</span>
 <span class="sd">    float</span>
 <span class="sd">        ESS in [1, n].</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_result</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">log_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"samples"</span><span class="p">:</span> <span class="n">samples</span><span class="p">,</span>
+        <span class="s2">"weights"</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+        <span class="s2">"equal_weight_samples"</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+        <span class="s2">"ess"</span><span class="p">:</span> <span class="n">eff_sample_size</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span>
+        <span class="s2">"log_evidence"</span><span class="p">:</span> <span class="n">log_evidence</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">extra</span><span class="p">,</span>
+    <span class="p">}</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
@@ -181,8 +142,8 @@
 
 <div class="viewcode-block" id="importance_sampling">
 <a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.importance_sampling">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">importance_sampling</span><span class="p">(</span><span class="n">log_target_fn</span><span class="p">,</span> <span class="n">proposal_samples</span><span class="p">,</span> <span class="n">log_proposal_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">importance_sampling</span><span class="p">(</span><span class="n">log_target_fn</span><span class="p">,</span> <span class="n">proposal_samples</span><span class="p">,</span> <span class="n">log_proposal_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vectorized</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Basic importance sampling.</span>
 
 <span class="sd">    Parameters</span>
@@ -195,40 +156,38 @@
 <span class="sd">    log_proposal_fn : callable or None</span>
 <span class="sd">        Log of the proposal density evaluated at each sample.</span>
 <span class="sd">        ``None`` assumes a uniform (constant) proposal.</span>
+<span class="sd">    vectorized : bool</span>
+<span class="sd">        If True, ``log_target_fn`` (and ``log_proposal_fn``) accept a batch of</span>
+<span class="sd">        shape (n, d) and return shape (n,), so all particles are evaluated in</span>
+<span class="sd">        one call.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    samples : np.ndarray, shape (n, d)</span>
-<span class="sd">        Particles resampled proportionally to the importance weights.</span>
-<span class="sd">    weights : np.ndarray, shape (n,)</span>
-<span class="sd">        Normalised importance weights (sum to 1).</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    ESS can be computed with :func:`eff_sample_size`.</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``samples`` : (n, d) final weighted particles.</span>
+<span class="sd">        ``weights`` : (n,) normalised weights, aligned with ``samples``.</span>
+<span class="sd">        ``equal_weight_samples`` : (n, d) particles resampled by weight;</span>
+<span class="sd">        use these where unweighted draws are needed.</span>
+<span class="sd">        ``ess`` : effective sample size of ``weights``.</span>
+<span class="sd">        ``log_evidence`` : log marginal likelihood estimate, or None.</span>
+<span class="sd">        ``samples`` are the proposal samples themselves. ``log_evidence`` is</span>
+<span class="sd">        given only when ``log_proposal_fn`` is supplied (it needs the</span>
+<span class="sd">        normalised proposal density).</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; prior = UniformPrior([(-3, 3), (0.1, 3)])</span>
-<span class="sd">    &gt;&gt;&gt; proposal_samples = prior.sample(2000)</span>
-<span class="sd">    &gt;&gt;&gt; samples, w = importance_sampling(log_posterior, proposal_samples)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; res = importance_sampling(log_posterior, prior.sample(2000), log_proposal_fn=prior.log_prob)</span>
+<span class="sd">    &gt;&gt;&gt; np.average(res["samples"], weights=res["weights"], axis=0)</span>
+<span class="sd">    """</span>
     <span class="n">proposal_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">proposal_samples</span><span class="p">)</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">proposal_samples</span><span class="p">)</span>
 
-    <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_target_fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">proposal_samples</span><span class="p">])</span>
-
+    <span class="n">log_w</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_target_fn</span><span class="p">,</span> <span class="n">proposal_samples</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">)</span>
+    <span class="n">log_z</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">log_proposal_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">log_w</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_proposal_fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">proposal_samples</span><span class="p">])</span>
-
-    <span class="c1"># numerically stable: shift by max before exp</span>
-    <span class="n">log_w</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
-    <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_w</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
-    <span class="n">w</span> <span class="o">/=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">proposal_samples</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">w</span></div>
+        <span class="n">log_w</span> <span class="o">-=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_proposal_fn</span><span class="p">,</span> <span class="n">proposal_samples</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">)</span>
+        <span class="n">log_z</span> <span class="o">=</span> <span class="n">_log_mean_exp</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_result</span><span class="p">(</span><span class="n">proposal_samples</span><span class="p">,</span> <span class="n">_normalise_log_weights</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_z</span><span class="p">)</span></div>
 
 
 
@@ -243,11 +202,12 @@
     <span class="n">prior</span><span class="p">,</span>
     <span class="n">n_particles</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
     <span class="n">n_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">kernel</span><span class="o">=</span><span class="s2">&quot;EmpiricalCovariance&quot;</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="s2">"EmpiricalCovariance"</span><span class="p">,</span>
     <span class="n">ess_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">vectorized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Sequential importance sampling with MCMC move kernel.</span>
 
 <span class="sd">    Each step re-weights the current particles under the target and</span>
@@ -264,46 +224,46 @@
 <span class="sd">        Number of SIS iterations.</span>
 <span class="sd">    kernel : str or sklearn covariance estimator</span>
 <span class="sd">        Kernel used to estimate the MCMC move covariance.</span>
-<span class="sd">        Accepts ``&#39;EmpiricalCovariance&#39;`` or ``&#39;LedoitWolf&#39;``.</span>
+<span class="sd">        Accepts ``'EmpiricalCovariance'`` or ``'LedoitWolf'``.</span>
 <span class="sd">    ess_threshold : float</span>
 <span class="sd">        Resample when ESS / n_particles falls below this fraction.</span>
 <span class="sd">    verbose : bool</span>
+<span class="sd">    vectorized : bool</span>
+<span class="sd">        If True, ``log_target_fn`` accepts a batch (n, d) and returns (n,).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    samples : np.ndarray, shape (n_particles, d)</span>
-<span class="sd">    weights : np.ndarray, shape (n_particles,)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``samples`` : (n, d) final weighted particles.</span>
+<span class="sd">        ``weights`` : (n,) normalised weights, aligned with ``samples``.</span>
+<span class="sd">        ``equal_weight_samples`` : (n, d) particles resampled by weight;</span>
+<span class="sd">        use these where unweighted draws are needed.</span>
+<span class="sd">        ``ess`` : effective sample size of ``weights``.</span>
+<span class="sd">        ``log_evidence`` : log marginal likelihood estimate, or None.</span>
+<span class="sd">        ``log_evidence`` is always None for SIS.</span>
+<span class="sd">    """</span>
     <span class="n">cov_est</span> <span class="o">=</span> <span class="n">_get_cov_estimator</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
 
     <span class="n">particles</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_particles</span><span class="p">)</span>
-    <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_target_fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">])</span>
-    <span class="n">log_w</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
-    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_w</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
-    <span class="n">w</span> <span class="o">/=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">_normalise_log_weights</span><span class="p">(</span><span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_target_fn</span><span class="p">,</span> <span class="n">particles</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">))</span>
 
-    <span class="n">iterator</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;SIS&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">iterator</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"SIS"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
         <span class="n">ess</span> <span class="o">=</span> <span class="n">eff_sample_size</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="s2">&quot;set_postfix&quot;</span><span class="p">):</span>
-            <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">ESS</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_particles</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="s2">"set_postfix"</span><span class="p">):</span>
+            <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">ESS</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_particles</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ess</span> <span class="o">/</span> <span class="n">n_particles</span> <span class="o">&lt;</span> <span class="n">ess_threshold</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">particles</span> <span class="o">=</span> <span class="n">particles</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
             <span class="n">cov</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">cov_est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span><span class="o">.</span><span class="n">covariance_</span>
-            <span class="n">perturbed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">particles</span>
-            <span class="p">])</span>
+            <span class="n">perturbed</span> <span class="o">=</span> <span class="n">_gaussian_perturb</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
             <span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">perturbed</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-            <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_target_fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">perturbed</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">kde</span><span class="p">(</span><span class="n">perturbed</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
-            <span class="n">log_w</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_w</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
-            <span class="n">w</span> <span class="o">/=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">log_w</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_target_fn</span><span class="p">,</span> <span class="n">perturbed</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">kde</span><span class="p">(</span><span class="n">perturbed</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">_normalise_log_weights</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span>
             <span class="n">particles</span> <span class="o">=</span> <span class="n">perturbed</span>
 
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">particles</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">w</span></div>
+    <span class="k">return</span> <span class="n">_result</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span></div>
 
 
 
@@ -318,11 +278,12 @@
     <span class="n">prior</span><span class="p">,</span>
     <span class="n">n_particles</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
     <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">kernel</span><span class="o">=</span><span class="s2">&quot;EmpiricalCovariance&quot;</span><span class="p">,</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="s2">"EmpiricalCovariance"</span><span class="p">,</span>
     <span class="n">ess_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">vectorized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Sequential Monte Carlo via likelihood tempering.</span>
 
 <span class="sd">    Anneals from the prior to the posterior through a sequence of</span>
@@ -344,18 +305,26 @@
 <span class="sd">    ess_threshold : float</span>
 <span class="sd">        Fraction of n_particles below which resampling + MCMC move fires.</span>
 <span class="sd">    verbose : bool</span>
+<span class="sd">    vectorized : bool</span>
+<span class="sd">        If True, ``log_likelihood_fn`` accepts a batch (n, d) and returns (n,).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    samples : np.ndarray, shape (n_particles, d)</span>
-<span class="sd">        Unweighted posterior samples (after final resampling).</span>
-<span class="sd">    weights : np.ndarray, shape (n_particles,)</span>
-<span class="sd">        Final normalised importance weights.</span>
+<span class="sd">    dict</span>
+<span class="sd">        ``samples`` : (n, d) final weighted particles.</span>
+<span class="sd">        ``weights`` : (n,) normalised weights, aligned with ``samples``.</span>
+<span class="sd">        ``equal_weight_samples`` : (n, d) particles resampled by weight;</span>
+<span class="sd">        use these where unweighted draws are needed.</span>
+<span class="sd">        ``ess`` : effective sample size of ``weights``.</span>
+<span class="sd">        ``log_evidence`` : log marginal likelihood estimate, or None.</span>
+<span class="sd">        ``log_evidence`` is the standard SMC estimate (sum over temperature</span>
+<span class="sd">        steps of the log mean incremental weight); it requires a normalised</span>
+<span class="sd">        ``log_likelihood_fn`` and prior. Also returns ``log_likelihood`` (n,).</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
 <span class="sd">    Effective sample size at each step is reported when ``verbose=True``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cov_est</span> <span class="o">=</span> <span class="n">_get_cov_estimator</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
 
     <span class="c1"># temperature schedule: quadratic ramp 0 -&gt; 1</span>
@@ -363,49 +332,50 @@
 
     <span class="c1"># initialise from prior</span>
     <span class="n">particles</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_particles</span><span class="p">)</span>
-    <span class="n">log_likes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_likelihood_fn</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">particles</span><span class="p">])</span>
+    <span class="n">log_likes</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_likelihood_fn</span><span class="p">,</span> <span class="n">particles</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">)</span>
+    <span class="n">log_priors</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">particles</span><span class="p">,</span> <span class="n">_accepts_batch</span><span class="p">(</span><span class="n">prior</span><span class="p">))</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_particles</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_particles</span>
+    <span class="n">log_z</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="n">iterator</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;SMC&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">iterator</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"SMC"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
         <span class="n">delta</span> <span class="o">=</span> <span class="n">betas</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">betas</span><span class="p">[</span><span class="n">t</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
 
-        <span class="c1"># incremental weight update</span>
-        <span class="n">log_incr</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">log_likes</span>
-        <span class="n">log_incr</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">log_incr</span><span class="p">)</span>
-        <span class="n">w_incr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_incr</span><span class="p">),</span> <span class="n">log_incr</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">w_incr</span>
-        <span class="n">w</span> <span class="o">/=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="c1"># incremental weight update; log Z_t / Z_{t-1} = log sum_i w_i * L_i^delta</span>
+        <span class="n">log_incr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_likes</span><span class="p">),</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">log_likes</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+            <span class="n">log_wt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">log_incr</span>
+        <span class="n">log_z</span> <span class="o">+=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">log_wt</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">_normalise_log_weights</span><span class="p">(</span><span class="n">log_wt</span><span class="p">)</span>
 
         <span class="n">ess</span> <span class="o">=</span> <span class="n">eff_sample_size</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="s2">&quot;set_postfix&quot;</span><span class="p">):</span>
-            <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ESS</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_particles</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="s2">"set_postfix"</span><span class="p">):</span>
+            <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ESS</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_particles</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ess</span> <span class="o">/</span> <span class="n">n_particles</span> <span class="o">&lt;</span> <span class="n">ess_threshold</span><span class="p">:</span>
             <span class="c1"># resample</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">particles</span> <span class="o">=</span> <span class="n">particles</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
             <span class="n">log_likes</span> <span class="o">=</span> <span class="n">log_likes</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">log_priors</span> <span class="o">=</span> <span class="n">log_priors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_particles</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_particles</span>
 
-            <span class="c1"># MCMC move (Gaussian random walk)</span>
+            <span class="c1"># MCMC move (Gaussian random walk), all particles at once</span>
             <span class="n">cov</span> <span class="o">=</span> <span class="mf">2.38</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">particles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">cov_est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">particles</span><span class="p">)</span><span class="o">.</span><span class="n">covariance_</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_particles</span><span class="p">):</span>
-                <span class="n">proposal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cov</span><span class="p">)</span>
-                <span class="n">log_lp_prop</span> <span class="o">=</span> <span class="n">log_likelihood_fn</span><span class="p">(</span><span class="n">proposal</span><span class="p">)</span>
-                <span class="n">log_prior_prop</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">proposal</span><span class="p">)</span>
-                <span class="n">log_prior_cur</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                <span class="n">log_accept</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">betas</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">log_lp_prop</span> <span class="o">-</span> <span class="n">log_likes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                    <span class="o">+</span> <span class="p">(</span><span class="n">log_prior_prop</span> <span class="o">-</span> <span class="n">log_prior_cur</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">log_accept</span><span class="p">:</span>
-                    <span class="n">particles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">proposal</span>
-                    <span class="n">log_likes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_lp_prop</span>
+            <span class="n">proposals</span> <span class="o">=</span> <span class="n">_gaussian_perturb</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
+            <span class="n">log_priors_prop</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">proposals</span><span class="p">,</span> <span class="n">_accepts_batch</span><span class="p">(</span><span class="n">prior</span><span class="p">))</span>
+            <span class="n">log_likes_prop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_particles</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+            <span class="n">inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_priors_prop</span><span class="p">)</span>  <span class="c1"># skip likelihood calls outside the prior</span>
+            <span class="k">if</span> <span class="n">inside</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">log_likes_prop</span><span class="p">[</span><span class="n">inside</span><span class="p">]</span> <span class="o">=</span> <span class="n">_batch_eval</span><span class="p">(</span><span class="n">log_likelihood_fn</span><span class="p">,</span> <span class="n">proposals</span><span class="p">[</span><span class="n">inside</span><span class="p">],</span> <span class="n">vectorized</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+                <span class="n">log_accept</span> <span class="o">=</span> <span class="n">betas</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">log_likes_prop</span> <span class="o">-</span> <span class="n">log_likes</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">log_priors_prop</span> <span class="o">-</span> <span class="n">log_priors</span><span class="p">)</span>
+            <span class="n">accept</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n_particles</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">log_accept</span>
+            <span class="n">particles</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span> <span class="o">=</span> <span class="n">proposals</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span>
+            <span class="n">log_likes</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_likes_prop</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span>
+            <span class="n">log_priors</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_priors_prop</span><span class="p">[</span><span class="n">accept</span><span class="p">]</span>
 
-    <span class="c1"># final resample to get unweighted draws</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_particles</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">particles</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">w</span></div>
+    <span class="k">return</span> <span class="n">_result</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">log_z</span><span class="p">),</span> <span class="n">log_likelihood</span><span class="o">=</span><span class="n">log_likes</span><span class="p">)</span></div>
 
 
 
@@ -413,11 +383,40 @@
 <span class="c1"># Internal</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_batch_eval</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">vectorized</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Evaluate *fn* on every row of *X*; one batched call if *vectorized*."""</span>
+    <span class="k">if</span> <span class="n">vectorized</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fn</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_accepts_batch</span><span class="p">(</span><span class="n">prior</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..utils.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePrior</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="n">BasePrior</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_mean_exp</span><span class="p">(</span><span class="n">log_w</span><span class="p">):</span>
+    <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_w</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">log_w</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">log_w</span><span class="p">)))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalise_log_weights</span><span class="p">(</span><span class="n">log_w</span><span class="p">):</span>
+    <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">log_w</span><span class="p">),</span> <span class="n">log_w</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_w</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">log_w</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">w</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gaussian_perturb</span><span class="p">(</span><span class="n">particles</span><span class="p">,</span> <span class="n">cov</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Draw one N(particle, cov) sample per particle in a single matrix operation."""</span>
+    <span class="n">chol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">cov</span> <span class="o">+</span> <span class="mf">1e-12</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cov</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">particles</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">particles</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">@</span> <span class="n">chol</span><span class="o">.</span><span class="n">T</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_cov_estimator</span><span class="p">(</span><span class="n">kernel</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">kernel</span> <span class="o">==</span> <span class="s2">&quot;EmpiricalCovariance&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kernel</span> <span class="o">==</span> <span class="s2">"EmpiricalCovariance"</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.covariance</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmpiricalCovariance</span>
         <span class="k">return</span> <span class="n">EmpiricalCovariance</span><span class="p">()</span>
-    <span class="k">elif</span> <span class="n">kernel</span> <span class="o">==</span> <span class="s2">&quot;LedoitWolf&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">kernel</span> <span class="o">==</span> <span class="s2">"LedoitWolf"</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.covariance</span><span class="w"> </span><span class="kn">import</span> <span class="n">LedoitWolf</span>
         <span class="k">return</span> <span class="n">LedoitWolf</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>

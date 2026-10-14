@@ -53,17 +53,27 @@
 <li class="toctree-l1"><a class="reference internal" href="sbi.html">psiphy.sbi</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">psiphy.mcmc</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.tqdm"><code class="docutils literal notranslate"><span class="pre">tqdm()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior"><code class="docutils literal notranslate"><span class="pre">UniformPrior</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior.ndim"><code class="docutils literal notranslate"><span class="pre">UniformPrior.ndim</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior.sample"><code class="docutils literal notranslate"><span class="pre">UniformPrior.sample()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior.log_prob"><code class="docutils literal notranslate"><span class="pre">UniformPrior.log_prob()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior.in_support"><code class="docutils literal notranslate"><span class="pre">UniformPrior.in_support()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.eff_sample_size"><code class="docutils literal notranslate"><span class="pre">eff_sample_size()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.importance_sampling"><code class="docutils literal notranslate"><span class="pre">importance_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.sequential_importance_sampling"><code class="docutils literal notranslate"><span class="pre">sequential_importance_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.importance_sampling.SMC"><code class="docutils literal notranslate"><span class="pre">SMC()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler"><code class="docutils literal notranslate"><span class="pre">MHSampler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.run"><code class="docutils literal notranslate"><span class="pre">MHSampler.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.load"><code class="docutils literal notranslate"><span class="pre">MHSampler.load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.n_steps"><code class="docutils literal notranslate"><span class="pre">MHSampler.n_steps</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.get_chain"><code class="docutils literal notranslate"><span class="pre">MHSampler.get_chain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.get_log_prob"><code class="docutils literal notranslate"><span class="pre">MHSampler.get_log_prob()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.autocorr_time"><code class="docutils literal notranslate"><span class="pre">MHSampler.autocorr_time()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.acceptance_fraction"><code class="docutils literal notranslate"><span class="pre">MHSampler.acceptance_fraction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.summary"><code class="docutils literal notranslate"><span class="pre">MHSampler.summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.mcmc.nested_sampler.NestedSampler"><code class="docutils literal notranslate"><span class="pre">NestedSampler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.nested_sampler.NestedSampler.run"><code class="docutils literal notranslate"><span class="pre">NestedSampler.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.nested_sampler.NestedSampler.get_result"><code class="docutils literal notranslate"><span class="pre">NestedSampler.get_result()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.mcmc.nested_sampler.NestedSampler.to_getdist"><code class="docutils literal notranslate"><span class="pre">NestedSampler.to_getdist()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="forecasting.html">psiphy.forecasting</a></li>
@@ -102,43 +112,6 @@
 <span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">tqdm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#tqdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.tqdm" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.UniformPrior">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">UniformPrior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#UniformPrior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.UniformPrior" title="Link to this definition"></a></dt>
-<dd><p>Box-uniform prior for use with importance sampling and SMC.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>bounds</strong> (<em>list</em><em> of </em><em>(</em><em>low</em><em>, </em><em>high</em><em>) </em><em>tuples</em><em>, or </em><em>dict mapping name -&gt;</em><em> (</em><em>low</em><em>, </em><em>high</em><em>)</em>)</p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">({</span><span class="s1">&#39;mu&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)})</span>
-</pre></div>
-</div>
-<dl class="py property">
-<dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.UniformPrior.ndim">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#psiphy.mcmc.importance_sampling.UniformPrior.ndim" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.UniformPrior.sample">
-<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#UniformPrior.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.UniformPrior.sample" title="Link to this definition"></a></dt>
-<dd><p>Draw <em>n</em> samples; returns shape (n, ndim).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.UniformPrior.log_prob">
-<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#UniformPrior.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.UniformPrior.log_prob" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.UniformPrior.in_support">
-<span class="sig-name descname"><span class="pre">in_support</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#UniformPrior.in_support"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.UniformPrior.in_support" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.eff_sample_size">
 <span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">eff_sample_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#eff_sample_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.eff_sample_size" title="Link to this definition"></a></dt>
@@ -159,7 +132,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.importance_sampling">
-<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_target_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_proposal_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.importance_sampling" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_target_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_proposal_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.importance_sampling" title="Link to this definition"></a></dt>
 <dd><p>Basic importance sampling.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -169,29 +142,37 @@ Signature: <code class="docutils literal notranslate"><span class="pre">log_targ
 <li><p><strong>proposal_samples</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>d</em><em>)</em>) – Samples already drawn from the proposal distribution.</p></li>
 <li><p><strong>log_proposal_fn</strong> (<em>callable</em><em> or </em><em>None</em>) – Log of the proposal density evaluated at each sample.
 <code class="docutils literal notranslate"><span class="pre">None</span></code> assumes a uniform (constant) proposal.</p></li>
+<li><p><strong>vectorized</strong> (<em>bool</em>) – If True, <code class="docutils literal notranslate"><span class="pre">log_target_fn</span></code> (and <code class="docutils literal notranslate"><span class="pre">log_proposal_fn</span></code>) accept a batch of
+shape (n, d) and return shape (n,), so all particles are evaluated in
+one call.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>samples</strong> (<em>np.ndarray, shape (n, d)</em>) – Particles resampled proportionally to the importance weights.</p></li>
-<li><p><strong>weights</strong> (<em>np.ndarray, shape (n,)</em>) – Normalised importance weights (sum to 1).</p></li>
-</ul>
-</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> : (n, d) final weighted particles.
+<code class="docutils literal notranslate"><span class="pre">weights</span></code> : (n,) normalised weights, aligned with <code class="docutils literal notranslate"><span class="pre">samples</span></code>.
+<code class="docutils literal notranslate"><span class="pre">equal_weight_samples</span></code> : (n, d) particles resampled by weight;
+use these where unweighted draws are needed.
+<code class="docutils literal notranslate"><span class="pre">ess</span></code> : effective sample size of <code class="docutils literal notranslate"><span class="pre">weights</span></code>.
+<code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> : log marginal likelihood estimate, or None.
+<code class="docutils literal notranslate"><span class="pre">samples</span></code> are the proposal samples themselves. <code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> is
+given only when <code class="docutils literal notranslate"><span class="pre">log_proposal_fn</span></code> is supplied (it needs the
+normalised proposal density).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>ESS can be computed with <a class="reference internal" href="#psiphy.mcmc.importance_sampling.eff_sample_size" title="psiphy.mcmc.importance_sampling.eff_sample_size"><code class="xref py py-func docutils literal notranslate"><span class="pre">eff_sample_size()</span></code></a>.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">([(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">proposal_samples</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_posterior</span><span class="p">,</span> <span class="n">proposal_samples</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">importance_sampling</span><span class="p">(</span><span class="n">log_posterior</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2000</span><span class="p">),</span> <span class="n">log_proposal_fn</span><span class="o">=</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">res</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.sequential_importance_sampling">
-<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">sequential_importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_target_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ess_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#sequential_importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.sequential_importance_sampling" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">sequential_importance_sampling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_target_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ess_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#sequential_importance_sampling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.sequential_importance_sampling" title="Link to this definition"></a></dt>
 <dd><p>Sequential importance sampling with MCMC move kernel.</p>
 <p>Each step re-weights the current particles under the target and
 applies a Gaussian random-walk MCMC move to diversify them.</p>
@@ -199,28 +180,34 @@ applies a Gaussian random-walk MCMC move to diversify them.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>log_target_fn</strong> (<em>callable</em>) – Log of the (unnormalised) target.</p></li>
-<li><p><strong>prior</strong> (<a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior" title="psiphy.mcmc.importance_sampling.UniformPrior"><em>UniformPrior</em></a><em> or </em><em>object with .sample</em><em>(</em><em>n</em><em>) </em><em>and .log_prob</em><em>(</em><em>theta</em><em>)</em>) – Used to draw the initial particle set.</p></li>
+<li><p><strong>prior</strong> (<a class="reference internal" href="utils.html#psiphy.utils.prior.UniformPrior" title="psiphy.utils.prior.UniformPrior"><em>UniformPrior</em></a><em> or </em><em>object with .sample</em><em>(</em><em>n</em><em>) </em><em>and .log_prob</em><em>(</em><em>theta</em><em>)</em>) – Used to draw the initial particle set.</p></li>
 <li><p><strong>n_particles</strong> (<em>int</em>)</p></li>
 <li><p><strong>n_steps</strong> (<em>int</em>) – Number of SIS iterations.</p></li>
 <li><p><strong>kernel</strong> (<em>str</em><em> or </em><em>sklearn covariance estimator</em>) – Kernel used to estimate the MCMC move covariance.
 Accepts <code class="docutils literal notranslate"><span class="pre">'EmpiricalCovariance'</span></code> or <code class="docutils literal notranslate"><span class="pre">'LedoitWolf'</span></code>.</p></li>
 <li><p><strong>ess_threshold</strong> (<em>float</em>) – Resample when ESS / n_particles falls below this fraction.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+<li><p><strong>vectorized</strong> (<em>bool</em>) – If True, <code class="docutils literal notranslate"><span class="pre">log_target_fn</span></code> accepts a batch (n, d) and returns (n,).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>samples</strong> (<em>np.ndarray, shape (n_particles, d)</em>)</p></li>
-<li><p><strong>weights</strong> (<em>np.ndarray, shape (n_particles,)</em>)</p></li>
-</ul>
-</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> : (n, d) final weighted particles.
+<code class="docutils literal notranslate"><span class="pre">weights</span></code> : (n,) normalised weights, aligned with <code class="docutils literal notranslate"><span class="pre">samples</span></code>.
+<code class="docutils literal notranslate"><span class="pre">equal_weight_samples</span></code> : (n, d) particles resampled by weight;
+use these where unweighted draws are needed.
+<code class="docutils literal notranslate"><span class="pre">ess</span></code> : effective sample size of <code class="docutils literal notranslate"><span class="pre">weights</span></code>.
+<code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> : log marginal likelihood estimate, or None.
+<code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> is always None for SIS.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="psiphy.mcmc.importance_sampling.SMC">
-<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">SMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_likelihood_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ess_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#SMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.SMC" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.importance_sampling.</span></span><span class="sig-name descname"><span class="pre">SMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_likelihood_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_particles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EmpiricalCovariance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ess_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/importance_sampling.html#SMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.importance_sampling.SMC" title="Link to this definition"></a></dt>
 <dd><p>Sequential Monte Carlo via likelihood tempering.</p>
 <p>Anneals from the prior to the posterior through a sequence of
 tempered targets:</p>
@@ -232,24 +219,207 @@ tempered targets:</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>log_likelihood_fn</strong> (<em>callable</em>) – Log-likelihood. <code class="docutils literal notranslate"><span class="pre">log_likelihood_fn(theta)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code></p></li>
-<li><p><strong>prior</strong> (<a class="reference internal" href="#psiphy.mcmc.importance_sampling.UniformPrior" title="psiphy.mcmc.importance_sampling.UniformPrior"><em>UniformPrior</em></a><em> or </em><em>object with .sample</em><em>(</em><em>n</em><em>) </em><em>and .log_prob</em><em>(</em><em>theta</em><em>)</em>)</p></li>
+<li><p><strong>prior</strong> (<a class="reference internal" href="utils.html#psiphy.utils.prior.UniformPrior" title="psiphy.utils.prior.UniformPrior"><em>UniformPrior</em></a><em> or </em><em>object with .sample</em><em>(</em><em>n</em><em>) </em><em>and .log_prob</em><em>(</em><em>theta</em><em>)</em>)</p></li>
 <li><p><strong>n_particles</strong> (<em>int</em>)</p></li>
 <li><p><strong>n_steps</strong> (<em>int</em>) – Number of temperature steps.</p></li>
 <li><p><strong>kernel</strong> (<em>str</em><em> or </em><em>sklearn covariance estimator</em>)</p></li>
 <li><p><strong>ess_threshold</strong> (<em>float</em>) – Fraction of n_particles below which resampling + MCMC move fires.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+<li><p><strong>vectorized</strong> (<em>bool</em>) – If True, <code class="docutils literal notranslate"><span class="pre">log_likelihood_fn</span></code> accepts a batch (n, d) and returns (n,).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>samples</strong> (<em>np.ndarray, shape (n_particles, d)</em>) – Unweighted posterior samples (after final resampling).</p></li>
-<li><p><strong>weights</strong> (<em>np.ndarray, shape (n_particles,)</em>) – Final normalised importance weights.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> : (n, d) final weighted particles.
+<code class="docutils literal notranslate"><span class="pre">weights</span></code> : (n,) normalised weights, aligned with <code class="docutils literal notranslate"><span class="pre">samples</span></code>.
+<code class="docutils literal notranslate"><span class="pre">equal_weight_samples</span></code> : (n, d) particles resampled by weight;
+use these where unweighted draws are needed.
+<code class="docutils literal notranslate"><span class="pre">ess</span></code> : effective sample size of <code class="docutils literal notranslate"><span class="pre">weights</span></code>.
+<code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> : log marginal likelihood estimate, or None.
+<code class="docutils literal notranslate"><span class="pre">log_evidence</span></code> is the standard SMC estimate (sum over temperature
+steps of the log mean incremental weight); it requires a normalised
+<code class="docutils literal notranslate"><span class="pre">log_likelihood_fn</span></code> and prior. Also returns <code class="docutils literal notranslate"><span class="pre">log_likelihood</span></code> (n,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
 <p>Effective sample size at each step is reported when <code class="docutils literal notranslate"><span class="pre">verbose=True</span></code>.</p>
+</dd></dl>
+
+<p id="module-psiphy.mcmc.mh_sampler">Ensemble Metropolis-Hastings style sampling with a pluggable backend.</p>
+<p>Currently supported backends: <code class="docutils literal notranslate"><span class="pre">&quot;emcee&quot;</span></code>.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span> <span class="o">=</span> <span class="n">MHSampler</span><span class="p">(</span><span class="n">log_prob_fn</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"emcee"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">theta_init</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chain</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">thin</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.mh_sampler.</span></span><span class="sig-name descname"><span class="pre">MHSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_prob_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_walkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'emcee'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler" title="Link to this definition"></a></dt>
+<dd><p>Wrapper around ensemble MCMC samplers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_prob_fn</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">log_prob_fn(theta)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>; return <code class="docutils literal notranslate"><span class="pre">-np.inf</span></code> outside the support.</p></li>
+<li><p><strong>n_walkers</strong> (<em>int</em>) – Number of walkers in the ensemble.</p></li>
+<li><p><strong>backend</strong> (<em>str</em>) – Sampling library. Only <code class="docutils literal notranslate"><span class="pre">&quot;emcee&quot;</span></code> is available.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em> or </em><em>None</em>) – If given, the chain is stored in this HDF5 file (requires <code class="docutils literal notranslate"><span class="pre">h5py</span></code>) and
+can be reloaded with <a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.load" title="psiphy.mcmc.mh_sampler.MHSampler.load"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load()</span></code></a> or extended with further <a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.run" title="psiphy.mcmc.mh_sampler.MHSampler.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> calls.</p></li>
+<li><p><strong>param_names</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Names used by <a class="reference internal" href="#psiphy.mcmc.mh_sampler.MHSampler.summary" title="psiphy.mcmc.mh_sampler.MHSampler.summary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">summary()</span></code></a>.</p></li>
+<li><p><strong>moves</strong> (<em>emcee move</em><em> or </em><em>list</em><em>, </em><em>optional</em>) – Proposal moves forwarded to <code class="docutils literal notranslate"><span class="pre">emcee.EnsembleSampler</span></code>.</p></li>
+<li><p><strong>pool</strong> (object with a <code class="docutils literal notranslate"><span class="pre">map</span></code> method, optional) – For parallel log-prob evaluation.</p></li>
+<li><p><strong>**kwargs</strong> – Extra keyword arguments forwarded to <code class="docutils literal notranslate"><span class="pre">emcee.EnsembleSampler</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.run" title="Link to this definition"></a></dt>
+<dd><p>Advance the chain by <em>n_steps</em> iterations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta_init</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_dim</em><em>,</em><em>) or </em><em>(</em><em>n_walkers</em><em>, </em><em>n_dim</em><em>)</em><em>, or </em><em>None</em>) – Starting point. A single point is jittered into a small Gaussian
+ball of relative width <em>init_scale</em>. <code class="docutils literal notranslate"><span class="pre">None</span></code> continues from the
+last state (of this run, or of the chain stored in <code class="docutils literal notranslate"><span class="pre">filename</span></code>).</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of iterations to add.</p></li>
+<li><p><strong>reset</strong> (<em>bool</em>) – Discard any chain already stored in <code class="docutils literal notranslate"><span class="pre">filename</span></code>.</p></li>
+<li><p><strong>progress</strong> (<em>bool</em>) – Show emcee’s progress bar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.load">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prob_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.load" title="Link to this definition"></a></dt>
+<dd><p>Reload a chain saved to an HDF5 file.</p>
+<p>Pass <em>log_prob_fn</em> to be able to continue sampling with <code class="docutils literal notranslate"><span class="pre">run(None,</span> <span class="pre">n_steps)</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.n_steps">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_steps</span></span><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.n_steps" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.get_chain">
+<span class="sig-name descname"><span class="pre">get_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.get_chain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.get_chain" title="Link to this definition"></a></dt>
+<dd><p>Chain of shape (n_steps, n_walkers, n_dim), or (n_samples, n_dim) if <em>flat</em>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">discard=&quot;auto&quot;</span></code> drops three times the longest autocorrelation time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.get_log_prob">
+<span class="sig-name descname"><span class="pre">get_log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.get_log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.get_log_prob" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.autocorr_time">
+<span class="sig-name descname"><span class="pre">autocorr_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.autocorr_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.autocorr_time" title="Link to this definition"></a></dt>
+<dd><p>Integrated autocorrelation time per parameter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.acceptance_fraction">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">acceptance_fraction</span></span><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.acceptance_fraction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.mh_sampler.MHSampler.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/mh_sampler.html#MHSampler.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.mh_sampler.MHSampler.summary" title="Link to this definition"></a></dt>
+<dd><p>Per-parameter posterior summary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">name</span> <span class="pre">-&gt;</span> <span class="pre">{mean,</span> <span class="pre">std,</span> <span class="pre">median,</span> <span class="pre">lo68,</span> <span class="pre">hi68,</span> <span class="pre">tau}</span></code> plus
+<code class="docutils literal notranslate"><span class="pre">&quot;acceptance_fraction&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;n_samples&quot;</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p id="module-psiphy.mcmc.nested_sampler">Nested sampling with interchangeable backends.</p>
+<p>Supported backends: <code class="docutils literal notranslate"><span class="pre">&quot;dynesty&quot;</span></code> (static nested sampling) and <code class="docutils literal notranslate"><span class="pre">&quot;nautilus&quot;</span></code>
+(neural-network-boosted importance nested sampling).</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span> <span class="o">=</span> <span class="n">NestedSampler</span><span class="p">(</span><span class="n">log_likelihood_fn</span><span class="p">,</span> <span class="n">prior_transform</span><span class="p">,</span> <span class="n">n_dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"dynesty"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>   <span class="c1"># log_evidence, samples, weights</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="psiphy.mcmc.nested_sampler.NestedSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.mcmc.nested_sampler.</span></span><span class="sig-name descname"><span class="pre">NestedSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_likelihood_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_transform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dynesty'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_live</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/nested_sampler.html#NestedSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.nested_sampler.NestedSampler" title="Link to this definition"></a></dt>
+<dd><p>Backend-agnostic nested sampling wrapper.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_likelihood_fn</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">log_likelihood_fn(theta)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p></li>
+<li><p><strong>prior_transform</strong> (<em>callable</em><em> or </em><a class="reference internal" href="utils.html#psiphy.utils.prior.BasePrior" title="psiphy.utils.prior.BasePrior"><em>psiphy.utils.prior.BasePrior</em></a>) – Maps a point in the unit hypercube to parameter space. A prior object
+is accepted directly; its <code class="docutils literal notranslate"><span class="pre">prior_transform</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim</span></code> and <code class="docutils literal notranslate"><span class="pre">names</span></code>
+are used.</p></li>
+<li><p><strong>n_dim</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of parameters. Inferred when <em>prior_transform</em> is a prior object.</p></li>
+<li><p><strong>backend</strong> (<em>{&quot;dynesty&quot;</em><em>, </em><em>&quot;nautilus&quot;}</em>)</p></li>
+<li><p><strong>n_live</strong> (<em>int</em>) – Number of live points.</p></li>
+<li><p><strong>param_names</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>pool</strong> (object with a <code class="docutils literal notranslate"><span class="pre">map</span></code> method, optional) – For parallel likelihood evaluation. With dynesty also pass <code class="docutils literal notranslate"><span class="pre">queue_size</span></code>.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><em>optional</em>) – Random seed for the sampler and for equal-weight resampling.</p></li>
+<li><p><strong>**kwargs</strong> – Extra keyword arguments for the backend’s sampler constructor
+(<code class="docutils literal notranslate"><span class="pre">dynesty.NestedSampler</span></code> or <code class="docutils literal notranslate"><span class="pre">nautilus.Sampler</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.nested_sampler.NestedSampler.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dlogz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">run_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/nested_sampler.html#NestedSampler.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.nested_sampler.NestedSampler.run" title="Link to this definition"></a></dt>
+<dd><p>Run the sampler to convergence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dlogz</strong> (<em>float</em>) – Stopping tolerance. For dynesty this is the remaining evidence
+<code class="docutils literal notranslate"><span class="pre">dlogz</span></code>; for nautilus it is used as <code class="docutils literal notranslate"><span class="pre">f_live</span></code> (fraction of
+evidence in the live set).</p></li>
+<li><p><strong>progress</strong> (<em>bool</em>) – Print backend progress.</p></li>
+<li><p><strong>**run_kwargs</strong> – Extra keyword arguments for <code class="docutils literal notranslate"><span class="pre">run_nested</span></code> (dynesty) or <code class="docutils literal notranslate"><span class="pre">run</span></code> (nautilus).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.nested_sampler.NestedSampler.get_result">
+<span class="sig-name descname"><span class="pre">get_result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/nested_sampler.html#NestedSampler.get_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.nested_sampler.NestedSampler.get_result" title="Link to this definition"></a></dt>
+<dd><p>Unified results dictionary (same keys for every backend).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">log_evidence</span></code>, <code class="docutils literal notranslate"><span class="pre">log_evidence_err</span></code> (None for nautilus),
+<code class="docutils literal notranslate"><span class="pre">samples</span></code> (n, n_dim), normalised <code class="docutils literal notranslate"><span class="pre">weights</span></code> (n,),
+<code class="docutils literal notranslate"><span class="pre">log_likelihood</span></code> (n,), <code class="docutils literal notranslate"><span class="pre">equal_weight_samples</span></code>, <code class="docutils literal notranslate"><span class="pre">ess</span></code>, <code class="docutils literal notranslate"><span class="pre">backend</span></code>.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.mcmc.nested_sampler.NestedSampler.to_getdist">
+<span class="sig-name descname"><span class="pre">to_getdist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/mcmc/nested_sampler.html#NestedSampler.to_getdist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.mcmc.nested_sampler.NestedSampler.to_getdist" title="Link to this definition"></a></dt>
+<dd><p>Weighted <code class="docutils literal notranslate"><span class="pre">getdist.MCSamples</span></code> of the posterior.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>

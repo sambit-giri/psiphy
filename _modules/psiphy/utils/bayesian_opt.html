@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psiphy.utils.bayesian_opt &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">psiphy.utils.bayesian_opt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for psiphy.utils.bayesian_opt</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">Bayesian-optimisation helpers built on scikit-learn Gaussian processes.</span>
+
+<span class="sd">Acquisition functions return values to **maximise**. Each takes the candidate</span>
+<span class="sd">points, a fitted ``GaussianProcessRegressor``, the incumbent ``y_best`` and a</span>
+<span class="sd">``minimize`` flag stating whether the underlying objective is minimised</span>
+<span class="sd">(e.g. a BOLFI discrepancy) or maximised (e.g. an LFIRE posterior).</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">&gt;&gt;&gt; gpr = GaussianProcessRegressor(Matern(nu=2.5), normalize_y=True).fit(X, y)</span>
+<span class="sd">&gt;&gt;&gt; x_next = propose_location(gpr, bounds, acquisition="EI", X_sample=X, y_sample=y)</span>
+<span class="sd">&gt;&gt;&gt; batch = propose_location(gpr, bounds, acquisition="LCB", X_sample=X, y_sample=y, batch_size=4)</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span> <span class="k">as</span> <span class="n">_scipy_minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">helpers</span> <span class="k">as</span> <span class="n">hf</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Acquisition functions</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_improvement</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">minimize</span><span class="p">):</span>
+    <span class="n">mu</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">return_std</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">imp</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_best</span> <span class="o">-</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span> <span class="k">if</span> <span class="n">minimize</span> <span class="k">else</span> <span class="p">(</span><span class="n">mu</span> <span class="o">-</span> <span class="n">y_best</span> <span class="o">-</span> <span class="n">xi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">imp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sd</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="expected_improvement">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.expected_improvement">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">expected_improvement</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Expected improvement over *y_best*."""</span>
+    <span class="n">imp</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="n">_improvement</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">minimize</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">imp</span> <span class="o">/</span> <span class="n">sd</span>
+    <span class="k">return</span> <span class="n">imp</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">+</span> <span class="n">sd</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="probability_of_improvement">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.probability_of_improvement">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">probability_of_improvement</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Probability of improving on *y_best* by at least *xi*."""</span>
+    <span class="n">imp</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="n">_improvement</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">minimize</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">imp</span> <span class="o">/</span> <span class="n">sd</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="confidence_bound">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.confidence_bound">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">confidence_bound</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">gpr</span><span class="p">,</span> <span class="n">y_best</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="mf">1.96</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    GP confidence bound: ``-(mu - kappa*sd)`` (LCB) when minimising,</span>
+<span class="sd">    ``mu + kappa*sd`` (UCB) when maximising. Larger *kappa* explores more.</span>
+<span class="sd">    """</span>
+    <span class="n">mu</span><span class="p">,</span> <span class="n">sd</span> <span class="o">=</span> <span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">return_std</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">mu</span> <span class="o">-</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">sd</span><span class="p">)</span> <span class="k">if</span> <span class="n">minimize</span> <span class="k">else</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">sd</span></div>
+
+
+
+<span class="n">ACQUISITIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"EI"</span><span class="p">:</span> <span class="n">expected_improvement</span><span class="p">,</span>
+    <span class="s2">"PI"</span><span class="p">:</span> <span class="n">probability_of_improvement</span><span class="p">,</span>
+    <span class="s2">"LCB"</span><span class="p">:</span> <span class="n">confidence_bound</span><span class="p">,</span>
+    <span class="s2">"UCB"</span><span class="p">:</span> <span class="n">confidence_bound</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_acquisition">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.get_acquisition">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_acquisition</span><span class="p">(</span><span class="n">acquisition</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Look up an acquisition by name, or pass a callable through."""</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">acquisition</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">acquisition</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ACQUISITIONS</span><span class="p">[</span><span class="n">acquisition</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown acquisition </span><span class="si">{</span><span class="n">acquisition</span><span class="si">!r}</span><span class="s2">. "</span>
+                         <span class="sa">f</span><span class="s2">"Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">ACQUISITIONS</span><span class="p">)</span><span class="si">}</span><span class="s2"> or pass a callable."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Proposal</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_maximise</span><span class="p">(</span><span class="n">acq</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">n_candidates</span><span class="p">,</span> <span class="n">n_restarts</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Random-candidate search, then L-BFGS-B polish of the best few."""</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bounds</span><span class="p">)</span>
+    <span class="n">cand</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_candidates</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">acq</span><span class="p">(</span><span class="n">cand</span><span class="p">)</span>
+    <span class="n">best_x</span><span class="p">,</span> <span class="n">best_v</span> <span class="o">=</span> <span class="n">cand</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">vals</span><span class="p">)],</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x0</span> <span class="ow">in</span> <span class="n">cand</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">vals</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">n_restarts</span><span class="p">]]:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">_scipy_minimize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="n">acq</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">x0</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span> <span class="ow">and</span> <span class="o">-</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span> <span class="o">&gt;</span> <span class="n">best_v</span><span class="p">:</span>
+            <span class="n">best_x</span><span class="p">,</span> <span class="n">best_v</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span>
+    <span class="k">return</span> <span class="n">best_x</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fantasy_gp</span><span class="p">(</span><span class="n">gpr</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Refit *gpr* with its learned hyperparameters frozen (cheap)."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">gpr</span><span class="p">)</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">kernel</span><span class="o">=</span><span class="n">gpr</span><span class="o">.</span><span class="n">kernel_</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="propose_location">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.propose_location">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">propose_location</span><span class="p">(</span><span class="n">gpr</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="s2">"EI"</span><span class="p">,</span> <span class="n">X_sample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y_sample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_candidates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_restarts</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                     <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">acq_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Propose the next point(s) to evaluate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    gpr : fitted sklearn ``GaussianProcessRegressor``</span>
+<span class="sd">    bounds : array-like, shape (d, 2)</span>
+<span class="sd">        Search box, in the same coordinates the GP was fitted in.</span>
+<span class="sd">    acquisition : {"EI", "PI", "LCB", "UCB"} or callable</span>
+<span class="sd">        A callable must have signature ``acq(X, gpr, y_best, minimize, **acq_kwargs)``</span>
+<span class="sd">        and return values to maximise.</span>
+<span class="sd">    X_sample, y_sample : array-like</span>
+<span class="sd">        Evaluated points. Needed for EI/PI (incumbent) and for ``batch_size &gt; 1``.</span>
+<span class="sd">    batch_size : int</span>
+<span class="sd">        Number of points to return. Points after the first are chosen by the</span>
+<span class="sd">        kriging-believer heuristic: each chosen point is added to the GP with</span>
+<span class="sd">        its predicted mean as a fantasy observation, which shrinks the</span>
+<span class="sd">        uncertainty there and pushes the next pick elsewhere. Use this to run</span>
+<span class="sd">        several simulations in parallel per round.</span>
+<span class="sd">    minimize : bool</span>
+<span class="sd">        Whether the objective modelled by the GP is minimised.</span>
+<span class="sd">    n_candidates : int, optional</span>
+<span class="sd">        Random candidates scored per pick (default ``1000 * d``).</span>
+<span class="sd">    n_restarts : int</span>
+<span class="sd">        Best candidates polished with L-BFGS-B.</span>
+<span class="sd">    random_state : int or numpy Generator, optional</span>
+<span class="sd">    **acq_kwargs :</span>
+<span class="sd">        Passed to the acquisition (``xi`` for EI/PI, ``kappa`` for LCB/UCB).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray, shape (batch_size, d)</span>
+<span class="sd">    """</span>
+    <span class="n">acq_fn</span> <span class="o">=</span> <span class="n">get_acquisition</span><span class="p">(</span><span class="n">acquisition</span><span class="p">)</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="n">n_candidates</span> <span class="o">=</span> <span class="n">n_candidates</span> <span class="ow">or</span> <span class="mi">1000</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">bounds</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">X_sample</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"batch_size &gt; 1 requires X_sample and y_sample."</span><span class="p">)</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">X_sample</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X_sample</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">y_sample</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_sample</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpr</span>
+    <span class="n">picks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+        <span class="c1"># incumbent = best GP mean at evaluated points (robust to noisy observations)</span>
+        <span class="n">y_best</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mu_seen</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">y_best</span> <span class="o">=</span> <span class="n">mu_seen</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">if</span> <span class="n">minimize</span> <span class="k">else</span> <span class="n">mu_seen</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">acquisition</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"EI"</span><span class="p">,</span> <span class="s2">"PI"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"acquisition=</span><span class="si">{</span><span class="n">acquisition</span><span class="si">!r}</span><span class="s2"> requires X_sample."</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">_maximise</span><span class="p">(</span><span class="k">lambda</span> <span class="n">Z</span><span class="p">:</span> <span class="n">acq_fn</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">y_best</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="n">minimize</span><span class="p">,</span> <span class="o">**</span><span class="n">acq_kwargs</span><span class="p">),</span>
+                      <span class="n">bounds</span><span class="p">,</span> <span class="n">n_candidates</span><span class="p">,</span> <span class="n">n_restarts</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+        <span class="n">picks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">picks</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]))</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">_fantasy_gp</span><span class="p">(</span><span class="n">gpr</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">picks</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># n-sphere geometry helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="check_inside_nsphere">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.check_inside_nsphere">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_inside_nsphere</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">bound_min</span><span class="p">,</span> <span class="n">bound_max</span><span class="p">):</span>
+    <span class="n">check</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">X</span><span class="o">-</span><span class="n">bound_min</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">bound_max</span><span class="o">-</span><span class="n">bound_min</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span><span class="o">&gt;</span><span class="mi">1</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">X</span><span class="o">-</span><span class="n">bound_min</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">bound_max</span><span class="o">-</span><span class="n">bound_min</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">check</span><span class="o">&lt;</span><span class="mf">0.25</span></div>
+
+
+<div class="viewcode-block" id="draw_nsphere_surface">
+<a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.bayesian_opt.draw_nsphere_surface">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_nsphere_surface</span><span class="p">(</span><span class="n">bound_min</span><span class="p">,</span> <span class="n">bound_max</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bound_min</span><span class="p">)</span>
+    <span class="n">ri</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">N</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">dims</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="n">ri</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">ri</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">N</span><span class="p">)))</span>
+    <span class="n">ri</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">ri</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">N</span><span class="p">)))</span>
+    <span class="n">ri</span> <span class="o">=</span> <span class="n">ri</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hf</span><span class="o">.</span><span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">thet</span><span class="p">)</span> <span class="k">for</span> <span class="n">thet</span> <span class="ow">in</span> <span class="n">ri</span><span class="p">])</span>
+    <span class="n">yi</span> <span class="o">=</span> <span class="p">(</span><span class="n">xi</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">bound_max</span><span class="o">-</span><span class="n">bound_min</span><span class="p">)</span><span class="o">+</span><span class="n">bound_min</span>
+    <span class="k">return</span> <span class="n">yi</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

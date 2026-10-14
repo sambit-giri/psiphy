@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>psiphy.mcmc.nested_sampler &mdash; psiphy  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            psiphy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils.html">psiphy.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/sbi.html">psiphy.sbi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/mcmc.html">psiphy.mcmc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/forecasting.html">psiphy.forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/plotting.html">psiphy.plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/toy_models.html">psiphy.toy_models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">psiphy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">psiphy.mcmc.nested_sampler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for psiphy.mcmc.nested_sampler</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">Nested sampling with interchangeable backends.</span>
+
+<span class="sd">Supported backends: ``"dynesty"`` (static nested sampling) and ``"nautilus"``</span>
+<span class="sd">(neural-network-boosted importance nested sampling).</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">&gt;&gt;&gt; sampler = NestedSampler(log_likelihood_fn, prior_transform, n_dim=3, backend="dynesty")</span>
+<span class="sd">&gt;&gt;&gt; sampler.run()</span>
+<span class="sd">&gt;&gt;&gt; result = sampler.get_result()   # log_evidence, samples, weights</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">_BACKENDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"dynesty"</span><span class="p">,</span> <span class="s2">"nautilus"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resample_equal</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Systematic resampling of a weighted sample set to equal weights."""</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span> <span class="n">positions</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">samples</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+
+
+<div class="viewcode-block" id="NestedSampler">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.nested_sampler.NestedSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NestedSampler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Backend-agnostic nested sampling wrapper.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    log_likelihood_fn : callable</span>
+<span class="sd">        ``log_likelihood_fn(theta) -&gt; float``.</span>
+<span class="sd">    prior_transform : callable or psiphy.utils.prior.BasePrior</span>
+<span class="sd">        Maps a point in the unit hypercube to parameter space. A prior object</span>
+<span class="sd">        is accepted directly; its ``prior_transform``, ``ndim`` and ``names``</span>
+<span class="sd">        are used.</span>
+<span class="sd">    n_dim : int, optional</span>
+<span class="sd">        Number of parameters. Inferred when *prior_transform* is a prior object.</span>
+<span class="sd">    backend : {"dynesty", "nautilus"}</span>
+<span class="sd">    n_live : int</span>
+<span class="sd">        Number of live points.</span>
+<span class="sd">    param_names : list of str, optional</span>
+<span class="sd">    pool : object with a ``map`` method, optional</span>
+<span class="sd">        For parallel likelihood evaluation. With dynesty also pass ``queue_size``.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Random seed for the sampler and for equal-weight resampling.</span>
+<span class="sd">    **kwargs :</span>
+<span class="sd">        Extra keyword arguments for the backend's sampler constructor</span>
+<span class="sd">        (``dynesty.NestedSampler`` or ``nautilus.Sampler``).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_likelihood_fn</span><span class="p">,</span> <span class="n">prior_transform</span><span class="p">,</span> <span class="n">n_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">"dynesty"</span><span class="p">,</span>
+                 <span class="n">n_live</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_BACKENDS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown backend </span><span class="si">{</span><span class="n">backend</span><span class="si">!r}</span><span class="s2">. Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_BACKENDS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prior_transform</span><span class="p">,</span> <span class="s2">"prior_transform"</span><span class="p">):</span>
+            <span class="n">prior</span> <span class="o">=</span> <span class="n">prior_transform</span>
+            <span class="n">prior_transform</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">prior_transform</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">ndim</span> <span class="k">if</span> <span class="n">n_dim</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">n_dim</span>
+            <span class="n">param_names</span> <span class="o">=</span> <span class="n">param_names</span> <span class="ow">or</span> <span class="n">prior</span><span class="o">.</span><span class="n">names</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"n_dim is required when prior_transform is a plain function."</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood_fn</span> <span class="o">=</span> <span class="n">log_likelihood_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_transform</span> <span class="o">=</span> <span class="n">prior_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_live</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_live</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">param_names</span><span class="p">)</span> <span class="k">if</span> <span class="n">param_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># ---- running ----</span>
+
+<div class="viewcode-block" id="NestedSampler.run">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.nested_sampler.NestedSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dlogz</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">run_kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Run the sampler to convergence.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dlogz : float</span>
+<span class="sd">            Stopping tolerance. For dynesty this is the remaining evidence</span>
+<span class="sd">            ``dlogz``; for nautilus it is used as ``f_live`` (fraction of</span>
+<span class="sd">            evidence in the live set).</span>
+<span class="sd">        progress : bool</span>
+<span class="sd">            Print backend progress.</span>
+<span class="sd">        **run_kwargs :</span>
+<span class="sd">            Extra keyword arguments for ``run_nested`` (dynesty) or ``run`` (nautilus).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self</span>
+<span class="sd">        """</span>
+        <span class="n">runner</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"dynesty"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_dynesty</span><span class="p">,</span> <span class="s2">"nautilus"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_nautilus</span><span class="p">}[</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="o">=</span> <span class="n">runner</span><span class="p">(</span><span class="n">dlogz</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_dynesty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">dynesty</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">"backend='dynesty' requires dynesty: pip install 'psiphy[mcmc]'"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+        <span class="n">kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nlive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_live</span><span class="p">,</span> <span class="n">rstate</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">),</span> <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">)</span>
+        <span class="n">kw</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_transform</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">dlogz</span><span class="o">=</span><span class="n">dlogz</span><span class="p">,</span> <span class="n">print_progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">run_kwargs</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">results</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_package</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">logwt</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">logl</span><span class="p">,</span>
+                             <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">logz</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">logzerr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_nautilus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">nautilus</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">"backend='nautilus' requires nautilus-sampler: pip install 'psiphy[mcmc]'"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">nautilus</span><span class="o">.</span><span class="n">Sampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood_fn</span><span class="p">,</span>
+                                        <span class="n">n_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_live</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_live</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span>
+                                        <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">run_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"discard_exploration"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">f_live</span><span class="o">=</span><span class="n">dlogz</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">run_kwargs</span><span class="p">)</span>
+        <span class="n">points</span><span class="p">,</span> <span class="n">log_w</span><span class="p">,</span> <span class="n">log_l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">posterior</span><span class="p">()</span>
+        <span class="c1"># nautilus provides no evidence error; its documented accuracy scales as 1/sqrt(n_eff)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_package</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">log_w</span><span class="p">,</span> <span class="n">log_l</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">log_z</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_package</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">log_w</span><span class="p">,</span> <span class="n">log_l</span><span class="p">,</span> <span class="n">log_z</span><span class="p">,</span> <span class="n">log_z_err</span><span class="p">):</span>
+        <span class="n">log_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">log_w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_w</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">log_w</span><span class="p">))</span>
+        <span class="n">weights</span> <span class="o">/=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"log_evidence"</span><span class="p">:</span> <span class="n">log_z</span><span class="p">,</span>
+            <span class="s2">"log_evidence_err"</span><span class="p">:</span> <span class="n">log_z_err</span><span class="p">,</span>
+            <span class="s2">"samples"</span><span class="p">:</span> <span class="n">samples</span><span class="p">,</span>
+            <span class="s2">"weights"</span><span class="p">:</span> <span class="n">weights</span><span class="p">,</span>
+            <span class="s2">"log_likelihood"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">log_l</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span>
+            <span class="s2">"equal_weight_samples"</span><span class="p">:</span> <span class="n">_resample_equal</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">rng</span><span class="p">),</span>
+            <span class="s2">"ess"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span><span class="p">)),</span>
+            <span class="s2">"backend"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># ---- outputs ----</span>
+
+<div class="viewcode-block" id="NestedSampler.get_result">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.nested_sampler.NestedSampler.get_result">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Unified results dictionary (same keys for every backend).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            ``log_evidence``, ``log_evidence_err`` (None for nautilus),</span>
+<span class="sd">            ``samples`` (n, n_dim), normalised ``weights`` (n,),</span>
+<span class="sd">            ``log_likelihood`` (n,), ``equal_weight_samples``, ``ess``, ``backend``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Call run() first."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result</span></div>
+
+
+<div class="viewcode-block" id="NestedSampler.to_getdist">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.nested_sampler.NestedSampler.to_getdist">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_getdist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Weighted ``getdist.MCSamples`` of the posterior."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">getdist</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCSamples</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">names</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="ow">or</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"p</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">MCSamples</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">res</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">res</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">],</span>
+                         <span class="n">loglikes</span><span class="o">=-</span><span class="n">res</span><span class="p">[</span><span class="s2">"log_likelihood"</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
+                         <span class="n">labels</span><span class="o">=</span><span class="n">labels</span> <span class="ow">or</span> <span class="n">names</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sambit Giri.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

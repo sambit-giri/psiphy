@@ -87,7 +87,7 @@
 <a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.helpers.loading_verbose">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">loading_verbose</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
 	<span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="n">string</span><span class="p">)</span>
-	<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">msg</span><span class="p">)</span>
+	<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'</span><span class="se">\r</span><span class="s1">'</span><span class="o">+</span><span class="n">msg</span><span class="p">)</span>
 	<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
 
 
@@ -105,19 +105,19 @@
 <div class="viewcode-block" id="save_model">
 <a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.helpers.save_model">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">save_model</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-	<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+	<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span>
 	<span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
 	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-	<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Model saved at&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+	<span class="nb">print</span><span class="p">(</span><span class="s1">'Model saved at'</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_model">
 <a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.helpers.load_model">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-	<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+	<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
 	<span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-	<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Model read&#39;</span><span class="p">)</span>
+	<span class="nb">print</span><span class="p">(</span><span class="s1">'Model read'</span><span class="p">)</span>
 	<span class="k">return</span> <span class="n">data</span></div>
 
 

@@ -85,7 +85,7 @@
 <div class="viewcode-block" id="kl_divergence">
 <a class="viewcode-back" href="../../../api/utils.html#psiphy.utils.distances.kl_divergence">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">kl_divergence</span><span class="p">(</span><span class="n">p_probs</span><span class="p">,</span> <span class="n">q_probs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;KL (p || q)&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""""KL (p || q)"""</span>
     <span class="n">kl_div</span> <span class="o">=</span> <span class="n">p_probs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_probs</span> <span class="o">/</span> <span class="n">q_probs</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">kl_div</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">kl_div</span><span class="p">)])</span></div>
 

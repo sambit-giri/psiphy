@@ -116,6 +116,18 @@ posterior diagnostics.</p>
 <li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.sampling_space.MC_sampling"><code class="docutils literal notranslate"><span class="pre">MC_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.sampling_space.MCS_nsphere"><code class="docutils literal notranslate"><span class="pre">MCS_nsphere()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.sampling_space.LHS_nsphere"><code class="docutils literal notranslate"><span class="pre">LHS_nsphere()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.prior.BasePrior"><code class="docutils literal notranslate"><span class="pre">BasePrior</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.prior.UniformPrior"><code class="docutils literal notranslate"><span class="pre">UniformPrior</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.prior.LogUniformPrior"><code class="docutils literal notranslate"><span class="pre">LogUniformPrior</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.prior.GaussianPrior"><code class="docutils literal notranslate"><span class="pre">GaussianPrior</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.prior.MixturePrior"><code class="docutils literal notranslate"><span class="pre">MixturePrior</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.expected_improvement"><code class="docutils literal notranslate"><span class="pre">expected_improvement()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.probability_of_improvement"><code class="docutils literal notranslate"><span class="pre">probability_of_improvement()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.confidence_bound"><code class="docutils literal notranslate"><span class="pre">confidence_bound()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.get_acquisition"><code class="docutils literal notranslate"><span class="pre">get_acquisition()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.propose_location"><code class="docutils literal notranslate"><span class="pre">propose_location()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.check_inside_nsphere"><code class="docutils literal notranslate"><span class="pre">check_inside_nsphere()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#psiphy.utils.bayesian_opt.draw_nsphere_surface"><code class="docutils literal notranslate"><span class="pre">draw_nsphere_surface()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api/sbi.html">psiphy.sbi</a><ul>
@@ -127,24 +139,19 @@ posterior diagnostics.</p>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt"><code class="docutils literal notranslate"><span class="pre">LFIRE_BayesianOpt</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.lfire.LFIRE_BayesianOpt_ShrinkSpace"><code class="docutils literal notranslate"><span class="pre">LFIRE_BayesianOpt_ShrinkSpace</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.lfire.LFIRE"><code class="docutils literal notranslate"><span class="pre">LFIRE</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.dict_get_remove"><code class="docutils literal notranslate"><span class="pre">dict_get_remove()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.read_sampler_emcee"><code class="docutils literal notranslate"><span class="pre">read_sampler_emcee()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.get_chain_emcee"><code class="docutils literal notranslate"><span class="pre">get_chain_emcee()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.BOLFI"><code class="docutils literal notranslate"><span class="pre">BOLFI</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.importance_sampling"><code class="docutils literal notranslate"><span class="pre">importance_sampling()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.sequential_importance_sampling"><code class="docutils literal notranslate"><span class="pre">sequential_importance_sampling()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.bolfi.SMC_sampling"><code class="docutils literal notranslate"><span class="pre">SMC_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.abc_gp.tqdm"><code class="docutils literal notranslate"><span class="pre">tqdm()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/sbi.html#psiphy.sbi.abc_gp.ABC_gpL"><code class="docutils literal notranslate"><span class="pre">ABC_gpL</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api/mcmc.html">psiphy.mcmc</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.tqdm"><code class="docutils literal notranslate"><span class="pre">tqdm()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.UniformPrior"><code class="docutils literal notranslate"><span class="pre">UniformPrior</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.eff_sample_size"><code class="docutils literal notranslate"><span class="pre">eff_sample_size()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.importance_sampling"><code class="docutils literal notranslate"><span class="pre">importance_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.sequential_importance_sampling"><code class="docutils literal notranslate"><span class="pre">sequential_importance_sampling()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.importance_sampling.SMC"><code class="docutils literal notranslate"><span class="pre">SMC()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.mh_sampler.MHSampler"><code class="docutils literal notranslate"><span class="pre">MHSampler</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mcmc.html#psiphy.mcmc.nested_sampler.NestedSampler"><code class="docutils literal notranslate"><span class="pre">NestedSampler</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api/forecasting.html">psiphy.forecasting</a><ul>

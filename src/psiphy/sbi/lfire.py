@@ -1,377 +1,264 @@
+"""
+LFIRE — Likelihood-Free Inference by Ratio Estimation (Thomas et al. 2022,
+Bayesian Analysis 17, 1).
+
+For a parameter value theta, simulated data from ``p(x | theta)`` and from the
+marginal ``p(x)`` (prior predictive) are separated with a logistic-regression
+classifier. Its log-odds estimate the log density ratio
+
+    log r(x, theta) = log p(x | theta) - log p(x),
+
+so ``p(theta | x_obs) ∝ prior(theta) * r(x_obs, theta)``. Each evaluation costs
+``n_theta`` simulations plus one classifier fit, so LFIRE either evaluates a grid
+directly (low dimensions) or learns a GP surrogate of the log ratio with Bayesian
+optimisation and samples that, as in BOLFI.
+
+Examples
+--------
+>>> lfire = LFIRE(simulator, x_obs, {'mu': (0, 3), 'sigma': (0.1, 2.5)}, summary=my_summaries)
+>>> lfire.learn_posterior(n_calls=60)
+>>> samples = lfire.sample_posterior(5000)
+"""
+
+import inspect
+
 import numpy as np
-from sklearn.model_selection import KFold
-try:
-    from scipy.integrate import simpson as simps
-except ImportError:
-    from scipy.integrate import simps
-import warnings 
-warnings.filterwarnings("ignore")
-from ..utils import distances
-from ..utils import helpers as hf
-from ..utils import bayesian_opt as bopt
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
 
-def _grid_bounds(bounds, n_grid=20):
-	def add_dim_to_grid(bound, n_grid=100, init_grid=None):
-		if init_grid is None:
-			final_grid = np.linspace(bound[0], bound[1], n_grid)
-		else:
-			final_grid = [np.append(gg,nn) if type(gg)==np.ndarray else [gg,nn] for gg in init_grid for nn in np.linspace(bound[0], bound[1], n_grid)]
-		return np.array(final_grid)
-	ndim_param = bounds.shape[0]
-	grid = add_dim_to_grid(bounds[0], n_grid=n_grid, init_grid=None)
-	if ndim_param==1: return grid
-	for bound in bounds[1:]:
-		grid = add_dim_to_grid(bound, n_grid=n_grid, init_grid=grid)
-	return grid
+from ._surrogate import SurrogateInference
 
 
-class LFIRE_core:
-	def __init__(self, simulator, observation, prior, bounds, sim_out_den=None, n_m=100, n_theta=100, n_grid_out=100, thetas=None, verbose=True, penalty='l1', n_jobs=4, clfy=None):
-		#self.N_init  = N_init
-		self.simulator = simulator
-		#self.distance  = distance
-		self.verbose = verbose
-		self.penalty = penalty
-		self.y_obs = observation
-		self.param_names = [kk for kk in prior]
-		self.param_bound = bounds
-		self.bounds = np.array([bounds[kk] for kk in self.param_names])
-		self.n_m = n_m
-		self.n_theta = n_theta
-		self.n_grid_out = n_grid_out
-		self.n_jobs = n_jobs
-		self.clfy   = clfy
+def _logistic_cv(penalty, n_jobs, random_state):
+    """Cross-validated logistic regression on standardised features."""
+    from sklearn.linear_model import LogisticRegressionCV
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
 
-		if sim_out_den is not None: 
-			self.sim_out_den = sim_out_den
-			self.n_theta = sim_out_den.shape[0]
-		else: 
-			self.sim_denominator()  
-
-		if thetas is None: self.theta_grid()
-		else: self.thetas = thetas 
-
-	def sample_prior(self, kk):
-		return self.param_bound[kk][0]+(self.param_bound[kk][1]-self.param_bound[kk][0])*np.random.uniform()
-
-	def theta_grid(self):
-		self.thetas = _grid_bounds(self.bounds, n_grid=self.n_grid_out)
-
-	def sim_denominator(self):
-		print('Simulating the marginalisation data set.')
-		params  = np.array([[self.sample_prior(kk) for kk in self.param_names] for i in range(self.n_m)]).squeeze()
-		self.sim_out_den = np.array([self.simulator(i) for i in params])
-
-	def sim_numerator(self, theta, n_theta):
-		self.sim_out_num = np.array([self.simulator(theta) for i in range(self.n_theta)])
-
-	def ratio(self, theta, sim_out_num=None, get_score=False):
-		n_m = self.sim_out_den.shape[0]
-		if sim_out_num is None:
-			self.sim_numerator(theta, self.n_theta)
-		else:
-			self.sim_out_num = sim_out_num
-		sim_out_num, sim_out_den = self.sim_out_num, self.sim_out_den
-		X = np.vstack((sim_out_num,sim_out_den))
-		y = np.hstack((np.ones(sim_out_num.shape[0]),np.zeros(sim_out_den.shape[0])))
-
-		clfy = LogisticRegressionCV(penalty=self.penalty, solver='saga', n_jobs=self.n_jobs) if self.clfy is None else self.clfy
-		clfy.fit(X, y)
-
-		sim_out_true = np.array([self.y_obs])
-		#y_pred = clfy.predict(sim_out_true), 
-		y_pred_prob  = clfy.predict_proba(sim_out_true).squeeze()
-		n_theta, n_m = sim_out_num.shape[0], sim_out_den.shape[0]
-		rr = (n_m/n_theta)*y_pred_prob[1]/y_pred_prob[0]
-		rr = 1 if rr>1 else rr
-		if get_score: return rr, clfy.score(X,y)
-		return rr
-
-	def run(self, thetas=None, n_grid_out=100, sim_out_num=None):
-		if thetas is not None: self.thetas = thetas
-		self.posterior = np.zeros(self.thetas.shape[0])
-		for i, theta in enumerate(self.thetas):
-			r0 = self.ratio(theta, sim_out_num=sim_out_num)
-			self.posterior[i] = r0
-			if self.verbose:
-				if np.array(theta).size==1: theta = [theta]
-				msg = ','.join(['{0:.3f}'.format(th) for th in theta]) 
-				print('Pr({0:}) = {1:.5f}'.format(msg,r0))
-				print('Completed: {0:.2f} %'.format(100*(i+1)/self.thetas.shape[0]))
+    kw = dict(Cs=5, cv=3, n_jobs=n_jobs, random_state=random_state)
+    if penalty == "l1":
+        # perfectly separable classes (theta far from the data) need more than liblinear's default 100
+        kw.update(solver="liblinear", max_iter=2000)
+    elif penalty != "l2":
+        raise ValueError(f"penalty must be 'l1' or 'l2', got {penalty!r}.")
+    if "use_legacy_attributes" in inspect.signature(LogisticRegressionCV).parameters:
+        # scikit-learn >= 1.8: penalty is expressed through l1_ratios
+        kw.update(l1_ratios=(1.0 if penalty == "l1" else 0.0,), use_legacy_attributes=False)
+    else:
+        kw["penalty"] = penalty
+    return make_pipeline(StandardScaler(), LogisticRegressionCV(**kw))
 
 
-class LFIRE_TrainingSetAuto:
-	def __init__(self, simulator, observation, prior, bounds, n_init=10, n_step=1, n_max=100, n_grid_out=25, thetas=None, verbose=True, penalty='l1', n_jobs=4, clfy=None, lfire=None):
-		self.n_init = n_init
-		self.n_m = None
-		self.n_theta = None
-		self.n_step  = n_step
-		self.n_max   = n_max
-		self.n_grid_out = n_grid_out
+class LFIRE(SurrogateInference):
+    """
+    Likelihood-free inference by ratio estimation.
 
-		self.simulator = simulator
-		self.verbose = verbose
-		self.penalty = penalty
-		self.y_obs  = observation
-		self.prior  = prior
-		self.bounds = bounds
-		self.thetas = thetas
-		self.n_jobs = n_jobs
-		self.clfy   = clfy
+    Parameters
+    ----------
+    simulator : callable
+        ``simulator(theta) -> x`` (array-like).
+    observation : array-like
+        Observed data, in the same format as the simulator output.
+    prior : list of (low, high), dict name -> (low, high), or prior object
+    n_m : int
+        Simulations from the marginal (prior predictive), drawn once and reused.
+    n_theta : int
+        Simulations at each parameter value evaluated.
+    summary : callable, optional
+        ``summary(x) -> 1-D features`` used by the classifier. Defaults to the
+        flattened data. The log ratio is linear in these features, so include
+        nonlinear terms (e.g. squares) when the data distribution changes shape
+        with theta.
+    penalty : {"l1", "l2"}
+        Regularisation of the default classifier (cross-validated). ``"l1"``
+        follows the paper and selects among many candidate summaries;
+        ``"l2"`` is several times faster when there are few summaries.
+    classifier : sklearn classifier, optional
+        Replaces the default; must provide ``decision_function`` (log-odds).
+        It is cloned for every evaluation.
+    acquisition : {"UCB", "EI", "PI"} or callable
+        Acquisition for :meth:`learn_posterior` (maximising the log ratio).
+    clip_log_ratio : float or None
+        The GP surrogate is fitted to ``max(log_r, max(log_r) - clip_log_ratio)``.
+        Far from the posterior the classes separate perfectly and the log
+        ratio becomes hugely negative (limited only by regularisation); without
+        the floor those values dominate the GP and widen the posterior. Points
+        below the floor carry less than ``exp(-clip_log_ratio)`` of the peak
+        posterior density. ``None`` disables it.
+    bounds : list of (low, high), optional
+        Search box; defaults to the prior bounds.
+    param_names : list of str, optional
+    n_jobs : int
+        Workers for the classifier's cross-validation.
+    random_state : int, optional
+        Seed for the classifier.
+    verbose : bool
+    """
 
-		self.lfire = LFIRE if lfire is None else lfire
+    _minimize = False
+    _config_keys = ("n_theta",)
+    _saved_arrays = ("X_marginal",)
 
-	def run(self, thetas=None, n_grid_out=100, sim_out_num=None):
-		self.clfy_score_mean = {}
-		#self.Ns = []
-		Ns_m = np.arange(self.n_init, self.n_max, self.n_step).astype(int)
-		Ns_theta = np.arange(self.n_init, self.n_max, self.n_step).astype(int)
-		for ni_m in Ns_m:
-			for ni_t in Ns_theta:
-				self.lfi = self.lfire(self.simulator, self.y_obs, self.prior, self.bounds, sim_out_den=None, n_m=ni_m, n_theta=ni_t, n_grid_out=self.n_grid_out, thetas=thetas, verbose=self.verbose, penalty=self.penalty, n_jobs=self.n_jobs, clfy=self.clfy)
-				if thetas is not None: self.lfi.thetas = thetas
-				self.lfi.posterior = np.zeros(self.lfi.thetas.shape[0])
-				self.clfy_score = np.zeros(self.lfi.thetas.shape[0])
-				for i, theta in enumerate(self.lfi.thetas):
-					r0, s0 = self.lfi.ratio(theta, sim_out_num=sim_out_num, get_score=True)
-					self.lfi.posterior[i] = r0
-					self.clfy_score[i] = s0
-					if self.verbose:
-						if np.array(theta).size==1: theta = [theta]
-						msg = ','.join(['{0:.3f}'.format(th) for th in theta]) 
-						print('Pr({0:}) = {1:.5f}'.format(msg,r0))
-						print('Completed: {0:.2f} %'.format(100*(i+1)/self.lfi.thetas.shape[0]))
-				print(ni_m,ni_t,self.clfy_score.mean())
-				self.clfy_score_mean[ni_m,ni_t] = self.clfy_score.mean()
+    def __init__(self, simulator, observation, prior, n_m=500, n_theta=500, summary=None,
+                 penalty="l1", classifier=None, acquisition="UCB", clip_log_ratio=20.0,
+                 bounds=None, param_names=None, n_jobs=1, random_state=None, verbose=True):
+        super().__init__(prior, acquisition, bounds=bounds, param_names=param_names, verbose=verbose)
+        if classifier is None:
+            _logistic_cv(penalty, n_jobs, random_state)  # validate penalty early
+        self.simulator = simulator
+        self.summary = summary if summary is not None else np.ravel
+        self.x_obs = self._features(observation)
+        self.n_m = int(n_m)
+        self.n_theta = int(n_theta)
+        self.penalty = penalty
+        self.classifier = classifier
+        self.n_jobs = n_jobs
+        self.random_state = random_state
+        self.clip_log_ratio = clip_log_ratio
+        self.X_marginal = None
+        self.thetas = None
+        self.posterior = None
 
+    # ---- ratio estimation ----
 
+    def _features(self, x):
+        return np.ravel(np.asarray(self.summary(x), dtype=float))
 
-class LFIRE_BayesianOpt:
-	def __init__(self, simulator, observation, prior, bounds, sim_out_den=None, n_m=100, n_theta=100, n_grid_out=100, thetas=None, n_init=10, max_iter=1000, tol=1e-5, verbose=True, penalty='l1', n_jobs=4, clfy=None, lfire=None, simulate_corner=True, exploitation_exploration=None, sigma_tol=0.001, model_pdf=None, params=None):
-		self.n_init     = n_init
-		self.max_iter   = max_iter
-		self.tol        = tol
-		self.n_m        = n_m 
-		self.n_theta    = n_theta
-		self.n_grid_out = n_grid_out
+    def _simulate(self, thetas):
+        return np.array([self._features(self.simulator(t)) for t in thetas])
 
-		self.simulator = simulator
-		self.verbose   = verbose
-		self.penalty   = penalty
-		self.y_obs  = observation
-		self.prior  = prior
-		self.bounds = bounds
-		self.thetas = thetas
-		self.n_jobs = n_jobs
-		self.clfy   = clfy
-		self.exploitation_exploration = exploitation_exploration
-		self.sigma_tol = sigma_tol
+    def simulate_marginal(self):
+        """Simulate the marginal (prior-predictive) set once; reused by every evaluation."""
+        if self.X_marginal is None:
+            self._print(f"Simulating {self.n_m} marginal data sets.")
+            self.X_marginal = self._simulate(self.prior.sample(self.n_m))
+        return self.X_marginal
 
-		self.lfire = LFIRE if lfire is None else lfire
-		if model_pdf is None:
-			kernel = Matern(length_scale=1.0, length_scale_bounds=(1e-3, 10.0), nu=1.5)
-			model_pdf = GaussianProcessRegressor(kernel=kernel)
-		self.gpr = model_pdf
+    def _make_classifier(self):
+        if self.classifier is not None:
+            from sklearn.base import clone
+            return clone(self.classifier)
+        return _logistic_cv(self.penalty, self.n_jobs, self.random_state)
 
-		self.lfi = self.lfire(self.simulator, self.y_obs, self.prior, self.bounds, sim_out_den=sim_out_den, n_m=self.n_m, n_theta=self.n_theta, n_grid_out=self.n_grid_out, thetas=thetas, verbose=self.verbose, penalty=self.penalty, n_jobs=self.n_jobs, clfy=self.clfy)
-		self.theta_out = self.lfi.thetas
+    def log_ratio(self, theta, return_score=False):
+        """
+        Estimate ``log r(x_obs, theta) = log p(x_obs | theta) - log p(x_obs)``.
 
-		params_corner = self.corner_to_theta() if simulate_corner else None
-		if params is None:
-			self.params   = np.array([[self.lfi.sample_prior(kk) for kk in self.lfi.param_names] for i in range(self.n_init if params_corner is None else self.n_init-params_corner.shape[0])]).squeeze()
-		else:
-			self.params   = params[:self.n_init,:]
-		if params_corner is not None: self.params = np.concatenate((params_corner, self.params), axis=0)
+        Parameters
+        ----------
+        theta : array-like, shape (n_dim,)
+        return_score : bool
+            Also return the classifier's training accuracy. Values near 0.5
+            mean data at *theta* are indistinguishable from the marginal.
 
-		self.JS_dist = []
-		self.posterior_theta = []
+        Returns
+        -------
+        float, or (float, float) with *return_score*
+        """
+        theta = np.asarray(theta, dtype=float)
+        X_m = self.simulate_marginal()
+        X_t = self._simulate(np.repeat(theta[None, :], self.n_theta, axis=0))
+        X = np.vstack([X_t, X_m])
+        y = np.r_[np.ones(len(X_t)), np.zeros(len(X_m))]
+        clf = self._make_classifier().fit(X, y)
+        # log-odds -> density ratio, correcting for the class sizes
+        log_r = float(clf.decision_function(self.x_obs[None, :])[0]) + np.log(len(X_m) / len(X_t))
+        if return_score:
+            return log_r, float(clf.score(X, y))
+        return log_r
 
-	def corner_to_theta(self):
-		pa = _grid_bounds(self.lfi.bounds, n_grid=2)
-		return pa
+    def _objective(self, theta):
+        return self.log_ratio(theta)
 
-	def _adjust_shape(self, abc):
-		return abc.reshape(-1,1) if abc.ndim==1 else abc
+    # ---- direct grid evaluation ----
 
-	def run(self, max_iter=None, tol=None):
-		if max_iter is not None: self.max_iter = max_iter
-		if tol is not None: self.tol = tol
-		# Initial grid
-		self.posterior_params = np.zeros(self.params.shape[0])
-		if len(self.posterior_theta)==0: #start_iter<self.n_init:
-			print('Initializing in a coarse parameter space.')
-			for i, theta in enumerate(self.params):
-				r0 = self.lfi.ratio(theta)
-				self.posterior_params[i] = r0
-				if self.verbose:
-					if np.array(theta).size==1: theta = [theta]
-					msg = ','.join(['{0:.3f}'.format(th) for th in theta]) 
-					print('Pr({0:}) = {1:.5f}'.format(msg,r0))
-					print('Completed: {0:.2f} %'.format(100*(i+1)/self.max_iter))
+    def _grid(self, n_grid):
+        axes = [np.linspace(lo, hi, n_grid) for lo, hi in self.bounds]
+        return np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1).reshape(-1, self.n_dim)
 
-		X, y = self._adjust_shape(self.params), self.posterior_params
-		self.gpr.fit(X, y)
-		posterior_theta_next, sigma_theta = self.gpr.predict(self._adjust_shape(self.theta_out), return_std=True)
-		posterior_theta_next[posterior_theta_next<0] = 0
-		posterior_theta_next[posterior_theta_next>1] = 1
-		self.posterior_theta.append(posterior_theta_next)
+    def _store_grid(self, thetas, log_post):
+        log_post = np.asarray(log_post, dtype=float)
+        p = np.exp(log_post - np.max(log_post))
+        self.thetas = thetas[:, 0] if self.n_dim == 1 else thetas
+        self.posterior = p / p.sum()
+        return self.thetas, self.posterior
 
-		# Next points
-		print('Further sampling the parameter space with Bayesian Optimisation.')
-		start_iter = self.params.size
-		condition1 = False
-		for n_iter in range(start_iter,self.max_iter):
-			if condition1: 
-				print('Stopped as extreme tolerance reached.')
-				break
+    def run_grid(self, n_grid=20, thetas=None):
+        """
+        Evaluate the log ratio directly at every grid point (no surrogate).
 
-			if self.sigma_tol is not None:
-				self.exploitation_exploration = 1./self.sigma_tol if np.any(sigma_theta>self.sigma_tol) else 1.
-			X_next = bopt.propose_location(self.gpr, self.lfi.bounds, acquisition="UCB", X_sample=self._adjust_shape(self.params), y_sample=self.posterior_params, minimize=False, n_restarts=10, kappa=self.exploitation_exploration)
-			self.params = np.vstack((self._adjust_shape(self.params), X_next))
-			r_next = self.lfi.ratio(self.params[-1])
-			self.posterior_params = np.hstack((self.posterior_params, r_next))
-	
-			posterior_theta_old  = self.posterior_theta[-1]
-			X, y = self._adjust_shape(self.params), self.posterior_params
-			self.gpr.fit(X, y)
-			posterior_theta_next, sigma_theta = self.gpr.predict(self._adjust_shape(self.theta_out), return_std=True)
-			posterior_theta_next[posterior_theta_next<0] = 0
-			posterior_theta_next[posterior_theta_next>1] = 1
-			self.posterior_theta.append(posterior_theta_next)
-			js = distances.jensenshannon(posterior_theta_old, posterior_theta_next)
-			self.JS_dist.append(js)
+        Costs ``n_theta`` simulations per point, so this suits one or two
+        parameters. Results: ``self.thetas``, ``self.log_ratios`` and the
+        normalised grid posterior ``self.posterior`` (also used by
+        :func:`psiphy.plotting.corner.plot_lfire`).
 
-			if self.verbose:
-				msg = ','.join(['{0:.3f}'.format(th) for th in self.params[-1]]) 
-				print('Pr({0:}) = {1:.5f}'.format(msg,r_next))
-				print('JS = {0:.5f}'.format(js))
-				print('Completed: {0:.2f} %'.format(100*(n_iter+1)/self.max_iter))
+        Returns
+        -------
+        thetas, posterior
+        """
+        thetas = self._grid(n_grid) if thetas is None else np.atleast_2d(np.asarray(thetas, dtype=float))
+        if thetas.shape[1] != self.n_dim:
+            thetas = thetas.reshape(-1, self.n_dim)
+        self.log_ratios = np.array([self.log_ratio(t) for t in thetas])
+        log_prior = np.atleast_1d(self.prior.log_prob(thetas))
+        return self._store_grid(thetas, self.log_ratios + log_prior)
 
-			condition1 = js<self.tol
+    # ---- GP surrogate ----
 
-		self.posterior = self.posterior_theta[-1]
-		self.thetas    = self.theta_out
-		self.param_names = self.lfi.param_names
+    def _fit_gp(self, random_state=None):
+        from ._surrogate import fit_gp
+        y = self.y if self.clip_log_ratio is None else np.maximum(self.y, self.y.max() - self.clip_log_ratio)
+        self.gp = fit_gp(self._to_unit(self.X), y, random_state)
+        return self.gp
 
+    def log_likelihood(self, theta):
+        """Surrogate log ratio (the log-likelihood up to a constant)."""
+        return self._predict(theta)
 
-class LFIRE_BayesianOpt_ShrinkSpace:
-	def __init__(self, simulator, observation, prior, bounds, sim_out_den=None, n_m=100, n_theta=100, n_grid_out=100, thetas=None, n_init=10, max_iter=1000, shrink_condition={'CI':95, 'n':5}, tol=1e-5, verbose=True, penalty='l1', n_jobs=4, clfy=None, lfire=None, simulate_corner=True, exploitation_exploration=1):
-		self.n_init     = n_init
-		self.tol        = tol
-		self.n_m        = n_m 
-		self.n_theta    = n_theta
-		self.n_grid_out = n_grid_out
+    def learn_posterior(self, n_calls=60, n_initial_points=None, batch_size=1, filename=None,
+                        reset_model=False, random_state=None, n_candidates=None, **acq_kwargs):
+        """
+        Learn a GP surrogate of the log ratio with Bayesian optimisation.
 
-		self.shrink_CI = shrink_CI
-		self.max_iter  = [max_iter for i in range(len(shrink_CI)+1)] if isinstance(max_iter, (int)) else max_iter
-		self.max_iter_tot = np.array(self.max_iter).sum()
+        Evaluations concentrate where the log ratio is high, i.e. in the
+        posterior bulk. Afterwards use :meth:`sample_posterior` or
+        :meth:`posterior_grid`.
 
-		self.simulator = simulator
-		self.verbose   = verbose
-		self.penalty   = penalty
-		self.y_obs  = observation
-		self.prior  = prior
-		self.bounds = bounds
-		self.thetas = thetas
-		self.n_jobs = n_jobs
-		self.clfy   = clfy
-		self.exploitation_exploration = exploitation_exploration
+        Parameters
+        ----------
+        n_calls : int
+            New log-ratio evaluations (each costs ``n_theta`` simulations).
+        n_initial_points : int, optional
+            Latin-hypercube initial design size; default ``5 * n_dim``.
+        batch_size : int
+            Points proposed per round (kriging believer).
+        filename : str, optional
+            Pickle file to resume from (unless *reset_model*) and save to. It
+            also stores the marginal simulations.
+        reset_model : bool
+        random_state : int, optional
+        n_candidates : int, optional
+        **acq_kwargs :
+            e.g. ``kappa`` for UCB (default 1.96), ``xi`` for EI/PI.
 
-		self.lfire = LFIRE if lfire is None else lfire
-		self.gpr = GaussianProcessRegressor()
+        Returns
+        -------
+        self
+        """
+        self._print(f"Learning the log ratio with Bayesian optimisation ({self.acquisition})...")
+        self._learn(n_calls, n_initial_points, batch_size, filename, reset_model,
+                    random_state, n_candidates, **acq_kwargs)
+        self._print("...done")
+        return self
 
-		self.lfi = self.lfire(self.simulator, self.y_obs, self.prior, self.bounds, sim_out_den=None, n_m=self.n_m, n_theta=self.n_theta, n_grid_out=self.n_grid_out, thetas=thetas, verbose=self.verbose, penalty=self.penalty, n_jobs=self.n_jobs, clfy=self.clfy)
-		self.theta_out = self.lfi.thetas
+    def posterior_grid(self, n_grid=50):
+        """
+        Normalised posterior of the surrogate on a grid.
 
-		params_corner = self.corner_to_theta() if simulate_corner else None
-		self.params   = np.array([[self.lfi.sample_prior(kk) for kk in self.lfi.param_names] for i in range(self.n_init if params_corner is None else self.n_init-params_corner.shape[0])]).squeeze()
-		if params_corner is not None: self.params = np.concatenate((params_corner, self.params), axis=0)
+        Sets ``self.thetas`` and ``self.posterior`` (for
+        :func:`psiphy.plotting.corner.plot_lfire`).
 
-		self.JS_dist = []
-		self.posterior_theta = []
-
-	def corner_to_theta(self):
-		pa = _grid_bounds(self.lfi.bounds, n_grid=2)
-		return pa
-
-	def _adjust_shape(self, abc):
-		return abc.reshape(-1,1) if abc.ndim==1 else abc
-
-	def run(self, max_iter=None, tol=None):
-		if max_iter is not None: self.max_iter = max_iter
-		if tol is not None: self.tol = tol
-		# Initial grid
-		self.posterior_params = np.zeros(self.params.shape[0])
-		if len(self.posterior_theta)==0: #start_iter<self.n_init:
-			print('Initializing in a coarse parameter space.')
-			for i, theta in enumerate(self.params):
-				r0 = self.lfi.ratio(theta)
-				self.posterior_params[i] = r0
-				if self.verbose:
-					if np.array(theta).size==1: theta = [theta]
-					msg = ','.join(['{0:.3f}'.format(th) for th in theta]) 
-					print('Pr({0:}) = {1:.5f}'.format(msg,r0))
-					print('Completed: {0:.2f} %'.format(100*(i+1)/self.max_iter_tot))
-
-		X, y = self._adjust_shape(self.params), self.posterior_params
-		self.gpr.fit(X, y)
-		posterior_theta_next = self.gpr.predict(self._adjust_shape(self.theta_out))
-		posterior_theta_next[posterior_theta_next<0] = 0
-		posterior_theta_next[posterior_theta_next>1] = 1
-		self.posterior_theta.append(posterior_theta_next)
-
-		# Next points
-		print('Further sampling the parameter space with Bayesian Optimisation.')
-		start_iter = len(self.params)
-		condition1 = False
-		for n_iter in range(start_iter,self.max_iter[0]):
-			if condition1: break
-			X_next = bopt.propose_location(self.gpr, self.lfi.bounds, acquisition="UCB", X_sample=self._adjust_shape(self.params), y_sample=self.posterior_params, minimize=False, n_restarts=10, kappa=self.exploitation_exploration)
-			self.params = np.vstack((self._adjust_shape(self.params), X_next))
-			r_next = self.lfi.ratio(self.params[-1])
-			self.posterior_params = np.hstack((self.posterior_params, r_next))
-	
-			posterior_theta_old  = self.posterior_theta[-1]
-			X, y = self._adjust_shape(self.params), self.posterior_params
-			self.gpr.fit(X, y)
-			posterior_theta_next = self.gpr.predict(self._adjust_shape(self.theta_out))
-			posterior_theta_next[posterior_theta_next<0] = 0
-			posterior_theta_next[posterior_theta_next>1] = 1
-			self.posterior_theta.append(posterior_theta_next)
-			js = distances.jensenshannon(posterior_theta_old, posterior_theta_next)
-			self.JS_dist.append(js)
-
-			if self.verbose:
-				msg = ','.join(['{0:.3f}'.format(th) for th in self.params[-1]]) 
-				print('Pr({0:}) = {1:.5f}'.format(msg,r_next))
-				print('JS = {0:.5f}'.format(js))
-				print('Completed: {0:.2f} %'.format(100*(n_iter+1)/self.max_iter_tot))
-
-			condition1 = js<self.tol
-
-		self.posterior = self.posterior_theta[-1]
-		self.thetas    = self.theta_out
-		self.param_names = self.lfi.param_names
-
-
-
-# LFIRE = LFIRE_core
-try:
-    import emcee
-    _emcee_EnsembleSampler = emcee.EnsembleSampler
-except ImportError:
-    emcee = None
-    class _emcee_EnsembleSampler:
-        pass
-
-class LFIRE(_emcee_EnsembleSampler):
-	"""docstring for LFIRE"""
-	def __init__(self, **arg):
-		super(LFIRE, self).__init__(**arg)
-		#self.arg = arg
-
-
+        Returns
+        -------
+        thetas, posterior
+        """
+        thetas = self._grid(n_grid)
+        return self._store_grid(thetas, self.log_posterior(thetas))

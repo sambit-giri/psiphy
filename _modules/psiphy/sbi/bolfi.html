@@ -94,15 +94,9 @@
 <span class="sd">&gt;&gt;&gt; samples = bolfi.sample_posterior(5000, method='MCMC')</span>
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats.qmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">LatinHypercube</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">bayesian_opt</span> <span class="k">as</span> <span class="n">bopt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..utils.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">UniformPrior</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._surrogate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurrogateInference</span>
 
 <span class="n">_LOG_KERNELS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"exp"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">d</span><span class="p">,</span>              <span class="c1"># L ∝ exp(-d/2): d plays the role of a chi^2</span>
@@ -112,7 +106,7 @@
 
 <div class="viewcode-block" id="BOLFI">
 <a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BOLFI</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BOLFI</span><span class="p">(</span><span class="n">SurrogateInference</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Bayesian Optimisation for Likelihood-Free Inference.</span>
 
@@ -132,21 +126,25 @@
 <span class="sd">        :mod:`psiphy.utils.bayesian_opt`. ``"LCB"`` follows Gutmann &amp; Corander (2016).</span>
 <span class="sd">    learn_log_dist : bool</span>
 <span class="sd">        Model ``log d`` instead of ``d`` (helps when d spans orders of magnitude).</span>
+<span class="sd">    n_repeats : int</span>
+<span class="sd">        Distance evaluations (simulations) averaged per parameter value. With a</span>
+<span class="sd">        stochastic simulator each ``d(theta)`` is noisy; averaging ``n`` of them</span>
+<span class="sd">        cuts the noise variance by ``n`` and makes the GP surrogate, and the</span>
+<span class="sd">        posterior widths, more stable from run to run. The simulations at one</span>
+<span class="sd">        theta are independent, so they can run in parallel. The extra noise in</span>
+<span class="sd">        a single-simulation ``d`` adds a roughly constant offset that cancels</span>
+<span class="sd">        in the normalised posterior.</span>
 <span class="sd">    bounds : list of (low, high), optional</span>
 <span class="sd">        Search space for the optimisation; defaults to the prior bounds.</span>
 <span class="sd">    param_names : list of str, optional</span>
 <span class="sd">    verbose : bool</span>
 <span class="sd">    """</span>
 
+    <span class="n">_minimize</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">_config_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"learn_log_dist"</span><span class="p">,</span> <span class="s2">"n_repeats"</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">prior</span><span class="p">,</span> <span class="n">distance_kernel</span><span class="o">=</span><span class="s2">"exp"</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="s2">"LCB"</span><span class="p">,</span>
-                 <span class="n">learn_log_dist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">bopt</span><span class="o">.</span><span class="n">get_acquisition</span><span class="p">(</span><span class="n">acquisition</span><span class="p">)</span>  <span class="c1"># validate early</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="s2">"log_prob"</span><span class="p">):</span>
-            <span class="n">prior</span> <span class="o">=</span> <span class="n">UniformPrior</span><span class="p">(</span><span class="n">prior</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="s2">"mins"</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Pass bounds= for a prior without mins/maxs."</span><span class="p">)</span>
-            <span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">prior</span><span class="o">.</span><span class="n">mins</span><span class="p">,</span> <span class="n">prior</span><span class="o">.</span><span class="n">maxs</span><span class="p">])</span>
+                 <span class="n">learn_log_dist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_repeats</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">distance_kernel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log_kernel</span> <span class="o">=</span> <span class="n">distance_kernel</span>
         <span class="k">elif</span> <span class="n">distance_kernel</span> <span class="ow">in</span> <span class="n">_LOG_KERNELS</span><span class="p">:</span>
@@ -154,88 +152,36 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown distance_kernel </span><span class="si">{</span><span class="n">distance_kernel</span><span class="si">!r}</span><span class="s2">. "</span>
                              <span class="sa">f</span><span class="s2">"Choose from </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_LOG_KERNELS</span><span class="p">)</span><span class="si">}</span><span class="s2"> or pass a callable."</span><span class="p">)</span>
-
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="n">acquisition</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">param_names</span><span class="o">=</span><span class="n">param_names</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_repeats</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"n_repeats must be &gt;= 1."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">distance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="n">prior</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span> <span class="o">=</span> <span class="n">acquisition</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learn_log_dist</span> <span class="o">=</span> <span class="n">learn_log_dist</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">param_names</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">prior</span><span class="p">,</span> <span class="s2">"names"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                                <span class="ow">or</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"p</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_repeats</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gp</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-    <span class="c1"># ---- surrogate ----</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_to_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_from_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_simulations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Distance evaluations (simulations) used so far."""</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)))</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_repeats</span><span class="p">)]))</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_log_dist</span> <span class="k">else</span> <span class="n">d</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_gp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.gaussian_process</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcessRegressor</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.gaussian_process.kernels</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstantKernel</span><span class="p">,</span> <span class="n">Matern</span><span class="p">,</span> <span class="n">WhiteKernel</span>
-        <span class="n">kernel</span> <span class="o">=</span> <span class="p">(</span><span class="n">ConstantKernel</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e3</span><span class="p">))</span>
-                  <span class="o">*</span> <span class="n">Matern</span><span class="p">(</span><span class="n">length_scale</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">length_scale_bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e2</span><span class="p">),</span> <span class="n">nu</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
-                  <span class="o">+</span> <span class="n">WhiteKernel</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="p">(</span><span class="mf">1e-8</span><span class="p">,</span> <span class="mf">1e1</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gp</span> <span class="o">=</span> <span class="n">GaussianProcessRegressor</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">normalize_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_restarts_optimizer</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-                                           <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConvergenceWarning</span>
-        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-            <span class="c1"># hyperparameter optimiser often hits its iteration cap on tiny designs; the fit is still usable</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">ConvergenceWarning</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gp</span>
 
 <div class="viewcode-block" id="BOLFI.predict_distance">
 <a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.predict_distance">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">predict_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">return_std</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""GP mean (and std) of the modelled discrepancy (``log d`` if ``learn_log_dist``)."""</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Call learn_likelihood() or load_likelihood_model() first."</span><span class="p">)</span>
-        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">single</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gp</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_unit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">theta</span><span class="p">)),</span> <span class="n">return_std</span><span class="o">=</span><span class="n">return_std</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="n">return_std</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">out</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">return_std</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BOLFI.log_likelihood">
 <a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.log_likelihood">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Synthetic log-likelihood ``log K(d_hat(theta))``."""</span>
-        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_distance</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_kernel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_log_dist</span> <span class="k">else</span> <span class="n">mu</span><span class="p">)</span></div>
 
-
-<div class="viewcode-block" id="BOLFI.log_posterior">
-<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.log_posterior">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">log_posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
-        <span class="n">lp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">lp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lp</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-        <span class="n">ok</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span>
-        <span class="n">out</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span> <span class="o">=</span> <span class="n">lp</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta</span><span class="p">)[</span><span class="n">ok</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">out</span></div>
-
-
-    <span class="c1"># ---- learning ----</span>
 
 <div class="viewcode-block" id="BOLFI.learn_likelihood">
 <a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.learn_likelihood">[docs]</a>
@@ -247,7 +193,8 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        n_calls : int</span>
-<span class="sd">            Number of new distance evaluations (including initial design points).</span>
+<span class="sd">            Number of new parameter values evaluated (including initial design</span>
+<span class="sd">            points); each costs ``n_repeats`` distance evaluations.</span>
 <span class="sd">        n_initial_points : int, optional</span>
 <span class="sd">            Size of the Latin-hypercube initial design; default ``5 * n_dim``.</span>
 <span class="sd">            Points already loaded from *filename* count towards it.</span>
@@ -269,129 +216,16 @@
 <span class="sd">        -------</span>
 <span class="sd">        self</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reset_model</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">load_likelihood_model</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Resuming from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2"> stored evaluations."</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">reset_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">n_initial_points</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">n_initial_points</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span>
-        <span class="n">n_init</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">n_initial_points</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span> <span class="n">n_calls</span><span class="p">))</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Learning synthetic likelihood with Bayesian optimisation (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">n_init</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_unit</span><span class="p">(</span><span class="n">LatinHypercube</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_init</span><span class="p">)))</span>
-        <span class="n">unit_box</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">remaining</span> <span class="o">=</span> <span class="n">n_calls</span> <span class="o">-</span> <span class="n">n_init</span>
-        <span class="k">while</span> <span class="n">remaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">gp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_gp</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
-            <span class="n">q</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">remaining</span><span class="p">)</span>
-            <span class="n">u</span> <span class="o">=</span> <span class="n">bopt</span><span class="o">.</span><span class="n">propose_location</span><span class="p">(</span><span class="n">gp</span><span class="p">,</span> <span class="n">unit_box</span><span class="p">,</span> <span class="n">acquisition</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span><span class="p">,</span>
-                                      <span class="n">X_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">),</span> <span class="n">y_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-                                      <span class="n">batch_size</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_candidates</span><span class="o">=</span><span class="n">n_candidates</span><span class="p">,</span>
-                                      <span class="n">random_state</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span> <span class="o">**</span><span class="n">acq_kwargs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_from_unit</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
-            <span class="n">remaining</span> <span class="o">-=</span> <span class="n">q</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_gp</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_learn</span><span class="p">(</span><span class="n">n_calls</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">reset_model</span><span class="p">,</span>
+                    <span class="n">random_state</span><span class="p">,</span> <span class="n">n_candidates</span><span class="p">,</span> <span class="o">**</span><span class="n">acq_kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="s2">"...done"</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">save_likelihood_model</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Evaluate the discrepancy at each row of *thetas* and store the results."""</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_objective</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">thetas</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">thetas</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
-
-    <span class="c1"># ---- persistence ----</span>
-
-<div class="viewcode-block" id="BOLFI.save_likelihood_model">
-<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.save_likelihood_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_likelihood_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Store the evaluated points; the GP is refitted on load."""</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">"X"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s2">"bounds"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
-                         <span class="s2">"learn_log_dist"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_log_dist</span><span class="p">},</span> <span class="n">f</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved likelihood model: </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="BOLFI.load_likelihood_model">
-<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.load_likelihood_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_likelihood_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span> <span class="ow">or</span> <span class="n">state</span><span class="p">[</span><span class="s2">"learn_log_dist"</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learn_log_dist</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> was created with different bounds or learn_log_dist."</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">"X"</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="s2">"y"</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_fit_gp</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded likelihood model with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2"> evaluations."</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-
-    <span class="c1"># ---- sampling ----</span>
-
-<div class="viewcode-block" id="BOLFI.sample_posterior">
-<a class="viewcode-back" href="../../../api/sbi.html#psiphy.sbi.bolfi.BOLFI.sample_posterior">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample_posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"MCMC"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Draw equal-weight posterior samples from the synthetic likelihood.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n_samples : int</span>
-<span class="sd">        method : {"MCMC", "NestedSampling", "IS", "SMC"}</span>
-<span class="sd">            ``"MCMC"`` uses :class:`~psiphy.mcmc.MHSampler` (kwargs: ``n_walkers``,</span>
-<span class="sd">            ``n_burn``, ``filename``, plus sampler options);</span>
-<span class="sd">            ``"NestedSampling"`` uses :class:`~psiphy.mcmc.NestedSampler`</span>
-<span class="sd">            (kwargs: ``backend``, ``n_live``, ``dlogz``, ...);</span>
-<span class="sd">            ``"IS"`` uses importance sampling with the prior as proposal;</span>
-<span class="sd">            ``"SMC"`` uses likelihood-tempered :func:`~psiphy.mcmc.SMC`.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        np.ndarray, shape (n_samples, n_dim)</span>
-<span class="sd">            The full sampler output is kept in ``self.sampler_info``.</span>
-<span class="sd">        """</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">mcmc</span>
-
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"MCMC"</span><span class="p">:</span>
-            <span class="n">n_walkers</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"n_walkers"</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
-            <span class="n">n_burn</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"n_burn"</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
-            <span class="n">n_steps</span> <span class="o">=</span> <span class="n">n_burn</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">n_samples</span> <span class="o">/</span> <span class="n">n_walkers</span><span class="p">))</span>
-            <span class="n">sampler</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">MHSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_posterior</span><span class="p">,</span> <span class="n">n_walkers</span><span class="o">=</span><span class="n">n_walkers</span><span class="p">,</span>
-                                     <span class="n">param_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="n">sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_walkers</span><span class="p">),</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span> <span class="o">=</span> <span class="n">sampler</span>
-            <span class="k">return</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_chain</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discard</span><span class="o">=</span><span class="n">n_burn</span><span class="p">)[</span><span class="o">-</span><span class="n">n_samples</span><span class="p">:]</span>
-
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"NestedSampling"</span><span class="p">:</span>
-            <span class="n">dlogz</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"dlogz"</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-            <span class="n">sampler</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">,</span>
-                                         <span class="n">param_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">dlogz</span><span class="o">=</span><span class="n">dlogz</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span> <span class="o">=</span> <span class="n">sampler</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">res</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"IS"</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">importance_sampling</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_samples</span><span class="p">),</span> <span class="n">vectorized</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span><span class="p">[</span><span class="s2">"equal_weight_samples"</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"SMC"</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"verbose"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
-            <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"vectorized"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span> <span class="o">=</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">SMC</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_likelihood</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">,</span> <span class="n">n_particles</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_info</span><span class="p">[</span><span class="s2">"equal_weight_samples"</span><span class="p">]</span>
-
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown method </span><span class="si">{</span><span class="n">method</span><span class="si">!r}</span><span class="s2">. Choose from 'MCMC', 'NestedSampling', 'IS', 'SMC'."</span><span class="p">)</span></div>
-</div>
+    <span class="c1"># names kept from the original BOLFI interface</span>
+    <span class="n">save_likelihood_model</span> <span class="o">=</span> <span class="n">SurrogateInference</span><span class="o">.</span><span class="n">save_model</span>
+    <span class="n">load_likelihood_model</span> <span class="o">=</span> <span class="n">SurrogateInference</span><span class="o">.</span><span class="n">load_model</span></div>
 
 </pre></div>
 

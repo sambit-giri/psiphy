@@ -235,7 +235,7 @@ where w_t ~ N(0, 1) i.i.d.</p>
 <p class="rubric">Notes</p>
 <p>Parameters: theta = [theta_1, theta_2].
 The prior is uniform on the MA(2) invertibility region:
-<a href="#id1"><span class="problematic" id="id2">|theta_2|</span></a> &lt; 1, theta_2 + theta_1 &gt; -1, theta_2 - theta_1 &gt; -1.</p>
+<code class="docutils literal notranslate"><span class="pre">|theta_2|</span> <span class="pre">&lt;</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">theta_2</span> <span class="pre">+</span> <span class="pre">theta_1</span> <span class="pre">&gt;</span> <span class="pre">-1</span></code>, <code class="docutils literal notranslate"><span class="pre">theta_2</span> <span class="pre">-</span> <span class="pre">theta_1</span> <span class="pre">&gt;</span> <span class="pre">-1</span></code>.</p>
 <p>The likelihood is intractable; log_prob returns None.
 Summary statistics returned by simulate: [mean, variance, lag-1 autocov, lag-2 autocov].</p>
 <dl class="py attribute">

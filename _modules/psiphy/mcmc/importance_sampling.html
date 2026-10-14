@@ -79,7 +79,9 @@
            <div itemprop="articleBody">
              
   <h1>Source code for psiphy.mcmc.importance_sampling</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_kde</span>
 
@@ -268,12 +270,12 @@
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
-<span class="c1"># SMC with annealed likelihood tempering</span>
+<span class="c1"># Sequential Monte Carlo with likelihood tempering</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="SMC">
-<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.SMC">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">SMC</span><span class="p">(</span>
+<div class="viewcode-block" id="sequential_monte_carlo">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.sequential_monte_carlo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sequential_monte_carlo</span><span class="p">(</span>
     <span class="n">log_likelihood_fn</span><span class="p">,</span>
     <span class="n">prior</span><span class="p">,</span>
     <span class="n">n_particles</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
@@ -421,6 +423,16 @@
         <span class="k">return</span> <span class="n">LedoitWolf</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">kernel</span>  <span class="c1"># assume already an estimator instance</span>
+
+
+<div class="viewcode-block" id="SMC">
+<a class="viewcode-back" href="../../../api/mcmc.html#psiphy.mcmc.importance_sampling.SMC">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SMC</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Deprecated alias of :func:`sequential_monte_carlo`; will be removed in psiphy 0.3."""</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"SMC() is renamed sequential_monte_carlo(); the old name will be removed in psiphy 0.3."</span><span class="p">,</span>
+                  <span class="ne">FutureWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sequential_monte_carlo</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>

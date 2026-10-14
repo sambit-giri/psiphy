@@ -17,10 +17,12 @@ psiphy.sbi
 .. automodule:: psiphy.sbi.lfire
    :members:
    :undoc-members:
+   :inherited-members:
 
 .. automodule:: psiphy.sbi.bolfi
    :members:
    :undoc-members:
+   :inherited-members:
 
 .. automodule:: psiphy.sbi.abc_gp
    :members:

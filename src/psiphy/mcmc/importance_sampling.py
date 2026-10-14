@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.special import logsumexp
 from scipy.stats import gaussian_kde
@@ -175,10 +177,10 @@ def sequential_importance_sampling(
 
 
 # ---------------------------------------------------------------------------
-# SMC with annealed likelihood tempering
+# Sequential Monte Carlo with likelihood tempering
 # ---------------------------------------------------------------------------
 
-def SMC(
+def sequential_monte_carlo(
     log_likelihood_fn,
     prior,
     n_particles=1000,
@@ -325,3 +327,10 @@ def _get_cov_estimator(kernel):
         return LedoitWolf()
     else:
         return kernel  # assume already an estimator instance
+
+
+def SMC(*args, **kwargs):
+    """Deprecated alias of :func:`sequential_monte_carlo`; will be removed in psiphy 0.3."""
+    warnings.warn("SMC() is renamed sequential_monte_carlo(); the old name will be removed in psiphy 0.3.",
+                  FutureWarning, stacklevel=2)
+    return sequential_monte_carlo(*args, **kwargs)

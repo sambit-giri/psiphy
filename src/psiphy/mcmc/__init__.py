@@ -3,6 +3,7 @@ from .importance_sampling import (
     eff_sample_size,
     importance_sampling,
     sequential_importance_sampling,
+    sequential_monte_carlo,
     SMC,
 )
 from .mh_sampler import MHSampler

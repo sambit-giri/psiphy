@@ -17,7 +17,7 @@ class MA2Model:
     -----
     Parameters: theta = [theta_1, theta_2].
     The prior is uniform on the MA(2) invertibility region:
-    |theta_2| < 1, theta_2 + theta_1 > -1, theta_2 - theta_1 > -1.
+    ``|theta_2| < 1``, ``theta_2 + theta_1 > -1``, ``theta_2 - theta_1 > -1``.
 
     The likelihood is intractable; log_prob returns None.
     Summary statistics returned by simulate: [mean, variance, lag-1 autocov, lag-2 autocov].

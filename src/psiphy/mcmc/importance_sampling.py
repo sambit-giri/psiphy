@@ -1,7 +1,8 @@
-import random as _random
-
 import numpy as np
+from scipy.special import logsumexp
 from scipy.stats import gaussian_kde
+
+from ..utils.prior import UniformPrior  # re-exported for backwards compatibility
 
 try:
     from tqdm.auto import tqdm
@@ -13,47 +14,6 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-class UniformPrior:
-    """
-    Box-uniform prior for use with importance sampling and SMC.
-
-    Parameters
-    ----------
-    bounds : list of (low, high) tuples, or dict mapping name -> (low, high)
-
-    Examples
-    --------
-    >>> prior = UniformPrior([(0, 1), (-2, 2)])
-    >>> prior = UniformPrior({'mu': (-5, 5), 'sigma': (0.1, 5)})
-    """
-
-    def __init__(self, bounds):
-        if isinstance(bounds, dict):
-            bounds = list(bounds.values())
-        self.bounds = np.asarray(bounds, dtype=float)
-        self.mins = self.bounds[:, 0]
-        self.maxs = self.bounds[:, 1]
-        self._log_vol = float(np.sum(np.log(self.maxs - self.mins)))
-
-    @property
-    def ndim(self):
-        return len(self.mins)
-
-    def sample(self, n=1):
-        """Draw *n* samples; returns shape (n, ndim)."""
-        return self.mins + (self.maxs - self.mins) * np.random.uniform(size=(n, self.ndim))
-
-    def log_prob(self, theta):
-        theta = np.asarray(theta)
-        if np.any(theta < self.mins) or np.any(theta > self.maxs):
-            return -np.inf
-        return -self._log_vol
-
-    def in_support(self, theta):
-        theta = np.asarray(theta)
-        return bool(np.all(theta >= self.mins) and np.all(theta <= self.maxs))
-
 
 def eff_sample_size(weights):
     """
@@ -76,11 +36,24 @@ def eff_sample_size(weights):
     return 1.0 / float(np.sum(w ** 2))
 
 
+def _result(samples, weights, log_evidence=None, **extra):
+    n = len(weights)
+    idx = np.random.choice(n, size=n, p=weights, replace=True)
+    return {
+        "samples": samples,
+        "weights": weights,
+        "equal_weight_samples": samples[idx],
+        "ess": eff_sample_size(weights),
+        "log_evidence": log_evidence,
+        **extra,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Importance Sampling
 # ---------------------------------------------------------------------------
 
-def importance_sampling(log_target_fn, proposal_samples, log_proposal_fn=None):
+def importance_sampling(log_target_fn, proposal_samples, log_proposal_fn=None, vectorized=False):
     """
     Basic importance sampling.
 
@@ -94,40 +67,38 @@ def importance_sampling(log_target_fn, proposal_samples, log_proposal_fn=None):
     log_proposal_fn : callable or None
         Log of the proposal density evaluated at each sample.
         ``None`` assumes a uniform (constant) proposal.
+    vectorized : bool
+        If True, ``log_target_fn`` (and ``log_proposal_fn``) accept a batch of
+        shape (n, d) and return shape (n,), so all particles are evaluated in
+        one call.
 
     Returns
     -------
-    samples : np.ndarray, shape (n, d)
-        Particles resampled proportionally to the importance weights.
-    weights : np.ndarray, shape (n,)
-        Normalised importance weights (sum to 1).
-
-    Notes
-    -----
-    ESS can be computed with :func:`eff_sample_size`.
+    dict
+        ``samples`` : (n, d) final weighted particles.
+        ``weights`` : (n,) normalised weights, aligned with ``samples``.
+        ``equal_weight_samples`` : (n, d) particles resampled by weight;
+        use these where unweighted draws are needed.
+        ``ess`` : effective sample size of ``weights``.
+        ``log_evidence`` : log marginal likelihood estimate, or None.
+        ``samples`` are the proposal samples themselves. ``log_evidence`` is
+        given only when ``log_proposal_fn`` is supplied (it needs the
+        normalised proposal density).
 
     Examples
     --------
     >>> prior = UniformPrior([(-3, 3), (0.1, 3)])
-    >>> proposal_samples = prior.sample(2000)
-    >>> samples, w = importance_sampling(log_posterior, proposal_samples)
+    >>> res = importance_sampling(log_posterior, prior.sample(2000), log_proposal_fn=prior.log_prob)
+    >>> np.average(res["samples"], weights=res["weights"], axis=0)
     """
     proposal_samples = np.asarray(proposal_samples)
-    n = len(proposal_samples)
 
-    log_w = np.array([log_target_fn(s) for s in proposal_samples])
-
+    log_w = _batch_eval(log_target_fn, proposal_samples, vectorized)
+    log_z = None
     if log_proposal_fn is not None:
-        log_w -= np.array([log_proposal_fn(s) for s in proposal_samples])
-
-    # numerically stable: shift by max before exp
-    log_w -= np.nanmax(log_w)
-    log_w = np.where(np.isfinite(log_w), log_w, -np.inf)
-    w = np.exp(log_w)
-    w /= w.sum()
-
-    idx = np.random.choice(n, size=n, p=w, replace=True)
-    return proposal_samples[idx], w
+        log_w -= _batch_eval(log_proposal_fn, proposal_samples, vectorized)
+        log_z = _log_mean_exp(log_w)
+    return _result(proposal_samples, _normalise_log_weights(log_w), log_z)
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +113,7 @@ def sequential_importance_sampling(
     kernel="EmpiricalCovariance",
     ess_threshold=0.5,
     verbose=True,
+    vectorized=False,
 ):
     """
     Sequential importance sampling with MCMC move kernel.
@@ -164,19 +136,24 @@ def sequential_importance_sampling(
     ess_threshold : float
         Resample when ESS / n_particles falls below this fraction.
     verbose : bool
+    vectorized : bool
+        If True, ``log_target_fn`` accepts a batch (n, d) and returns (n,).
 
     Returns
     -------
-    samples : np.ndarray, shape (n_particles, d)
-    weights : np.ndarray, shape (n_particles,)
+    dict
+        ``samples`` : (n, d) final weighted particles.
+        ``weights`` : (n,) normalised weights, aligned with ``samples``.
+        ``equal_weight_samples`` : (n, d) particles resampled by weight;
+        use these where unweighted draws are needed.
+        ``ess`` : effective sample size of ``weights``.
+        ``log_evidence`` : log marginal likelihood estimate, or None.
+        ``log_evidence`` is always None for SIS.
     """
     cov_est = _get_cov_estimator(kernel)
 
     particles = prior.sample(n_particles)
-    log_w = np.array([log_target_fn(s) for s in particles])
-    log_w -= np.nanmax(log_w)
-    w = np.exp(np.where(np.isfinite(log_w), log_w, -np.inf))
-    w /= w.sum()
+    w = _normalise_log_weights(_batch_eval(log_target_fn, particles, vectorized))
 
     iterator = tqdm(range(n_steps), desc="SIS") if verbose else range(n_steps)
     for step in iterator:
@@ -188,18 +165,13 @@ def sequential_importance_sampling(
             idx = np.random.choice(n_particles, size=n_particles, p=w, replace=True)
             particles = particles[idx]
             cov = 2.0 * cov_est.fit(particles).covariance_
-            perturbed = np.array([
-                np.random.multivariate_normal(p, cov) for p in particles
-            ])
+            perturbed = _gaussian_perturb(particles, cov)
             kde = gaussian_kde(perturbed.T)
-            log_w = np.array([log_target_fn(s) for s in perturbed]) - np.log(kde(perturbed.T))
-            log_w -= np.nanmax(log_w)
-            w = np.exp(np.where(np.isfinite(log_w), log_w, -np.inf))
-            w /= w.sum()
+            log_w = _batch_eval(log_target_fn, perturbed, vectorized) - np.log(kde(perturbed.T))
+            w = _normalise_log_weights(log_w)
             particles = perturbed
 
-    idx = np.random.choice(n_particles, size=n_particles, p=w, replace=True)
-    return particles[idx], w
+    return _result(particles, w)
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +186,7 @@ def SMC(
     kernel="EmpiricalCovariance",
     ess_threshold=0.5,
     verbose=True,
+    vectorized=False,
 ):
     """
     Sequential Monte Carlo via likelihood tempering.
@@ -237,13 +210,21 @@ def SMC(
     ess_threshold : float
         Fraction of n_particles below which resampling + MCMC move fires.
     verbose : bool
+    vectorized : bool
+        If True, ``log_likelihood_fn`` accepts a batch (n, d) and returns (n,).
 
     Returns
     -------
-    samples : np.ndarray, shape (n_particles, d)
-        Unweighted posterior samples (after final resampling).
-    weights : np.ndarray, shape (n_particles,)
-        Final normalised importance weights.
+    dict
+        ``samples`` : (n, d) final weighted particles.
+        ``weights`` : (n,) normalised weights, aligned with ``samples``.
+        ``equal_weight_samples`` : (n, d) particles resampled by weight;
+        use these where unweighted draws are needed.
+        ``ess`` : effective sample size of ``weights``.
+        ``log_evidence`` : log marginal likelihood estimate, or None.
+        ``log_evidence`` is the standard SMC estimate (sum over temperature
+        steps of the log mean incremental weight); it requires a normalised
+        ``log_likelihood_fn`` and prior. Also returns ``log_likelihood`` (n,).
 
     Notes
     -----
@@ -256,19 +237,21 @@ def SMC(
 
     # initialise from prior
     particles = prior.sample(n_particles)
-    log_likes = np.array([log_likelihood_fn(s) for s in particles])
+    log_likes = _batch_eval(log_likelihood_fn, particles, vectorized)
+    log_priors = _batch_eval(prior.log_prob, particles, _accepts_batch(prior))
     w = np.ones(n_particles) / n_particles
+    log_z = 0.0
 
     iterator = tqdm(range(1, n_steps + 1), desc="SMC") if verbose else range(1, n_steps + 1)
     for t in iterator:
         delta = betas[t] - betas[t - 1]
 
-        # incremental weight update
-        log_incr = delta * log_likes
-        log_incr -= np.nanmax(log_incr)
-        w_incr = np.exp(np.where(np.isfinite(log_incr), log_incr, -np.inf))
-        w = w * w_incr
-        w /= w.sum()
+        # incremental weight update; log Z_t / Z_{t-1} = log sum_i w_i * L_i^delta
+        log_incr = np.where(np.isfinite(log_likes), delta * log_likes, -np.inf)
+        with np.errstate(divide="ignore"):
+            log_wt = np.log(w) + log_incr
+        log_z += logsumexp(log_wt)
+        w = _normalise_log_weights(log_wt)
 
         ess = eff_sample_size(w)
         if verbose and hasattr(iterator, "set_postfix"):
@@ -279,31 +262,59 @@ def SMC(
             idx = np.random.choice(n_particles, size=n_particles, p=w, replace=True)
             particles = particles[idx]
             log_likes = log_likes[idx]
+            log_priors = log_priors[idx]
             w = np.ones(n_particles) / n_particles
 
-            # MCMC move (Gaussian random walk)
+            # MCMC move (Gaussian random walk), all particles at once
             cov = 2.38 ** 2 / particles.shape[1] * cov_est.fit(particles).covariance_
-            for i in range(n_particles):
-                proposal = np.random.multivariate_normal(particles[i], cov)
-                log_lp_prop = log_likelihood_fn(proposal)
-                log_prior_prop = prior.log_prob(proposal)
-                log_prior_cur = prior.log_prob(particles[i])
-                log_accept = (
-                    betas[t] * (log_lp_prop - log_likes[i])
-                    + (log_prior_prop - log_prior_cur)
-                )
-                if np.log(np.random.uniform()) < log_accept:
-                    particles[i] = proposal
-                    log_likes[i] = log_lp_prop
+            proposals = _gaussian_perturb(particles, cov)
+            log_priors_prop = _batch_eval(prior.log_prob, proposals, _accepts_batch(prior))
+            log_likes_prop = np.full(n_particles, -np.inf)
+            inside = np.isfinite(log_priors_prop)  # skip likelihood calls outside the prior
+            if inside.any():
+                log_likes_prop[inside] = _batch_eval(log_likelihood_fn, proposals[inside], vectorized)
+            with np.errstate(invalid="ignore"):
+                log_accept = betas[t] * (log_likes_prop - log_likes) + (log_priors_prop - log_priors)
+            accept = np.log(np.random.uniform(size=n_particles)) < log_accept
+            particles[accept] = proposals[accept]
+            log_likes[accept] = log_likes_prop[accept]
+            log_priors[accept] = log_priors_prop[accept]
 
-    # final resample to get unweighted draws
-    idx = np.random.choice(n_particles, size=n_particles, p=w, replace=True)
-    return particles[idx], w
+    return _result(particles, w, float(log_z), log_likelihood=log_likes)
 
 
 # ---------------------------------------------------------------------------
 # Internal
 # ---------------------------------------------------------------------------
+
+def _batch_eval(fn, X, vectorized):
+    """Evaluate *fn* on every row of *X*; one batched call if *vectorized*."""
+    if vectorized:
+        return np.asarray(fn(X), dtype=float).reshape(len(X))
+    return np.array([fn(x) for x in X], dtype=float)
+
+
+def _accepts_batch(prior):
+    from ..utils.prior import BasePrior
+    return isinstance(prior, BasePrior)
+
+
+def _log_mean_exp(log_w):
+    log_w = np.where(np.isfinite(log_w), log_w, -np.inf)
+    return float(logsumexp(log_w) - np.log(len(log_w)))
+
+
+def _normalise_log_weights(log_w):
+    log_w = np.where(np.isfinite(log_w), log_w, -np.inf)
+    w = np.exp(log_w - np.max(log_w))
+    return w / w.sum()
+
+
+def _gaussian_perturb(particles, cov):
+    """Draw one N(particle, cov) sample per particle in a single matrix operation."""
+    chol = np.linalg.cholesky(cov + 1e-12 * np.eye(len(cov)))
+    return particles + np.random.standard_normal(particles.shape) @ chol.T
+
 
 def _get_cov_estimator(kernel):
     if kernel == "EmpiricalCovariance":

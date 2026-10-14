@@ -57,3 +57,6 @@ Issues = "https://github.com/sambit-giri/psiphy/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

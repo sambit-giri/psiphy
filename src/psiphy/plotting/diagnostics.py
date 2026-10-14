@@ -547,7 +547,10 @@ class PosteriorComparison:
         return None
 
     def plot_boxplot(self, levels=(68, 95), figsize=None,
-                     markersize=8, linewidth=2):
+                     markersize=8, linewidth=2, label_fontsize=13,
+                     xlabel_fontsize=None, xticklabel_fontsize=None,
+                     yticklabel_fontsize=None,
+                     title_fontsize=None, title=None, title_y=1.01):
         """Horizontal boxplot of credible intervals.
 
         Box = inner CI (levels[0]), whiskers = outer CI (levels[1]).
@@ -572,6 +575,11 @@ class PosteriorComparison:
         labels = self._entries[0]['posterior']._param_labels()
         lo_lv, hi_lv = levels[0], levels[1] if len(levels) > 1 else levels[0]
         box_h = 0.45
+
+        _xlabel_fs = xlabel_fontsize if xlabel_fontsize is not None else label_fontsize
+        _xtick_fs = xticklabel_fontsize if xticklabel_fontsize is not None else label_fontsize
+        _ytick_fs = yticklabel_fontsize if yticklabel_fontsize is not None else label_fontsize
+        _title_fs = title_fontsize if title_fontsize is not None else label_fontsize
 
         fig, axes = plt.subplots(1, nd, figsize=figsize or (4 * nd + 2, n * 0.4 + 2),
                                  sharey=True)
@@ -606,12 +614,16 @@ class PosteriorComparison:
             tv = self._first_true_values()
             if tv is not None and p < len(tv):
                 ax.axvline(tv[p], color='gray', ls='--', lw=1.5)
-            ax.set_xlabel(f'${labels[p]}$', fontsize=13)
+            ax.set_xlabel(f'${labels[p]}$', fontsize=_xlabel_fs)
+            ax.tick_params(axis='x', labelsize=_xtick_fs)
             if p == 0:
                 ax.set_yticks(range(n))
-                ax.set_yticklabels([e['label'] for e in self._entries])
+                ax.set_yticklabels([e['label'] for e in self._entries],
+                                   fontsize=_ytick_fs)
             ax.invert_yaxis()
 
+        if title is not None:
+            fig.suptitle(title, fontsize=_title_fs, y=title_y)
         fig.tight_layout()
         return fig
 

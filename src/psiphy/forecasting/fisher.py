@@ -84,6 +84,8 @@ class FisherMatrix:
         self.C_inv = None
         self.hartlap = None
         self.dmu_dtheta = None
+        self.dmu_samples_ns = None
+        self.dmu_samples_ic = None
         self.F = None
         self.F_inv = None
         self.F_std = None
@@ -92,16 +94,48 @@ class FisherMatrix:
     # ---- Parallel worker helpers ----
 
     @staticmethod
-    def _run_seed_jobs(seed, noise_seeds, simulator, theta, sim_kwargs):
-        """Worker: run all noise_seeds for one IC seed. In-memory coeval cache reused within job."""
-        return [(seed, ns, np.asarray(simulator(theta, seed, ns, **sim_kwargs)))
-                for ns in noise_seeds]
-
-    @staticmethod
     def _run_theta_seed_jobs(theta_step, seed, noise_seeds, simulator, sim_kwargs):
         """Worker: run all noise_seeds for one (theta_step, IC seed) pair."""
         return [(seed, ns, np.asarray(simulator(theta_step, seed, ns, **sim_kwargs)))
                 for ns in noise_seeds]
+
+    def _prerun_parallel(self, thetas, seeds, noise_seeds, n_jobs, desc):
+        """
+        Run every uncached (theta, seed, noise_seed) simulation with joblib and
+        store the results in the cache. No-op when ``n_jobs == 1`` or joblib is
+        missing; callers then simulate serially through ``_simulate_cached``.
+
+        One job per (theta, IC seed) pair runs all its noise_seeds, so the
+        simulator's in-memory coeval cache is reused within each job.
+
+        Returns
+        -------
+        int
+            Number of (theta, seed) jobs run.
+        """
+        if n_jobs == 1 or not _JOBLIB_AVAILABLE:
+            return 0
+        jobs = {}
+        for theta in thetas:
+            for seed in seeds:
+                key = (tuple(np.round(theta, 10)), seed)
+                if key not in jobs and any(
+                    self._cache_key(theta, seed, ns) not in self._cache for ns in noise_seeds
+                ):
+                    jobs[key] = (np.array(theta, dtype=float), seed)
+        self._print(f"  Parallel mode (n_jobs={n_jobs}): {len(jobs)} (theta, seed) jobs to run")
+        if not jobs:
+            return 0
+        all_results = Parallel(n_jobs=n_jobs)(
+            _jdelayed(FisherMatrix._run_theta_seed_jobs)(t, s, noise_seeds, self.simulator, self.sim_kwargs)
+            for t, s in tqdm(jobs.values(), desc=desc)
+        )
+        for (t, _), triplets in zip(jobs.values(), all_results):
+            for seed, ns, x in triplets:
+                self._cache.setdefault(self._cache_key(t, seed, ns), x)
+        if self.cache_file is not None:
+            self._save_cache()
+        return len(jobs)
 
     # ---- Internals ----
 
@@ -152,7 +186,8 @@ class FisherMatrix:
 
     # ---- Cache utilities ----
 
-    def run_simulations(self, theta=None, seeds=range(1, 11), noise_seeds=range(10), save=True):
+    def run_simulations(self, theta=None, seeds=range(1, 11), noise_seeds=range(10), save=True,
+                        n_jobs=1):
         """
         Pre-run and cache simulations.
 
@@ -166,6 +201,8 @@ class FisherMatrix:
             Noise seeds.
         save : bool
             Save cache to file after running.
+        n_jobs : int
+            Number of parallel workers (joblib). -1 uses all CPUs.
 
         Returns
         -------
@@ -184,6 +221,10 @@ class FisherMatrix:
         self._print(f"  Running simulations — {n_total} total")
         self._print(f"{'='*50}")
 
+        n_before = len(self._cache)
+        self._prerun_parallel([theta], seeds, noise_seeds, n_jobs, desc="Simulating")
+        n_parallel = len(self._cache) - n_before
+
         theta_str = "[" + ", ".join(f"{v:.3g}" for v in theta) + "]"
         for seed in (pbar := tqdm(seeds, desc="Simulating")):
             for ns in noise_seeds:
@@ -195,6 +236,8 @@ class FisherMatrix:
                     self._simulate_cached(theta, seed, ns)
                     n_new += 1
 
+        # simulations just run in parallel were counted as cached by the loop above
+        n_new, n_cached = n_new + n_parallel, n_cached - n_parallel
         self._print(f"  New: {n_new}, From cache: {n_cached}")
         if save and n_new > 0:
             self._save_cache()
@@ -271,30 +314,8 @@ class FisherMatrix:
         self._print(f"  Estimating covariance matrix")
         self._print(f"{'='*50}")
 
-        if n_jobs != 1 and _JOBLIB_AVAILABLE:
-            # One job per IC seed; each job runs all noise_seeds so that the
-            # simulator's in-memory coeval cache is reused across noise realisations.
-            seeds_to_run = [s for s in seeds if any(
-                self._cache_key(self.theta_fid, s, ns) not in self._cache
-                for ns in noise_seeds
-            )]
-            n_skip = len(seeds) - len(seeds_to_run)
-            self._print(f"  Parallel mode (n_jobs={n_jobs}): "
-                        f"{len(seeds_to_run)} seeds to run, {n_skip} already cached")
-            if seeds_to_run:
-                all_results = Parallel(n_jobs=n_jobs)(
-                    _jdelayed(FisherMatrix._run_seed_jobs)(
-                        s, noise_seeds, self.simulator, self.theta_fid, self.sim_kwargs
-                    )
-                    for s in tqdm(seeds_to_run, desc="Simulating realisations")
-                )
-                for seed_results in all_results:
-                    for seed, ns, x in seed_results:
-                        key = self._cache_key(self.theta_fid, seed, ns)
-                        if key not in self._cache:
-                            self._cache[key] = x
-                if self.cache_file is not None:
-                    self._save_cache()
+        self._prerun_parallel([self.theta_fid], seeds, noise_seeds, n_jobs,
+                              desc="Simulating realisations")
 
         fid_str = "[" + ", ".join(f"{v:.3g}" for v in self.theta_fid) + "]"
         for seed in (pbar := tqdm(seeds, desc="Simulating realisations")):
@@ -362,6 +383,7 @@ class FisherMatrix:
         delta_frac=0.01,
         seeds=range(1, 11),
         noise_seed=0,
+        noise_seeds=None,
         n_stencil=2,
         use_crn=False,
         n_jobs=1,
@@ -371,12 +393,24 @@ class FisherMatrix:
 
         Parameters
         ----------
-        delta_frac : float
-            Fractional step size h relative to the fiducial value.
+        delta_frac : float, dict, or array-like
+            Fractional step size h relative to the fiducial value. A dict
+            keyed by parameter name (or an array in param order) sets a
+            per-parameter step, so weakly responding parameters can use
+            larger steps to beat down stochastic derivative noise (~1/h)
+            without inflating truncation error for the others.
         seeds : iterable
             Seeds to average over for stable derivatives.
         noise_seed : int or None
             Noise seed for derivatives (0 = noiseless; None = average over 10).
+            Ignored if `noise_seeds` is given.
+        noise_seeds : iterable or None
+            Explicit list of noise seeds to average the derivatives over.
+            Use this for summaries whose expectation depends on the noise level
+            (non-additive statistics): with a seeded simulator, each noise seed
+            gives the identical noise realisation at every stencil point, so the
+            noise cancels in the differences while its suppression of the signal
+            response is retained.
         n_stencil : int
             Stencil order: 2, 4, or 6. Higher order reduces truncation error O(h^n).
         use_crn : bool
@@ -401,6 +435,15 @@ class FisherMatrix:
         steps   = stencil_configs[n_stencil]['steps']
         seeds   = [int(s) for s in seeds]
 
+        if isinstance(delta_frac, dict):
+            df_arr = np.array([float(delta_frac[p]) for p in self.param_names])
+        elif np.isscalar(delta_frac):
+            df_arr = np.full(self.n_params, float(delta_frac))
+        else:
+            df_arr = np.asarray(delta_frac, dtype=float)
+            assert df_arr.shape == (self.n_params,), \
+                f"delta_frac array must have length {self.n_params}"
+
         if self.x_realisations is not None:
             n_data = self.x_realisations.shape[1]
         else:
@@ -408,50 +451,37 @@ class FisherMatrix:
             n_data = len(self._normalise(x_test))
 
         self.dmu_dtheta = np.zeros((self.n_params, n_data))
-        noise_seeds_deriv = [noise_seed] if noise_seed is not None else list(range(10))
+        if noise_seeds is not None:
+            noise_seeds_deriv = [int(ns) for ns in noise_seeds]
+        else:
+            noise_seeds_deriv = [noise_seed] if noise_seed is not None else list(range(10))
+
+        # Per-group derivative estimates, used by compute(debias_derivatives=True)
+        # to remove the tr(C^-1 Cov(dmu)) inflation of the Fisher matrix.
+        if use_crn:
+            self.dmu_samples_ns = None
+            self.dmu_samples_ic = None
+        else:
+            self.dmu_samples_ns = np.zeros((len(noise_seeds_deriv), self.n_params, n_data))
+            self.dmu_samples_ic = np.zeros((len(seeds), self.n_params, n_data))
 
         crn_tag = " [CRN]" if use_crn else ""
         self._print(f"\n{'='*50}")
         self._print(f"  Computing derivatives ({n_stencil}-point stencil{crn_tag})")
         self._print(f"{'='*50}")
 
-        if n_jobs != 1 and _JOBLIB_AVAILABLE:
-            # Pre-run all required (theta_step, seed) pairs in parallel.
-            # One job per (theta_step, seed); each job runs all noise_seeds_deriv
-            # so the simulator's in-memory coeval cache is reused within the job.
-            pairs_to_run = {}  # (theta_tuple, seed) → (theta_step_array, seed)
-            for j in range(self.n_params):
-                h = delta_frac * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else delta_frac
-                for s_step in steps:
-                    theta_step = self.theta_fid.copy()
-                    theta_step[j] += s_step * h
-                    theta_key = tuple(np.round(theta_step, 10))
-                    for seed in seeds:
-                        pair_key = (theta_key, seed)
-                        if pair_key not in pairs_to_run and any(
-                            self._cache_key(theta_step, seed, ns) not in self._cache
-                            for ns in noise_seeds_deriv
-                        ):
-                            pairs_to_run[pair_key] = (theta_step.copy(), seed)
-            if pairs_to_run:
-                self._print(f"  Parallel mode (n_jobs={n_jobs}): "
-                            f"{len(pairs_to_run)} (theta,seed) pairs to run")
-                all_results = Parallel(n_jobs=n_jobs)(
-                    _jdelayed(FisherMatrix._run_theta_seed_jobs)(
-                        t, s, noise_seeds_deriv, self.simulator, self.sim_kwargs
-                    )
-                    for t, s in tqdm(pairs_to_run.values(), desc="Computing derivatives")
-                )
-                for (t, s), triplets in zip(pairs_to_run.values(), all_results):
-                    for seed, ns, x in triplets:
-                        key = self._cache_key(t, seed, ns)
-                        if key not in self._cache:
-                            self._cache[key] = x
-                if self.cache_file is not None:
-                    self._save_cache()
+        stencil_thetas = []
+        for j in range(self.n_params):
+            h = df_arr[j] * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else df_arr[j]
+            for s_step in steps:
+                theta_step = self.theta_fid.copy()
+                theta_step[j] += s_step * h
+                stencil_thetas.append(theta_step)
+        self._prerun_parallel(stencil_thetas, seeds, noise_seeds_deriv, n_jobs,
+                              desc="Computing derivatives")
 
         for j, pname in enumerate(self.param_names):
-            h = delta_frac * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else delta_frac
+            h = df_arr[j] * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else df_arr[j]
 
             if use_crn:
                 deriv_per_seed = []
@@ -468,21 +498,42 @@ class FisherMatrix:
                         deriv_per_seed.append(deriv_i / h)
                 self.dmu_dtheta[j] = np.mean(deriv_per_seed, axis=0)
             else:
-                deriv_sum = np.zeros(n_data)
-                for w, s in zip(weights, steps):
+                x_steps = np.zeros((len(steps), len(seeds), len(noise_seeds_deriv), n_data))
+                for si, s in enumerate(steps):
                     theta_step = self.theta_fid.copy()
                     theta_step[j] += s * h
                     step_str = "[" + ", ".join(f"{v:.3g}" for v in theta_step) + "]"
-                    x_step_list = []
-                    for seed in (pbar := tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False)):
-                        for ns in noise_seeds_deriv:
+                    for ki, seed in enumerate(pbar := tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False)):
+                        for ni, ns in enumerate(noise_seeds_deriv):
                             pbar.set_postfix(seed=seed, noise=ns, theta=step_str)
                             x_raw = self._simulate_cached(theta_step, seed, ns)
-                            x_step_list.append(self._normalise(x_raw))
-                    deriv_sum += w * np.mean(x_step_list, axis=0)
-                self.dmu_dtheta[j] = deriv_sum / h
+                            x_steps[si, ki, ni] = self._normalise(x_raw)
+                w_arr = np.asarray(weights)
+                self.dmu_dtheta[j] = np.tensordot(w_arr, x_steps.mean(axis=(1, 2)), axes=1) / h
+                self.dmu_samples_ns[:, j, :] = np.tensordot(w_arr, x_steps.mean(axis=1), axes=1) / h
+                self.dmu_samples_ic[:, j, :] = np.tensordot(w_arr, x_steps.mean(axis=2), axes=1) / h
 
             self._print(f"  {pname}: |dmu/dtheta| = {np.linalg.norm(self.dmu_dtheta[j]):.4f}")
+
+        if self.dmu_samples_ns is not None:
+            # Collapse antithetic pairs (ns, -ns) into single samples: pair members
+            # are anticorrelated by construction, so treating them as independent
+            # would overestimate Cov(dmu) in the debias correction.
+            ns_arr = np.array(noise_seeds_deriv)
+            used, groups = set(), []
+            for idx, ns in enumerate(ns_arr):
+                if idx in used:
+                    continue
+                partner = [p for p in np.where(ns_arr == -ns)[0] if p not in used and p != idx]
+                if ns != 0 and partner:
+                    groups.append([idx, partner[0]])
+                    used.update({idx, partner[0]})
+                else:
+                    groups.append([idx])
+                    used.add(idx)
+            if any(len(g) == 2 for g in groups):
+                self.dmu_samples_ns = np.array(
+                    [self.dmu_samples_ns[g].mean(axis=0) for g in groups])
 
         self._print(f"{'='*50}\n")
         return self
@@ -492,10 +543,12 @@ class FisherMatrix:
         delta_fracs=None,
         seeds=range(1, 11),
         noise_seed=0,
+        noise_seeds=None,
         n_stencil=2,
         use_crn=False,
         plot=True,
         restore=True,
+        n_jobs=1,
     ):
         """
         Test sensitivity of dmu/dtheta to the finite-difference step size.
@@ -520,6 +573,8 @@ class FisherMatrix:
             If True, show diagnostic plots.
         restore : bool
             Restore self.dmu_dtheta to its value before the test.
+        n_jobs : int
+            Forwarded to estimate_derivatives.
 
         Returns
         -------
@@ -537,7 +592,8 @@ class FisherMatrix:
         for df in tqdm(delta_fracs, desc="delta_frac sweep"):
             self.estimate_derivatives(
                 delta_frac=df, seeds=seeds, noise_seed=noise_seed,
-                n_stencil=n_stencil, use_crn=use_crn,
+                noise_seeds=noise_seeds, n_stencil=n_stencil, use_crn=use_crn,
+                n_jobs=n_jobs,
             )
             for j, pname in enumerate(self.param_names):
                 results[pname]['norms'].append(np.linalg.norm(self.dmu_dtheta[j]))
@@ -589,7 +645,8 @@ class FisherMatrix:
 
     # ---- Fisher computation ----
 
-    def compute(self, method='standard', n_bootstrap=0, n_split=None, shrinkage_target='diagonal'):
+    def compute(self, method='standard', n_bootstrap=0, n_split=None, shrinkage_target='diagonal',
+                debias_derivatives=False):
         """
         Compute the Fisher matrix. Results stored in self.F and self.F_inv.
 
@@ -606,6 +663,13 @@ class FisherMatrix:
             (CoultonWandelt2023 only) Size of set A. Defaults to 50/50 split.
         shrinkage_target : str
             (Shrinkage only) 'diagonal' or 'identity'.
+        debias_derivatives : bool
+            ('standard' only) Subtract the Fisher inflation caused by stochastic
+            error in the estimated derivatives, E[dm^T C^-1 dm] = F + tr(C^-1 Cov(dm)).
+            Cov(dm) is estimated from the per-noise-seed and per-IC-seed derivative
+            scatter recorded by estimate_derivatives (non-CRN path). If the debiased
+            matrix has non-positive eigenvalues, the corresponding directions carry
+            no significant information; eigenvalues are clipped with a warning.
 
         Returns
         -------
@@ -628,9 +692,52 @@ class FisherMatrix:
                              f"Choose from {list(dispatch)}.")
         dispatch[method]()
 
+        if debias_derivatives:
+            assert method == 'standard', "debias_derivatives requires method='standard'."
+            corr = self._derivative_noise_correction()
+            rel = np.abs(np.diag(corr)) / np.abs(np.diag(self.F))
+            self._print(f"  Derivative-noise correction (diag, relative to F): "
+                        f"{np.round(rel, 3)}")
+            self.F = self.F - corr
+            self.compute_method = 'standard+debias'
+            eigval, eigvec = np.linalg.eigh(self.F)
+            if np.any(eigval <= 0):
+                # Always printed, independent of self.verbose: a non-positive
+                # eigenvalue here means the debias correction (itself an
+                # estimate with sampling error) exceeded the raw signal, so at
+                # least one direction is consistent with zero information. The
+                # clip only keeps F_inv computable; it does NOT recover real
+                # information, and the resulting ellipse size/orientation along
+                # that direction is not physically meaningful.
+                print(f"  WARNING: debiased Fisher has non-positive eigenvalues; "
+                      f"those directions carry no significant information. "
+                      f"Clipping {np.sum(eigval <= 0)} eigenvalue(s). "
+                      f"Pre-clip eigenvalues: {np.round(eigval, 6)}")
+                eigval = np.clip(eigval, 1e-10 * eigval.max(), None)
+                self.F = eigvec @ np.diag(eigval) @ eigvec.T
+
         self.F_inv = np.linalg.inv(self.F)
         self._print_summary()
         return self
+
+    def _derivative_noise_correction(self):
+        """tr(C^-1 Cov(dmu_i, dmu_j)) from per-noise-seed and per-IC-seed scatter.
+
+        The two contributions (noise realisations, IC realisations) are added;
+        their small interaction term is double counted, which slightly
+        overcorrects — conservative in the constraint direction.
+        """
+        corr = np.zeros((self.n_params, self.n_params))
+        for samples in (self.dmu_samples_ns, self.dmu_samples_ic):
+            if samples is None or len(samples) < 2:
+                continue
+            N   = len(samples)
+            dev = samples - samples.mean(axis=0)     # (N, n_params, n_data)
+            for i in range(self.n_params):
+                for j in range(self.n_params):
+                    K_ij = dev[:, i, :].T @ dev[:, j, :] / (N - 1) / N
+                    corr[i, j] += np.sum(self.C_inv * K_ij)
+        return corr
 
     def _compute_standard(self):
         self.F = self.dmu_dtheta @ self.C_inv @ self.dmu_dtheta.T
@@ -1085,6 +1192,7 @@ class FisherMatrix:
             'X_std': self.X_std,
         }
         for attr in ('F', 'F_inv', 'F_std', 'C', 'C_inv', 'dmu_dtheta',
+                     'dmu_samples_ns', 'dmu_samples_ic',
                      'x_mean_fid', 'x_realisations'):
             if getattr(self, attr) is not None:
                 d[attr] = getattr(self, attr)
@@ -1119,6 +1227,7 @@ class FisherMatrix:
             **sim_kwargs,
         )
         for attr in ('F', 'F_inv', 'F_std', 'C', 'C_inv', 'dmu_dtheta',
+                     'dmu_samples_ns', 'dmu_samples_ic',
                      'x_mean_fid', 'x_realisations'):
             if attr in data:
                 setattr(obj, attr, data[attr])

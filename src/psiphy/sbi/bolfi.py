@@ -1,449 +1,290 @@
-import numpy as np
-import warnings, random
-warnings.filterwarnings("ignore")
+"""
+BOLFI — Bayesian Optimisation for Likelihood-Free Inference.
 
+A Gaussian-process surrogate of the discrepancy ``d(theta)`` between simulated
+and observed data is learned with Bayesian optimisation (Gutmann & Corander
+2016). The synthetic log-likelihood ``log K(d_hat(theta))`` is then sampled with
+any of the psiphy samplers (emcee, nested sampling, importance sampling, SMC).
+
+Examples
+--------
+>>> bolfi = BOLFI(distance_fn, {'mu': (-5, 5), 'sigma': (0.1, 5)})
+>>> bolfi.learn_likelihood(n_calls=100)
+>>> samples = bolfi.sample_posterior(5000, method='MCMC')
+"""
+
+import os
 import pickle
-from multiprocessing import Pool, cpu_count
-from glob import glob
-from time import time, sleep
-from scipy.stats import gaussian_kde
+import warnings
 
-try:
-    import emcee
-except ImportError:
-    emcee = None
+import numpy as np
+from scipy.stats.qmc import LatinHypercube
 
-try:
-    from dynesty import NestedSampler, DynamicNestedSampler
-    from dynesty.utils import resample_equal
-    from dynesty import plotting as dyplot
-except ImportError:
-    NestedSampler = DynamicNestedSampler = resample_equal = dyplot = None
-
-from ..utils import distances
 from ..utils import bayesian_opt as bopt
-from ..utils import helpers as hf
+from ..utils.prior import UniformPrior
 
-try:
-    from skopt import gp_minimize
-    from skopt import dump, load
-    from skopt import callbacks
-    from skopt.callbacks import CheckpointSaver
-except ImportError:
-    gp_minimize = dump = load = callbacks = CheckpointSaver = None
-
-try:
-    from GPyOpt.methods import BayesianOptimization
-except ImportError:
-    BayesianOptimization = None
-# BayesianOptimization = bopt.BayesianOptimization_GPyOpt
-
-def dict_get_remove(a, key, default=None, remove=True):
-	out = a.get(key, default)
-	if remove and key in a.keys(): 
-		a.pop(key)
-	return out, a
-
-def _dynesty_run(log_probability, prior_range, **kwargs):
-	space = prior_range if isinstance(prior_range,list) else [(prior_range[ke][0], prior_range[ke][1]) for ke in prior_range.keys()]
-	mins  = np.array([ii[0] for ii in space])
-	maxs  = np.array([ii[1] for ii in space])
-	def prior_transform(theta):
-		return mins + (maxs-mins)*theta
-
-	n_jobs = kwargs.get('n_jobs', 1)
-	nlive  = kwargs.get('nlive', 1024)      # number of live points
-	bound  = kwargs.get('bound', 'multi')   # use MutliNest algorithm for bounds
-	sample = kwargs.get('sample', 'unif')   # uniform sampling
-	tol  = kwargs.get('tol', 0.01)          # the stopping criterion
-	ndim = len(mins)
-
-	if n_jobs>1:
-		with Pool() as pool:
-			# sampler = NestedSampler(log_probability, prior_transform, ndim, bound=bound, sample=sample, nlive=nlive, pool=pool, queue_size=8)
-			sampler = DynamicNestedSampler(log_probability, prior_transform, ndim, bound=bound, sample=sample, pool=pool, queue_size=8)
-			t0 = time()
-			sampler.run_nested(nlive_init=nlive, dlogz_init=tol, print_progress=True) 
-			t1 = time()
-	else:
-		# sampler = NestedSampler(log_probability, prior_transform, ndim, bound=bound, sample=sample, nlive=nlive)
-		sampler = DynamicNestedSampler(log_probability, prior_transform, ndim, bound=bound, sample=sample)
-		t0 = time()
-		sampler.run_nested(nlive_init=nlive, dlogz_init=tol, print_progress=True) 
-		t1 = time()
-	timedynesty = (t1-t0)
-	print("Time taken to run 'dynesty' (in static mode) is {:.2f} seconds".format(timedynesty))
-	res = sampler.results # get results dictionary from sampler
-	# print(res.summary())
-	# draw posterior samples
-	weights = np.exp(res['logwt'] - res['logz'][-1])
-	samples_dynesty = resample_equal(res.samples, weights)
-	return {'weighted_samples': samples_dynesty, 'samples': res.samples, 'weights': weights}
-
-def _emcee_run(n_samples, nwalkers, ndim, log_probability, pos, filename, reset_sampler, n_jobs=1, **kwargs_emcee):
-	print(filename)
-	moves = kwargs_emcee.get('moves', emcee.moves.WalkMove())
-	print('Move used:', moves)
-
-	backend = emcee.backends.HDFBackend(filename) 
-	if reset_sampler or not glob(filename): 
-		backend.reset(nwalkers, ndim)
-		if n_jobs>1:
-			with Pool(n_jobs) as pool:
-				sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, backend=backend, pool=pool, moves=moves)
-				sampler.run_mcmc(pos, n_samples, progress=True);
-		else:
-			sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, backend=backend, moves=moves)
-			sampler.run_mcmc(pos, n_samples, progress=True);
-	else:
-		old_iter = backend.iteration
-		print('Previous run contains {} iterations.'.format(old_iter))
-		if n_samples>old_iter:
-			print('Continuing the chains...')
-			sleep(0.5)
-			if n_jobs>1:
-				with Pool(n_jobs) as pool:
-					sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, backend=backend, pool=pool, moves=moves)
-					sampler.run_mcmc(None, n_samples-old_iter, progress=True);
-			else:
-				sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, backend=backend, moves=moves)
-				sampler.run_mcmc(None, n_samples-old_iter, progress=True);
-		else:
-			sampler = emcee.EnsembleSampler(backend.shape[0], backend.shape[1], log_probability, backend=backend, moves=moves)
-	return sampler
-
-def read_sampler_emcee(filename=None, sampler=None):
-	if filename is not None:
-		backend = emcee.backends.HDFBackend(filename) 
-		sampler = emcee.EnsembleSampler(backend.shape[0], backend.shape[1], None, backend=backend)
-	# if sampler is None:
-	# 	sampler = self.sampler 
-	return sampler 
-
-def get_chain_emcee(discard=0, filename=None, sampler=None):
-	sampler = read_sampler_emcee(filename=filename, sampler=sampler)
-	tau = sampler.get_autocorr_time(quiet=True)
-	print('autocorr_time:', tau)
-	if discard=='tau': discard = 3*max(tau.astype(int))
-	flat_samples = sampler.get_chain(discard=discard, flat=True) 
-	flat_logprob = sampler.get_log_prob(discard=discard, flat=True) 
-	# print(flat_samples.shape, flat_logprob.shape)
-	return flat_samples, flat_logprob
+_LOG_KERNELS = {
+    "exp": lambda d: -0.5 * d,              # L ∝ exp(-d/2): d plays the role of a chi^2
+    "gaussian": lambda d: -0.5 * d**2,      # L ∝ exp(-d^2/2): d is a standardised distance
+}
 
 
-class BOLFI: 
-	''' 
-	Bayesian optimisation for Likelihood-free Inference. 
-	''' 
-	
-	def __init__(self, distance, prior_range, obs=None, distance_kernel='exp', verbose=True, package='GPyOpt', learn_log_dist=False): 
-		# self.simulator = simulator 
-		self.distance    = distance 
-		self.prior_range = prior_range 
-		if distance_kernel in [None, 'exp']: self.distance_kernel = lambda u: np.exp(-u/2)  
-		self.verbose = verbose 
-		self.obs = obs 
-		self.package = package 
-		self.learn_log_dist = learn_log_dist
-	
-	def save_likelihood_model(self, filename): 
-		try: self.J_save = {'model': self.J_full.models[-1],  
-		                     'X': self.J_full.x_iters,  
-		                     'y': self.J_full.func_vals} 
-		except: self.J_save = {'model': self.J_full.model,  
-		                        'X': self.J_full.X,  
-		                        'y': self.J_full.Y} 
-		pickle.dump(self.J_save, open(filename,'wb')) 
-		print('Saved likelihood model:', filename) 
+class BOLFI:
+    """
+    Bayesian Optimisation for Likelihood-Free Inference.
 
-	def load_likelihood_model(self, filename): 
-		self.J_save = pickle.load(open(filename, 'rb')) 
-		try: self.cook_likelihood(self.J_full.models[-1])#, package='skopt') 
-		except: self.cook_likelihood(self.J_full.model)#, package='GPyOpt') 
-		print('Previous likelihood model loaded.') 
-	
-	def cook_likelihood(self, gpmodel):
-		if self.package=='GPyOpt': 
-			self.gp_Jmu = lambda x: gpmodel.predict(x if x.ndim==2 else x[None,:])[0].squeeze()
-			self.gp_Jsigma = lambda x: gpmodel.predict(x if x.ndim==2 else x[None,:])[1].squeeze()
-		else: 
-			self.gp_Jmu = lambda x: gpmodel.predict(x if x.ndim==2 else x[:,None])
-			self.gp_Jsigma = lambda x: gpmodel.predict(x if x.ndim==2 else x[:,None], return_std)[1]
+    Parameters
+    ----------
+    distance : callable
+        ``distance(theta) -> float``: simulate at *theta* and return the
+        discrepancy to the observed data.
+    prior : list of (low, high), dict name -> (low, high), or prior object
+        Bounds are converted to a :class:`~psiphy.utils.prior.UniformPrior`.
+        A prior object must expose ``mins``/``maxs`` unless *bounds* is given.
+    distance_kernel : {"exp", "gaussian"} or callable
+        Maps the discrepancy to a log-likelihood. A callable must have
+        signature ``log_kernel(d) -> log L``.
+    acquisition : {"LCB", "EI", "PI"} or callable
+        Acquisition function choosing where to simulate next; see
+        :mod:`psiphy.utils.bayesian_opt`. ``"LCB"`` follows Gutmann & Corander (2016).
+    learn_log_dist : bool
+        Model ``log d`` instead of ``d`` (helps when d spans orders of magnitude).
+    bounds : list of (low, high), optional
+        Search space for the optimisation; defaults to the prior bounds.
+    param_names : list of str, optional
+    verbose : bool
+    """
 
-		if self.learn_log_dist:
-			self.gp_logL = lambda x: self.distance_kernel(np.exp(self.gp_Jmu(x))) 
-		else:
-			self.gp_logL = lambda x: self.distance_kernel(self.gp_Jmu(x)) 
-	  
-	def learn_likelihood(self, obs=None, gpmodel=None, reset_model=False,  
-		n_calls=100, n_random_starts=None, n_initial_points=None,  
-		initial_point_generator='random', acq_func='EI', acq_optimizer='auto',  
-		random_state=None, verbose=False, callback=None, n_points=10000,  
-		n_restarts_optimizer=5, xi=0.01, kappa=1.96, noise='gaussian',  
-		n_jobs=1, model_queue_size=None, batch_size=1, filename=None, 
-		acquisition_optimizer_type='lbfgs', **kwargs): 
+    def __init__(self, distance, prior, distance_kernel="exp", acquisition="LCB",
+                 learn_log_dist=False, bounds=None, param_names=None, verbose=True):
+        bopt.get_acquisition(acquisition)  # validate early
+        if not hasattr(prior, "log_prob"):
+            prior = UniformPrior(prior)
+        if bounds is None:
+            if not hasattr(prior, "mins"):
+                raise ValueError("Pass bounds= for a prior without mins/maxs.")
+            bounds = np.column_stack([prior.mins, prior.maxs])
+        if callable(distance_kernel):
+            self.log_kernel = distance_kernel
+        elif distance_kernel in _LOG_KERNELS:
+            self.log_kernel = _LOG_KERNELS[distance_kernel]
+        else:
+            raise ValueError(f"Unknown distance_kernel {distance_kernel!r}. "
+                             f"Choose from {list(_LOG_KERNELS)} or pass a callable.")
 
-		if obs is not None: self.obs = obs 
-		if self.obs is None: 
-			print('Provide obs to learn the likelihood.') 
-			return None 
+        self.distance = distance
+        self.prior = prior
+        self.bounds = np.asarray(bounds, dtype=float)
+        self.n_dim = len(self.bounds)
+        self.acquisition = acquisition
+        self.learn_log_dist = learn_log_dist
+        self.param_names = list(param_names or getattr(prior, "names", None)
+                                or [f"p{i}" for i in range(self.n_dim)])
+        self.verbose = verbose
 
-		x0, y0   = None, None 
-		callback = None 
-		if filename is not None and not reset_model: 
-			# checkpoint_saver = CheckpointSaver(filename, compress=9) # keyword arguments will be passed to `skopt.dump` 
-			# callback = [checkpoint_saver] 
-			if glob(filename): 
-				self.load_likelihood_model(filename) 
-				x0 = self.J_save['X'] 
-				y0 = self.J_save['y'] 
-				if gpmodel is None: gpmodel = self.J_save['model'] 
+        self.X = np.empty((0, self.n_dim))
+        self.y = np.empty(0)
+        self.gp = None
+        self.sampler_info = None
 
-		space = self.prior_range if isinstance(self.prior_range,list) else [(self.prior_range[ke][0], self.prior_range[ke][1]) for ke in self.prior_range.keys()] 
-		if n_initial_points is None: n_initial_points = 5**len(space) 
+    def _print(self, msg):
+        if self.verbose:
+            print(msg)
 
-		print('Learning synthetic likelihood using Bayesian Optimisation...') 
-		if self.learn_log_dist:
-			f = lambda x: np.log(self.distance(x)) #self.simulator(x), self.obs) 
-		else:
-			f = lambda x: self.distance(x) #self.simulator(x), self.obs) 
+    # ---- surrogate ----
 
-		if self.package=='skopt': 
-			res = gp_minimize(f,          # the function to minimize 
-					space,              # the bounds on each dimension of x 
-					base_estimator=gpmodel,  
-					n_calls=n_calls,  
-					n_random_starts=n_random_starts,  
-					n_initial_points=n_initial_points,  
-					initial_point_generator=initial_point_generator,  
-					acq_func=acq_func,  
-					acq_optimizer=acq_optimizer,  
-					x0=x0, y0=y0,  
-					random_state=random_state,  
-					verbose=verbose,  
-					callback=callback,  
-					n_points=n_points,  
-					n_restarts_optimizer=n_restarts_optimizer,  
-					xi=xi,  
-					kappa=kappa,  
-					noise=noise,  
-					n_jobs=n_jobs,  
-					# model_queue_size=model_queue_size, 
-					) 
-			self.J_full = res  
-			self.cook_likelihood(self.J_full.models[-1]) 
-		else: 
-			domain = [{'name': 'var_{}'.format(i), 'type': 'continuous', 'domain': (space[i][0],space[i][1])} for i in range(len(space))] 
-			res = BayesianOptimization( 
-						f, 
-						domain=domain, 
-						constraints=None, 
-						cost_withGradients=None, 
-						model_type='GP', 
-						X=x0, 
-						Y=y0, 
-						initial_design_numdata=n_initial_points, 
-						initial_design_type=initial_point_generator, 
-						acquisition_type=acq_func, 
-						normalize_Y=False, 
-						exact_feval=False, 
-						acquisition_optimizer_type=acquisition_optimizer_type, 
-						model_update_interval=1, 
-						evaluator_type='sequential', #'thompson_sampling' 
-						batch_size=batch_size, 
-						num_cores=n_jobs, 
-						verbosity=True, 
-						verbosity_model=True, 
-						maximize=False, 
-						de_duplication=False, 
-						**kwargs
-						) 
-			res.run_optimization(max_iter=n_calls, verbosity=verbose) 
-			self.J_full = res  
-			self.cook_likelihood(self.J_full.model) 
-		print('...done') 
-		if filename is not None: self.save_likelihood_model(filename)
+    def _to_unit(self, theta):
+        return (theta - self.bounds[:, 0]) / (self.bounds[:, 1] - self.bounds[:, 0])
 
-	def sample_posterior(self, n_samples=5000, method='MCMC', **kwargs):
-		# print(kwargs)
-		log_prior = kwargs.get('log_prior', None)
-		if method=='MCMC':
-			print('MCMC sampling using emcee...')
-			filename, kwargs = dict_get_remove(kwargs, 'filename', None) # filename = kwargs.get('filename', None)
-			nwalkers, kwargs = dict_get_remove(kwargs, 'nwalkers', 16)   # nwalkers = kwargs.get('nwalkers', 16)
-			reset_sampler, kwargs = dict_get_remove(kwargs, 'reset_sampler', True) # reset_sampler = kwargs.get('reset_sampler', True)
-			discard, kwargs = dict_get_remove(kwargs, 'discard', 0)      # discard = kwargs.get('discard', 0)
+    def _from_unit(self, u):
+        return self.bounds[:, 0] + u * (self.bounds[:, 1] - self.bounds[:, 0])
 
-			sampler = self.sample_MCMC(n_samples, log_prior=log_prior, nwalkers=nwalkers, filename=filename, 
-									reset_sampler=reset_sampler, n_jobs=4, **kwargs)
-			self.sampler_info = sampler
-			samples, logprobs = get_chain_emcee(discard=discard, sampler=sampler)
-		elif method=='NestedSampling':
-			res = self.sample_NestedSampling(**kwargs)
-			self.sampler_info = res 
-			return res['samples']
-		elif method=='IS':
-			print('Importance Sampling...')
-			proposal, kwargs = dict_get_remove(kwargs, 'proposal', 'uniform')
-			samples = self.sample_IS(n_samples, log_prior=log_prior, proposal=proposal)
-		print('...done')
-		return samples 
+    def _objective(self, theta):
+        d = float(self.distance(np.asarray(theta, dtype=float)))
+        return np.log(d) if self.learn_log_dist else d
 
-	def sample_MCMC(self, n_samples, log_prior=None, nwalkers=16,
-		filename=None, reset_sampler=True, n_jobs=4, **kwargs_emcee):
+    def _fit_gp(self, random_state=None):
+        from sklearn.gaussian_process import GaussianProcessRegressor
+        from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
+        kernel = (ConstantKernel(1.0, (1e-3, 1e3))
+                  * Matern(length_scale=np.full(self.n_dim, 0.3), length_scale_bounds=(1e-3, 1e2), nu=2.5)
+                  + WhiteKernel(1e-3, (1e-8, 1e1)))
+        self.gp = GaussianProcessRegressor(kernel, normalize_y=True, n_restarts_optimizer=3,
+                                           random_state=random_state)
+        from sklearn.exceptions import ConvergenceWarning
+        with warnings.catch_warnings():
+            # hyperparameter optimiser often hits its iteration cap on tiny designs; the fit is still usable
+            warnings.simplefilter("ignore", ConvergenceWarning)
+            self.gp.fit(self._to_unit(self.X), self.y)
+        return self.gp
 
-		space = self.prior_range if isinstance(self.prior_range,list) else [(self.prior_range[ke][0], self.prior_range[ke][1]) for ke in self.prior_range.keys()]
-		mins  = np.array([ii[0] for ii in space])
-		maxs  = np.array([ii[1] for ii in space])
-		pos = mins+(maxs-mins) * np.random.uniform(0,1,size=(nwalkers, len(mins)))
-		nwalkers, ndim = pos.shape
+    def predict_distance(self, theta, return_std=False):
+        """GP mean (and std) of the modelled discrepancy (``log d`` if ``learn_log_dist``)."""
+        if self.gp is None:
+            raise RuntimeError("Call learn_likelihood() or load_likelihood_model() first.")
+        theta = np.asarray(theta, dtype=float)
+        single = theta.ndim == 1
+        out = self.gp.predict(self._to_unit(np.atleast_2d(theta)), return_std=return_std)
+        if single:
+            return tuple(float(o[0]) for o in out) if return_std else float(out[0])
+        return out
 
-		if log_prior is None: 
-			log_prior = lambda x: np.log(np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)) if x.ndim==2 else np.log(np.product(mins<=x)*np.product(x<=maxs))
-		log_probability = lambda x: np.asscalar(self.gp_logL(x)+log_prior(x)) if np.isfinite(log_prior(x)) else -np.inf 
+    def log_likelihood(self, theta):
+        """Synthetic log-likelihood ``log K(d_hat(theta))``."""
+        mu = self.predict_distance(theta)
+        return self.log_kernel(np.exp(mu) if self.learn_log_dist else mu)
 
-		if filename is None: filename = 'dummy_bolfi_743.h5'
-		sampler = _emcee_run(n_samples, nwalkers, ndim, log_probability, pos, filename, reset_sampler, n_jobs=1, **kwargs_emcee)
-		return sampler
+    def log_posterior(self, theta):
+        lp = self.prior.log_prob(theta)
+        if np.ndim(lp) == 0:
+            return lp + self.log_likelihood(theta) if np.isfinite(lp) else -np.inf
+        out = np.full(len(lp), -np.inf)
+        ok = np.isfinite(lp)
+        out[ok] = lp[ok] + self.log_likelihood(np.asarray(theta)[ok])
+        return out
 
-	def sample_NestedSampling(self, log_prior=None, **kwargs):
-		space = self.prior_range if isinstance(self.prior_range,list) else [(self.prior_range[ke][0], self.prior_range[ke][1]) for ke in self.prior_range.keys()]
-		mins  = np.array([ii[0] for ii in space])
-		maxs  = np.array([ii[1] for ii in space])
+    # ---- learning ----
 
-		if log_prior is None: 
-			log_prior = lambda x: np.log(np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)) if x.ndim==2 else np.log(np.product(mins<=x)*np.product(x<=maxs))
-		log_probability = lambda x: np.asscalar(self.gp_logL(x)+log_prior(x)) if np.isfinite(log_prior(x)) else -np.inf 
+    def learn_likelihood(self, n_calls=100, n_initial_points=None, batch_size=1, filename=None,
+                         reset_model=False, random_state=None, n_candidates=None, **acq_kwargs):
+        """
+        Learn the discrepancy surrogate with Bayesian optimisation.
 
-		out = _dynesty_run(log_probability, self.prior_range, **kwargs)
-		return out
+        Parameters
+        ----------
+        n_calls : int
+            Number of new distance evaluations (including initial design points).
+        n_initial_points : int, optional
+            Size of the Latin-hypercube initial design; default ``5 * n_dim``.
+            Points already loaded from *filename* count towards it.
+        batch_size : int
+            Points proposed per optimisation round (kriging believer). The
+            points of one batch are independent, so their simulations can run
+            in parallel; they are currently evaluated in sequence.
+        filename : str, optional
+            Pickle file to resume from (unless *reset_model*) and save to.
+        reset_model : bool
+            Ignore an existing *filename*.
+        random_state : int, optional
+        n_candidates : int, optional
+            Random candidates scored per pick (default ``1000 * n_dim``).
+        **acq_kwargs :
+            Acquisition options, e.g. ``kappa`` (LCB) or ``xi`` (EI/PI).
 
-	def sample_IS(self, n_samples, log_prior=None, proposal='uniform'):
-		space = self.prior_range if isinstance(self.prior_range,list) else [(self.prior_range[ke][0], self.prior_range[ke][1]) for ke in self.prior_range.keys()]
-		mins  = np.array([ii[0] for ii in space])
-		maxs  = np.array([ii[1] for ii in space])
+        Returns
+        -------
+        self
+        """
+        if filename is not None and not reset_model and os.path.exists(filename):
+            self.load_likelihood_model(filename)
+            self._print(f"Resuming from {len(self.y)} stored evaluations.")
+        elif reset_model:
+            self.X, self.y = np.empty((0, self.n_dim)), np.empty(0)
 
-		if log_prior is None: 
-			log_prior = lambda x: np.log(np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)) if x.ndim==2 else np.log(np.product(mins<=x)*np.product(x<=maxs))
-		log_probability = lambda x: self.gp_logL(x)+log_prior(x) 
-		func = lambda x: np.exp(log_probability(x))
-		out  = importance_sampling(func, n_samples, self.prior_range, proposal=proposal)
-		return out
+        if n_initial_points is None:
+            n_initial_points = 5 * self.n_dim
+        n_init = int(min(max(n_initial_points - len(self.y), 0), n_calls))
 
+        self._print(f"Learning synthetic likelihood with Bayesian optimisation ({self.acquisition})...")
+        rng = np.random.default_rng(random_state)
+        if n_init:
+            self._evaluate(self._from_unit(LatinHypercube(d=self.n_dim, seed=rng).random(n_init)))
+        unit_box = np.tile([0.0, 1.0], (self.n_dim, 1))
+        remaining = n_calls - n_init
+        while remaining > 0:
+            gp = self._fit_gp(random_state)
+            q = min(batch_size, remaining)
+            u = bopt.propose_location(gp, unit_box, acquisition=self.acquisition,
+                                      X_sample=self._to_unit(self.X), y_sample=self.y,
+                                      batch_size=q, minimize=True, n_candidates=n_candidates,
+                                      random_state=rng, **acq_kwargs)
+            self._evaluate(self._from_unit(u))
+            remaining -= q
+        self._fit_gp(random_state)
+        self._print("...done")
 
-def _grid_creator(mins, maxs, n_samples):
-	out = np.linspace(mins[0],maxs[0],n_samples)[:,None]
-	for mn,mx in zip(mins[1:],maxs[1:]):
-		# print(mn, mx, out.shape)
-		nx = np.linspace(mn,mx,n_samples)
-		out1 = []
-		for i1 in out:
-			for i2 in nx:
-				out1.append(np.append(i1,i2))  
-		out = np.array(out1)
-	return out 
+        if filename is not None:
+            self.save_likelihood_model(filename)
+        return self
 
-def importance_sampling(func, n_samples, prior_range, proposal='uniform'):
-	space = prior_range if isinstance(prior_range,list) else [(prior_range[ke][0], prior_range[ke][1]) for ke in prior_range.keys()]
-	mins  = np.array([ii[0] for ii in space])
-	maxs  = np.array([ii[1] for ii in space])
-	print('Initialising samples...')
-	if proposal=='uniform':
-		pos0  = mins+(maxs-mins) * np.random.uniform(0,1,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)/n_samples if x.ndim==2 else np.product(mins<=x)*np.product(x<=maxs)/n_samples
-	elif proposal in ['gaussian', 'normal']:
-		pos0  = mins+(maxs-mins) * np.random.normal(0.5,1/3,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2),axis=1) if x.ndim==2 else np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2))
-	elif proposal=='grid':
-		pos0 = _grid_creator(mins, maxs, n_samples)
-		proposal = lambda x: np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)/n_samples if x.ndim==2 else np.product(mins<=x)*np.product(x<=maxs)/n_samples
-	print('...done')
-	wts  = func(pos0)/proposal(pos0); wts /= wts.sum()
-	pos1 = np.array(random.choices(pos0, weights=wts, k=n_samples))
-	return {'i': pos0, 'f':pos1, 'w': wts}
+    def _evaluate(self, thetas):
+        """Evaluate the discrepancy at each row of *thetas* and store the results."""
+        values = [self._objective(t) for t in thetas]
+        self.X = np.vstack([self.X, thetas])
+        self.y = np.append(self.y, values)
 
+    # ---- persistence ----
 
-def sequential_importance_sampling(func, n_samples, prior_range, proposal='uniform', max_iter=10, kernel='EmpiricalCovariance'):
-	if kernel=='EmpiricalCovariance':
-		from sklearn.covariance import EmpiricalCovariance
-		cov_est = EmpiricalCovariance()
-	elif kernel=='LedoitWolf':
-		from sklearn.covariance import LedoitWolf
-		cov_est = LedoitWolf()
-	else:
-		cov_est = kernel
+    def save_likelihood_model(self, filename):
+        """Store the evaluated points; the GP is refitted on load."""
+        with open(filename, "wb") as f:
+            pickle.dump({"X": self.X, "y": self.y, "bounds": self.bounds,
+                         "learn_log_dist": self.learn_log_dist}, f)
+        self._print(f"Saved likelihood model: {filename}")
 
-	space = prior_range if isinstance(prior_range,list) else [(prior_range[ke][0], prior_range[ke][1]) for ke in prior_range.keys()]
-	mins  = np.array([ii[0] for ii in space])
-	maxs  = np.array([ii[1] for ii in space])
-	# print('Initialising samples...')
-	if proposal=='uniform':
-		pos0  = mins+(maxs-mins) * np.random.uniform(0,1,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)/n_samples if x.ndim==2 else np.product(mins<=x)*np.product(x<=maxs)/n_samples
-	elif proposal in ['gaussian', 'normal']:
-		pos0  = mins+(maxs-mins) * np.random.normal(0.5,1/3,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2),axis=1) if x.ndim==2 else np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2))
-	elif proposal=='grid':
-		pos0 = _grid_creator(mins, maxs, n_samples)
-		proposal = lambda x: np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)/n_samples if x.ndim==2 else np.product(mins<=x)*np.product(x<=maxs)/n_samples
-	# print('...done')
-	out = {'i': pos0}
+    def load_likelihood_model(self, filename):
+        with open(filename, "rb") as f:
+            state = pickle.load(f)
+        if not np.allclose(state["bounds"], self.bounds) or state["learn_log_dist"] != self.learn_log_dist:
+            raise ValueError(f"{filename} was created with different bounds or learn_log_dist.")
+        self.X, self.y = state["X"], state["y"]
+        if len(self.y):
+            self._fit_gp()
+        self._print(f"Loaded likelihood model with {len(self.y)} evaluations.")
+        return self
 
-	wts  = func(pos0)/proposal(pos0); wts /= wts.sum()
-	with tqdm(range(max_iter)) as rounds:
-		for i in rounds:
-			rounds.set_description('Round = {}/{}'.format(i+1,max_iter))
-			pos1 = np.array(random.choices(pos0, weights=wts, k=n_samples))
-			cov  = 2*cov_est.fit(pos1).covariance_ #numpy.cov(pos0, aweights=wts0) #
-			# print(cov)
-			pos2 = np.array([np.random.multivariate_normal(po, cov) for po in pos1])
-			ker2 = gaussian_kde(pos2.T)
-			wts  = func(pos2)/ker2(pos2.T); wts /= wts.sum()
-			pos0 = pos2.copy()
-	pos1 = np.array(random.choices(pos0, weights=wts, k=n_samples))
-	out['f'] = pos1
-	out['w'] = wts
-	return out
+    # ---- sampling ----
 
+    def sample_posterior(self, n_samples=5000, method="MCMC", **kwargs):
+        """
+        Draw equal-weight posterior samples from the synthetic likelihood.
 
-def SMC_sampling(func, n_samples, prior_range, proposal='uniform', kernel='EmpiricalCovariance'):
-	'''
-	UNDER CONSTRUCTION
-	'''
-	if kernel=='EmpiricalCovariance':
-		from sklearn.covariance import EmpiricalCovariance
-		cov_est = EmpiricalCovariance()
-	elif kernel=='LedoitWolf':
-		from sklearn.covariance import LedoitWolf
-		cov_est = LedoitWolf()
-	else:
-		cov_est = kernel
+        Parameters
+        ----------
+        n_samples : int
+        method : {"MCMC", "NestedSampling", "IS", "SMC"}
+            ``"MCMC"`` uses :class:`~psiphy.mcmc.MHSampler` (kwargs: ``n_walkers``,
+            ``n_burn``, ``filename``, plus sampler options);
+            ``"NestedSampling"`` uses :class:`~psiphy.mcmc.NestedSampler`
+            (kwargs: ``backend``, ``n_live``, ``dlogz``, ...);
+            ``"IS"`` uses importance sampling with the prior as proposal;
+            ``"SMC"`` uses likelihood-tempered :func:`~psiphy.mcmc.SMC`.
 
-	space = prior_range if isinstance(prior_range,list) else [(prior_range[ke][0], prior_range[ke][1]) for ke in prior_range.keys()]
-	mins  = np.array([ii[0] for ii in space])
-	maxs  = np.array([ii[1] for ii in space])
+        Returns
+        -------
+        np.ndarray, shape (n_samples, n_dim)
+            The full sampler output is kept in ``self.sampler_info``.
+        """
+        from .. import mcmc
 
-	if proposal=='uniform':
-		pos0 = mins+(maxs-mins) * np.random.uniform(0,1,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(mins<=x,axis=1)*np.product(x<=maxs,axis=1)/n_samples if x.ndim==2 else np.product(mins<=x)*np.product(x<=maxs)/n_samples
-	elif proposal in ['gaussian', 'normal']:
-		pos0  = mins+(maxs-mins) * np.random.normal(0.5,1/3,size=(n_samples,len(mins)))
-		proposal = lambda x: np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2),axis=1) if x.ndim==2 else np.product(np.exp(-((x-mins)/(maxs-mins)-0.5)**2/(1/3)**2))
-	wts0  = proposal(pos0); wts0 /= wts0.sum()
+        if method == "MCMC":
+            n_walkers = kwargs.pop("n_walkers", 32)
+            n_burn = kwargs.pop("n_burn", 500)
+            n_steps = n_burn + int(np.ceil(n_samples / n_walkers))
+            sampler = mcmc.MHSampler(self.log_posterior, n_walkers=n_walkers,
+                                     param_names=self.param_names, **kwargs)
+            sampler.run(self.prior.sample(n_walkers), n_steps=n_steps)
+            self.sampler_info = sampler
+            return sampler.get_chain(flat=True, discard=n_burn)[-n_samples:]
 
-	max_iter = 5
-	with tqdm(range(max_iter)) as rounds:
-		for i in rounds:
-			rounds.set_description('Round = {}/{}'.format(i+1,max_iter))
-			pos1 = np.array(random.choices(pos0, weights=wts0, k=n_samples))
-			cov  = 2*cov_est.fit(pos1).covariance_ #numpy.cov(pos0, aweights=wts0) #
-			print(cov)
-			pos2 = np.array([np.random.multivariate_normal(po, cov) for po in pos1])
-			wts2 = func(pos2)/wts0; wts2 /= wts2.sum()
-			pos0, wts0 = pos2.copy(), wts2.copy()
-	return pos1, wts
+        if method == "NestedSampling":
+            dlogz = kwargs.pop("dlogz", 0.1)
+            sampler = mcmc.NestedSampler(self.log_likelihood, self.prior,
+                                         param_names=self.param_names, **kwargs).run(dlogz=dlogz)
+            self.sampler_info = sampler
+            res = sampler.get_result()
+            idx = np.random.choice(len(res["weights"]), size=n_samples, p=res["weights"])
+            return res["samples"][idx]
 
+        if method == "IS":
+            self.sampler_info = mcmc.importance_sampling(
+                self.log_likelihood, self.prior.sample(n_samples), vectorized=True)
+            return self.sampler_info["equal_weight_samples"]
 
+        if method == "SMC":
+            kwargs.setdefault("verbose", self.verbose)
+            kwargs.setdefault("vectorized", True)
+            self.sampler_info = mcmc.SMC(self.log_likelihood, self.prior, n_particles=n_samples, **kwargs)
+            return self.sampler_info["equal_weight_samples"]
 
-
-
+        raise ValueError(f"Unknown method {method!r}. Choose from 'MCMC', 'NestedSampling', 'IS', 'SMC'.")

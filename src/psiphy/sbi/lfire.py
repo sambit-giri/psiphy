@@ -230,8 +230,7 @@ class LFIRE_BayesianOpt:
 
 			if self.sigma_tol is not None:
 				self.exploitation_exploration = 1./self.sigma_tol if np.any(sigma_theta>self.sigma_tol) else 1.
-			#X_next = bopt.propose_location(bopt.expected_improvement, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10).T
-			X_next = bopt.propose_location(bopt.GP_UCB_posterior_space, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10, xi=self.exploitation_exploration).T
+			X_next = bopt.propose_location(self.gpr, self.lfi.bounds, acquisition="UCB", X_sample=self._adjust_shape(self.params), y_sample=self.posterior_params, minimize=False, n_restarts=10, kappa=self.exploitation_exploration)
 			self.params = np.vstack((self._adjust_shape(self.params), X_next))
 			r_next = self.lfi.ratio(self.params[-1])
 			self.posterior_params = np.hstack((self.posterior_params, r_next))
@@ -331,8 +330,7 @@ class LFIRE_BayesianOpt_ShrinkSpace:
 		condition1 = False
 		for n_iter in range(start_iter,self.max_iter[0]):
 			if condition1: break
-			#X_next = bopt.propose_location(bopt.expected_improvement, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10).T
-			X_next = bopt.propose_location(bopt.GP_UCB_posterior_space, self._adjust_shape(self.params), self.posterior_params, self.gpr, self.lfi.bounds, n_restarts=10, xi=self.exploitation_exploration).T
+			X_next = bopt.propose_location(self.gpr, self.lfi.bounds, acquisition="UCB", X_sample=self._adjust_shape(self.params), y_sample=self.posterior_params, minimize=False, n_restarts=10, kappa=self.exploitation_exploration)
 			self.params = np.vstack((self._adjust_shape(self.params), X_next))
 			r_next = self.lfi.ratio(self.params[-1])
 			self.posterior_params = np.hstack((self.posterior_params, r_next))

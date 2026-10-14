@@ -21,3 +21,11 @@ psiphy.utils
 .. automodule:: psiphy.utils.sampling_space
    :members:
    :undoc-members:
+
+.. automodule:: psiphy.utils.prior
+   :members:
+   :undoc-members:
+
+.. automodule:: psiphy.utils.bayesian_opt
+   :members:
+   :undoc-members:

@@ -218,3 +218,27 @@ def test_lfire_custom_classifier_and_validation(mean_only):
         LFIRE(sim, x_obs, {"mu": (0, 3)}, penalty="l3")
     with pytest.raises(RuntimeError):
         lf.log_likelihood([1.5])
+
+
+def test_bolfi_n_repeats_averages(tmp_path):
+    calls = []
+
+    def noisy(theta):
+        calls.append(1)
+        return quad_distance(theta) + np.random.normal(0, 1.0)
+
+    np.random.seed(0)
+    b = BOLFI(noisy, BOUNDS, n_repeats=5, verbose=False).learn_likelihood(n_calls=12, random_state=0)
+    assert len(calls) == 60 and b.n_simulations == 60 and len(b.y) == 12
+    # the stored value at a point is the mean of n_repeats noisy evaluations
+    np.random.seed(1)
+    expected = np.mean([quad_distance(MU) + np.random.normal(0, 1.0) for _ in range(5)])
+    np.random.seed(1)
+    assert np.isclose(b._objective(MU), expected)
+
+    fn = str(tmp_path / "b.pkl")
+    b.save_likelihood_model(fn)
+    with pytest.raises(ValueError):  # data averaged differently: refuse to mix
+        BOLFI(noisy, BOUNDS, n_repeats=1, verbose=False).load_likelihood_model(fn)
+    with pytest.raises(ValueError):
+        BOLFI(noisy, BOUNDS, n_repeats=0)

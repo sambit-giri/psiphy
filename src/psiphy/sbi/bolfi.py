@@ -43,6 +43,14 @@ class BOLFI(SurrogateInference):
         :mod:`psiphy.utils.bayesian_opt`. ``"LCB"`` follows Gutmann & Corander (2016).
     learn_log_dist : bool
         Model ``log d`` instead of ``d`` (helps when d spans orders of magnitude).
+    n_repeats : int
+        Distance evaluations (simulations) averaged per parameter value. With a
+        stochastic simulator each ``d(theta)`` is noisy; averaging ``n`` of them
+        cuts the noise variance by ``n`` and makes the GP surrogate, and the
+        posterior widths, more stable from run to run. The simulations at one
+        theta are independent, so they can run in parallel. The extra noise in
+        a single-simulation ``d`` adds a roughly constant offset that cancels
+        in the normalised posterior.
     bounds : list of (low, high), optional
         Search space for the optimisation; defaults to the prior bounds.
     param_names : list of str, optional
@@ -50,10 +58,10 @@ class BOLFI(SurrogateInference):
     """
 
     _minimize = True
-    _config_keys = ("learn_log_dist",)
+    _config_keys = ("learn_log_dist", "n_repeats")
 
     def __init__(self, distance, prior, distance_kernel="exp", acquisition="LCB",
-                 learn_log_dist=False, bounds=None, param_names=None, verbose=True):
+                 learn_log_dist=False, n_repeats=1, bounds=None, param_names=None, verbose=True):
         if callable(distance_kernel):
             self.log_kernel = distance_kernel
         elif distance_kernel in _LOG_KERNELS:
@@ -62,11 +70,19 @@ class BOLFI(SurrogateInference):
             raise ValueError(f"Unknown distance_kernel {distance_kernel!r}. "
                              f"Choose from {list(_LOG_KERNELS)} or pass a callable.")
         super().__init__(prior, acquisition, bounds=bounds, param_names=param_names, verbose=verbose)
+        if int(n_repeats) < 1:
+            raise ValueError("n_repeats must be >= 1.")
         self.distance = distance
         self.learn_log_dist = learn_log_dist
+        self.n_repeats = int(n_repeats)
+
+    @property
+    def n_simulations(self):
+        """Distance evaluations (simulations) used so far."""
+        return len(self.y) * self.n_repeats
 
     def _objective(self, theta):
-        d = float(self.distance(theta))
+        d = float(np.mean([self.distance(theta) for _ in range(self.n_repeats)]))
         return np.log(d) if self.learn_log_dist else d
 
     def predict_distance(self, theta, return_std=False):
@@ -86,7 +102,8 @@ class BOLFI(SurrogateInference):
         Parameters
         ----------
         n_calls : int
-            Number of new distance evaluations (including initial design points).
+            Number of new parameter values evaluated (including initial design
+            points); each costs ``n_repeats`` distance evaluations.
         n_initial_points : int, optional
             Size of the Latin-hypercube initial design; default ``5 * n_dim``.
             Points already loaded from *filename* count towards it.

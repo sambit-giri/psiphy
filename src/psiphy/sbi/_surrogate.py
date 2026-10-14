@@ -65,7 +65,7 @@ def sample_posterior(log_posterior, log_likelihood, prior, param_names, n_sample
         ``"NestedSampling"`` uses :class:`~psiphy.mcmc.NestedSampler`
         (kwargs: ``backend``, ``n_live``, ``dlogz``, ...);
         ``"IS"`` uses importance sampling with the prior as proposal;
-        ``"SMC"`` uses likelihood-tempered :func:`~psiphy.mcmc.SMC`.
+        ``"SMC"`` uses :func:`~psiphy.mcmc.sequential_monte_carlo` (likelihood tempering).
 
     Returns
     -------
@@ -97,7 +97,7 @@ def sample_posterior(log_posterior, log_likelihood, prior, param_names, n_sample
     if method == "SMC":
         kwargs.setdefault("verbose", verbose)
         kwargs.setdefault("vectorized", True)
-        info = mcmc.SMC(log_likelihood, prior, n_particles=n_samples, **kwargs)
+        info = mcmc.sequential_monte_carlo(log_likelihood, prior, n_particles=n_samples, **kwargs)
         return info["equal_weight_samples"], info
 
     raise ValueError(f"Unknown method {method!r}. Choose from 'MCMC', 'NestedSampling', 'IS', 'SMC'.")

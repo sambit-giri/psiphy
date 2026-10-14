@@ -8,6 +8,7 @@ from psiphy.mcmc import (
     importance_sampling,
     sequential_importance_sampling,
     SMC,
+    sequential_monte_carlo,
 )
 from psiphy.toy_models import GaussianSignal
 
@@ -99,11 +100,11 @@ class TestImportanceSampling:
         assert abs(res["log_evidence"] - np.log(1 / 20)) < 0.05
 
 
-class TestSMC:
+class TestSequentialMonteCarlo:
     def test_result(self, gaussian_setup):
         gs, theta_true, x_obs, prior, log_post = gaussian_setup
         np.random.seed(2)
-        res = SMC(lambda t: gs.log_prob(t, x_obs), prior, n_particles=200, n_steps=3, verbose=False)
+        res = sequential_monte_carlo(lambda t: gs.log_prob(t, x_obs), prior, n_particles=200, n_steps=3, verbose=False)
         assert set(res) == RESULT_KEYS | {"log_likelihood"}
         assert res["samples"].shape == res["equal_weight_samples"].shape == (200, 2)
         assert res["weights"].shape == res["log_likelihood"].shape == (200,)
@@ -112,7 +113,7 @@ class TestSMC:
     def test_mean_estimate(self, gaussian_setup):
         gs, theta_true, x_obs, prior, log_post = gaussian_setup
         np.random.seed(4)
-        res = SMC(lambda t: gs.log_prob(t, x_obs), prior, n_particles=1000, n_steps=8, verbose=False)
+        res = sequential_monte_carlo(lambda t: gs.log_prob(t, x_obs), prior, n_particles=1000, n_steps=8, verbose=False)
         post_mean, post_sigma = gs.analytic_posterior(x_obs)
         assert abs(np.average(res["samples"][:, 0], weights=res["weights"]) - post_mean) < 2 * post_sigma
 
@@ -123,7 +124,7 @@ class TestSMC:
         cov = np.array([[1.0, 0.3], [0.3, 0.5]])
         icov, norm = np.linalg.inv(cov), -0.5 * np.log(np.linalg.det(2 * np.pi * cov))
         loglike = lambda t: norm - 0.5 * (t - 1.0) @ icov @ (t - 1.0)
-        res = SMC(loglike, prior, n_particles=3000, n_steps=20, verbose=False)
+        res = sequential_monte_carlo(loglike, prior, n_particles=3000, n_steps=20, verbose=False)
         assert abs(res["log_evidence"] - np.log(1 / 400)) < 0.25  # seed-to-seed scatter ~0.07
 
 
@@ -283,7 +284,7 @@ class TestVectorized:
         w_vec = importance_sampling(self._loglike_batch, prop, vectorized=True)["weights"]
         np.testing.assert_allclose(w_vec, w_loop)
 
-    @pytest.mark.parametrize("fn", [SMC, sequential_importance_sampling])
+    @pytest.mark.parametrize("fn", [sequential_monte_carlo, sequential_importance_sampling])
     def test_recovers_mean(self, fn):
         np.random.seed(2)
         prior = UniformPrior([(0, 2), (0, 1)])
@@ -299,7 +300,14 @@ class TestVectorized:
             return self._loglike_batch(theta)
 
         np.random.seed(3)
-        SMC(counting, UniformPrior([(0, 2), (0, 1)]), n_particles=300, n_steps=4,
+        sequential_monte_carlo(counting, UniformPrior([(0, 2), (0, 1)]), n_particles=300, n_steps=4,
             verbose=False, vectorized=True)
         assert calls[0] == 300            # initial batch
         assert len(calls) <= 1 + 4        # at most one batched call per move step
+
+
+def test_smc_deprecated_alias():
+    prior = UniformPrior([(0, 2)])
+    with pytest.warns(FutureWarning, match="sequential_monte_carlo"):
+        res = SMC(lambda t: -0.5 * (t[0] - 1) ** 2, prior, n_particles=50, n_steps=2, verbose=False)
+    assert res["samples"].shape == (50, 1)

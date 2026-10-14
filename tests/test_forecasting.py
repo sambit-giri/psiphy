@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from psiphy.forecasting.fisher import FisherMatrix
+from psiphy.forecasting.fisher import FisherMatrix, fisher_blocks
 
 
 T = np.linspace(0, 1, 15)
@@ -84,3 +84,71 @@ def test_convergence_test_parallel():
                                                      plot=False, n_jobs=n_jobs)
     for p in ("a", "b"):
         np.testing.assert_allclose(res[2][p]["norms"], res[1][p]["norms"])
+
+
+# ── joint Fisher of correlated blocks ─────────────────────────────────────────
+
+def _block_sim(sl):
+    return lambda theta, seed, noise_seed: linear_sim(theta, seed, noise_seed)[sl]
+
+
+def _run(sim, **deriv_kw):
+    fm = FisherMatrix(sim, theta_fid=[1.0, 2.0], param_names=["a", "b"], verbose=False)
+    fm.estimate_covariance(seeds=range(1, 9), noise_seeds=range(1, 6))
+    fm.estimate_derivatives(delta_frac=0.01, seeds=range(1, 4), **deriv_kw)
+    return fm
+
+
+def test_joint_of_split_vector_matches_full():
+    '''Splitting one data vector into blocks and joining them gives the full Fisher matrix.'''
+    kw = dict(noise_seeds=[1, -1, 2, -2])
+    full = _run(linear_sim, **kw).compute(debias_derivatives=True)
+    blocks = [_run(_block_sim(slice(0, 6)), **kw), _run(_block_sim(slice(6, None)), **kw)]
+    joint = FisherMatrix.joint(blocks, verbose=False).compute(debias_derivatives=True)
+    np.testing.assert_allclose(joint.C, full.C)
+    np.testing.assert_allclose(joint.F, full.F)
+
+
+def test_joint_pairs_by_key_and_mixes_noiseless_blocks():
+    '''Rows are paired by (seed, noise_seed), not by order; a noiseless block adds no noise scatter.'''
+    a = _run(_block_sim(slice(0, 6)), noise_seeds=[1, -1, 2, -2])
+    b = _run(_block_sim(slice(6, None)), noise_seed=0)
+    order = np.random.default_rng(0).permutation(len(b.cov_keys))
+    b.cov_keys = [b.cov_keys[i] for i in order]
+    b.x_realisations = b.x_realisations[order]
+    joint = FisherMatrix.joint([a, b], verbose=False)
+    np.testing.assert_allclose(joint.x_realisations[:, :6], a.x_realisations)
+    assert joint.dmu_samples_ns.shape[2] == 15
+    assert np.allclose(joint.dmu_samples_ns[:, :, 6:], joint.dmu_samples_ns[0, :, 6:])
+    joint.compute(debias_derivatives=True)
+
+
+def _sliced_sim(theta, seed, noise_seed, sl):
+    return linear_sim(theta, seed, noise_seed)[sl]
+
+
+def test_fisher_blocks_with_cache_files(tmp_path):
+    '''Per-block caches joined back give the full Fisher matrix; a rerun reads only the caches.'''
+    kw = dict(covariance_kw=dict(seeds=range(1, 9), noise_seeds=range(1, 6)),
+              derivative_kw=dict(delta_frac=0.01, seeds=range(1, 4), noise_seeds=[1, -1, 2, -2]))
+    blocks = {'lo': dict(sl=slice(0, 6)), 'hi': dict(sl=slice(6, None))}
+    cache = lambda name: str(tmp_path / f'{name}.pkl')
+    fms = fisher_blocks(_sliced_sim, [1.0, 2.0], ['a', 'b'], blocks, cache_file=cache, **kw)
+    full = _run(linear_sim, noise_seeds=[1, -1, 2, -2]).compute(debias_derivatives=True)
+    joint = FisherMatrix.joint(list(fms.values()), verbose=False).compute(debias_derivatives=True)
+    np.testing.assert_allclose(joint.F, full.F)
+    failing = lambda *a, **k: (_ for _ in ()).throw(RuntimeError('simulated although cached'))
+    fisher_blocks(failing, [1.0, 2.0], ['a', 'b'], blocks, cache_file=cache, **kw)
+
+
+def test_chunked_parallel_matches_unchunked(tmp_path):
+    pytest.importorskip("joblib")
+    out = {}
+    for n_chunks in (1, 3):
+        fm = _fm(cache_file=str(tmp_path / f"c{n_chunks}.pkl"))
+        fm.estimate_covariance(seeds=range(1, 9), noise_seeds=range(1, 6), n_jobs=2, n_chunks=n_chunks)
+        fm.estimate_derivatives(delta_frac=0.01, seeds=range(1, 5), noise_seeds=[1, 2], n_stencil=4,
+                                n_jobs=2, n_chunks=n_chunks)
+        out[n_chunks] = fm.compute()
+    np.testing.assert_allclose(out[3].F, out[1].F)
+    assert len(out[3]._cache) == len(out[1]._cache)

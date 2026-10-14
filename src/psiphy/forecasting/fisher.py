@@ -85,6 +85,9 @@ class FisherMatrix:
             self._load_cache()
 
         self.x_realisations = None
+        self.cov_keys = []             # (seed, noise_seed) of each row of x_realisations
+        self.deriv_seeds = None        # IC seeds of dmu_samples_ic
+        self.deriv_noise_seeds = None  # noise seeds the derivatives were averaged over
         self.x_mean_fid = None
         self.C = None
         self.C_inv = None
@@ -105,14 +108,17 @@ class FisherMatrix:
         return [(seed, ns, np.asarray(simulator(theta_step, seed, ns, **sim_kwargs)))
                 for ns in noise_seeds]
 
-    def _prerun_parallel(self, thetas, seeds, noise_seeds, n_jobs, desc):
+    def _prerun_parallel(self, thetas, seeds, noise_seeds, n_jobs, desc, n_chunks=1):
         """
         Run every uncached (theta, seed, noise_seed) simulation with joblib and
         store the results in the cache. No-op when ``n_jobs == 1`` or joblib is
         missing; callers then simulate serially through ``_simulate_cached``.
 
         One job per (theta, IC seed) pair runs all its noise_seeds, so the
-        simulator's in-memory coeval cache is reused within each job.
+        simulator's in-memory coeval cache is reused within each job. With
+        ``n_chunks > 1`` the seeds are run in chunks, the cache is written after
+        each chunk (an interruption loses at most one chunk) and a progress bar
+        advances per finished chunk.
 
         Returns
         -------
@@ -121,6 +127,10 @@ class FisherMatrix:
         """
         if n_jobs == 1 or not _JOBLIB_AVAILABLE:
             return 0
+        if n_chunks > 1:
+            chunks = [c for c in np.array_split(np.asarray(seeds), n_chunks) if len(c)]
+            return sum(self._prerun_parallel(thetas, [int(s) for s in c], noise_seeds, n_jobs, desc)
+                       for c in tqdm(chunks, desc=f"{desc} (seed chunks)"))
         jobs = {}
         for theta in thetas:
             for seed in seeds:
@@ -290,7 +300,7 @@ class FisherMatrix:
 
     # ---- Covariance ----
 
-    def estimate_covariance(self, seeds=range(1, 11), noise_seeds=range(10), n_jobs=1):
+    def estimate_covariance(self, seeds=range(1, 11), noise_seeds=range(10), n_jobs=1, n_chunks=1):
         """
         Estimate the data covariance matrix at the fiducial point.
 
@@ -307,6 +317,9 @@ class FisherMatrix:
             Number of parallel workers (joblib). -1 uses all CPUs.
             Each worker handles all noise_seeds for one IC seed, so the
             simulator's in-memory coeval cache is reused within each job.
+        n_chunks : int
+            (parallel only) Run the seeds in this many chunks, writing the cache
+            after each, with a progress bar per finished chunk.
 
         Returns
         -------
@@ -321,7 +334,7 @@ class FisherMatrix:
         self._print(f"{'='*50}")
 
         self._prerun_parallel([self.theta_fid], seeds, noise_seeds, n_jobs,
-                              desc="Simulating realisations")
+                              desc="Simulating realisations", n_chunks=n_chunks)
 
         fid_str = "[" + ", ".join(f"{v:.3g}" for v in self.theta_fid) + "]"
         for seed in (pbar := tqdm(seeds, desc="Simulating realisations", disable=not self.verbose)):
@@ -331,12 +344,18 @@ class FisherMatrix:
                 new_realisations.append(self._normalise(x))
 
         new_realisations = np.array(new_realisations)
+        self.cov_keys += [(seed, ns) for seed in seeds for ns in noise_seeds]
 
         if self.x_realisations is not None:
             self.x_realisations = np.vstack([self.x_realisations, new_realisations])
         else:
             self.x_realisations = new_realisations
 
+        self._set_covariance()
+        return self
+
+    def _set_covariance(self):
+        """Mean, covariance and Hartlap-corrected inverse from self.x_realisations."""
         n_real = len(self.x_realisations)
         n_data = self.x_realisations.shape[1]
 
@@ -356,7 +375,6 @@ class FisherMatrix:
         self._print(f"  Hartlap factor: {self.hartlap:.3f}")
         self._print(f"  Condition number: {np.linalg.cond(self.C):.2e}")
         self._print(f"{'='*50}\n")
-        return self
 
     def add_modelling_error(self, mod_err=0.1):
         """
@@ -393,6 +411,7 @@ class FisherMatrix:
         n_stencil=2,
         use_crn=False,
         n_jobs=1,
+        n_chunks=1,
     ):
         """
         Estimate dmu/dtheta via central finite differences.
@@ -424,6 +443,9 @@ class FisherMatrix:
         n_jobs : int
             Number of parallel workers (joblib). -1 uses all CPUs.
             Each worker handles all noise_seeds for one (theta_step, IC seed) pair.
+        n_chunks : int
+            (parallel only) Run the seeds in this many chunks, writing the cache
+            after each, with a progress bar per finished chunk.
 
         Returns
         -------
@@ -464,6 +486,8 @@ class FisherMatrix:
 
         # Per-group derivative estimates, used by compute(debias_derivatives=True)
         # to remove the tr(C^-1 Cov(dmu)) inflation of the Fisher matrix.
+        self.deriv_seeds = seeds
+        self.deriv_noise_seeds = noise_seeds_deriv
         if use_crn:
             self.dmu_samples_ns = None
             self.dmu_samples_ic = None
@@ -484,7 +508,7 @@ class FisherMatrix:
                 theta_step[j] += s_step * h
                 stencil_thetas.append(theta_step)
         self._prerun_parallel(stencil_thetas, seeds, noise_seeds_deriv, n_jobs,
-                              desc="Computing derivatives")
+                              desc="Computing derivatives", n_chunks=n_chunks)
 
         for j, pname in enumerate(self.param_names):
             h = df_arr[j] * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else df_arr[j]
@@ -955,6 +979,68 @@ class FisherMatrix:
 
     # ---- Combining ----
 
+    @classmethod
+    def joint(cls, blocks, verbose=True):
+        """
+        Fisher matrix of the concatenated data vectors of several FisherMatrix objects.
+
+        Use this when the blocks come from the same simulations, e.g. different
+        summaries, or one summary at different redshifts, so they are correlated
+        and ``F_a + F_b`` would double count. The covariance is estimated from the
+        concatenated vectors, paired by (seed, noise_seed), and the derivatives
+        are concatenated block by block. Keeping one block (and one cache file)
+        per summary or redshift means that adding a block later reuses the rest.
+
+        Every block must have run estimate_covariance on the same (seed,
+        noise_seed) pairs and estimate_derivatives on the same IC seeds. A block
+        whose derivatives used a single noise seed (e.g. noiseless) enters the
+        noise part of the derivative debias with zero scatter.
+
+        Parameters
+        ----------
+        blocks : list of FisherMatrix
+        verbose : bool
+
+        Returns
+        -------
+        FisherMatrix
+            Call compute() on it as usual.
+        """
+        b0 = blocks[0]
+        for b in blocks:
+            assert np.array_equal(b.theta_fid, b0.theta_fid), "Fiducials must match."
+            assert b.param_names == b0.param_names,            "Parameter names must match."
+            assert b.x_realisations is not None, "Call estimate_covariance() on every block first."
+            assert b.dmu_dtheta is not None,     "Call estimate_derivatives() on every block first."
+
+        rows = [dict(zip(b.cov_keys, b.x_realisations)) for b in blocks]
+        missing = [i for i, r in enumerate(rows) if not set(b0.cov_keys) <= set(r)]
+        if missing:
+            raise ValueError(f"Blocks {missing} lack covariance realisations of block 0.")
+
+        def stack_samples(attr, ids_attr):
+            # Blocks with one sample (or none) have zero scatter: repeat their mean derivative
+            many = [b for b in blocks if getattr(b, attr) is not None and len(getattr(b, attr)) > 1]
+            if not many:
+                return None
+            for b in many[1:]:
+                if list(getattr(b, ids_attr)) != list(getattr(many[0], ids_attr)):
+                    raise ValueError(f"{attr}: blocks used different {ids_attr}.")
+            n = len(getattr(many[0], attr))
+            return np.concatenate([getattr(b, attr) if b in many
+                                   else np.repeat(b.dmu_dtheta[None], n, axis=0)
+                                   for b in blocks], axis=2)
+
+        fc = cls(None, b0.theta_fid, b0.param_names, verbose=verbose)
+        fc.cov_keys       = list(b0.cov_keys)
+        fc.x_realisations = np.array([np.concatenate([r[k] for r in rows]) for k in fc.cov_keys])
+        fc._set_covariance()
+        fc.dmu_dtheta     = np.hstack([b.dmu_dtheta for b in blocks])
+        fc.dmu_samples_ic = stack_samples('dmu_samples_ic', 'deriv_seeds')
+        fc.dmu_samples_ns = stack_samples('dmu_samples_ns', 'deriv_noise_seeds')
+        fc.deriv_seeds    = b0.deriv_seeds
+        return fc
+
     def __add__(self, other):
         """
         Add two Fisher matrices (e.g. from independent data sets).
@@ -1249,3 +1335,53 @@ class FisherMatrix:
         n_real = len(self.x_realisations) if self.x_realisations is not None else 0
         return (f"FisherMatrix({status}, params={self.param_names}, "
                 f"n_realisations={n_real})")
+
+
+def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
+                  covariance_kw=None, derivative_kw=None, verbose=False):
+    """
+    One FisherMatrix, with its own cache file, per block of a data vector.
+
+    A block is any part of the data vector that is simulated separately:
+    one redshift, frequency band, sky patch or summary statistic. Keeping one
+    cache per block means that adding a block later only simulates the new
+    one. Combine the blocks with ``FisherMatrix.joint``, which keeps their
+    cross-covariance.
+
+    Parameters
+    ----------
+    simulator : callable
+        simulator(theta, seed, noise_seed, **kwargs) -> data vector of one block.
+    theta_fid, param_names :
+        As for FisherMatrix.
+    blocks : dict
+        Block name -> keyword arguments passed to the simulator for that block,
+        e.g. ``{z: dict(redshifts=[z]) for z in redshifts}``.
+    cache_file : callable or None
+        cache_file(name) -> path of the block's cache file.
+    covariance_kw, derivative_kw : dict or None
+        Arguments of estimate_covariance and estimate_derivatives, the same for
+        every block (so the blocks can be joined).
+    verbose : bool
+
+    Returns
+    -------
+    dict
+        Block name -> FisherMatrix with covariance and derivatives estimated.
+
+    Examples
+    --------
+    >>> fms = fisher_blocks(sim, theta, names, {z: dict(redshifts=[z]) for z in (7, 8, 9)},
+    ...                     cache_file=lambda z: f'cache_z{z:.2f}.pkl',
+    ...                     covariance_kw=dict(seeds=range(1, 41), noise_seeds=range(1, 41)),
+    ...                     derivative_kw=dict(seeds=range(1, 41), delta_frac=0.02))
+    >>> F = FisherMatrix.joint(list(fms.values())).compute()
+    """
+    out = {}
+    for name, kw in blocks.items():
+        fm = FisherMatrix(simulator, theta_fid, param_names, verbose=verbose,
+                          cache_file=None if cache_file is None else cache_file(name), **kw)
+        fm.estimate_covariance(**(covariance_kw or {}))
+        fm.estimate_derivatives(**(derivative_kw or {}))
+        out[name] = fm
+    return out

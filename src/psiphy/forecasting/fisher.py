@@ -7,8 +7,14 @@ from itertools import combinations
 try:
     from tqdm.auto import tqdm
 except ImportError:
-    def tqdm(iterable, **kwargs):
-        return iterable
+    class tqdm:
+        """Minimal stand-in when tqdm is not installed (iteration and set_postfix only)."""
+        def __init__(self, iterable, **kwargs):
+            self._it = iterable
+        def __iter__(self):
+            return iter(self._it)
+        def set_postfix(self, *args, **kwargs):
+            pass
 
 try:
     from joblib import Parallel, delayed as _jdelayed
@@ -128,7 +134,7 @@ class FisherMatrix:
             return 0
         all_results = Parallel(n_jobs=n_jobs)(
             _jdelayed(FisherMatrix._run_theta_seed_jobs)(t, s, noise_seeds, self.simulator, self.sim_kwargs)
-            for t, s in tqdm(jobs.values(), desc=desc)
+            for t, s in tqdm(jobs.values(), desc=desc, disable=not self.verbose)
         )
         for (t, _), triplets in zip(jobs.values(), all_results):
             for seed, ns, x in triplets:
@@ -226,7 +232,7 @@ class FisherMatrix:
         n_parallel = len(self._cache) - n_before
 
         theta_str = "[" + ", ".join(f"{v:.3g}" for v in theta) + "]"
-        for seed in (pbar := tqdm(seeds, desc="Simulating")):
+        for seed in (pbar := tqdm(seeds, desc="Simulating", disable=not self.verbose)):
             for ns in noise_seeds:
                 pbar.set_postfix(seed=seed, noise=ns, theta=theta_str)
                 key = self._cache_key(theta, seed, ns)
@@ -318,7 +324,7 @@ class FisherMatrix:
                               desc="Simulating realisations")
 
         fid_str = "[" + ", ".join(f"{v:.3g}" for v in self.theta_fid) + "]"
-        for seed in (pbar := tqdm(seeds, desc="Simulating realisations")):
+        for seed in (pbar := tqdm(seeds, desc="Simulating realisations", disable=not self.verbose)):
             for ns in noise_seeds:
                 pbar.set_postfix(seed=seed, noise=ns, theta=fid_str)
                 x = self._simulate_cached(self.theta_fid, seed, ns)
@@ -485,7 +491,7 @@ class FisherMatrix:
 
             if use_crn:
                 deriv_per_seed = []
-                for seed in (pbar := tqdm(seeds, desc=f"d/d({pname}) CRN", leave=False)):
+                for seed in (pbar := tqdm(seeds, desc=f"d/d({pname}) CRN", leave=False, disable=not self.verbose)):
                     for ns in noise_seeds_deriv:
                         deriv_i = np.zeros(n_data)
                         for w, s in zip(weights, steps):
@@ -503,7 +509,7 @@ class FisherMatrix:
                     theta_step = self.theta_fid.copy()
                     theta_step[j] += s * h
                     step_str = "[" + ", ".join(f"{v:.3g}" for v in theta_step) + "]"
-                    for ki, seed in enumerate(pbar := tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False)):
+                    for ki, seed in enumerate(pbar := tqdm(seeds, desc=f"d/d({pname}) step {s:+d}h", leave=False, disable=not self.verbose)):
                         for ni, ns in enumerate(noise_seeds_deriv):
                             pbar.set_postfix(seed=seed, noise=ns, theta=step_str)
                             x_raw = self._simulate_cached(theta_step, seed, ns)
@@ -589,7 +595,7 @@ class FisherMatrix:
         results = {p: {'delta_fracs': delta_fracs, 'norms': [], 'sigma_1d': []}
                    for p in self.param_names}
 
-        for df in tqdm(delta_fracs, desc="delta_frac sweep"):
+        for df in tqdm(delta_fracs, desc="delta_frac sweep", disable=not self.verbose):
             self.estimate_derivatives(
                 delta_frac=df, seeds=seeds, noise_seed=noise_seed,
                 noise_seeds=noise_seeds, n_stencil=n_stencil, use_crn=use_crn,
@@ -799,7 +805,7 @@ class FisherMatrix:
         if n_bootstrap > 0:
             N = len(self.x_realisations)
             F_boots = []
-            for _ in tqdm(range(n_bootstrap), desc="LFIM bootstrap"):
+            for _ in tqdm(range(n_bootstrap), desc="LFIM bootstrap", disable=not self.verbose):
                 idx = np.random.choice(N, size=N, replace=True)
                 S_b = _scores(self.x_realisations[idx])
                 F_boots.append(S_b.T @ S_b / N)

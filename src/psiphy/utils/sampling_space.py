@@ -4,17 +4,21 @@ from . import helpers as hf
 
 def LH_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	"""
-	Parameters:
-	-----------
-	n_params (int): Give the number of parameters.
-	samples (int) : Total number of points required in the parameter space.
-	mins (float or list): Minimum value for the parametrs. If you give a float, then it assumes same minimum value for all the parameters.
-	maxs (float or list): Maximum value for the parameters. If you give a float, then it assumes same maximum value for all the parameters.
-	outfile (str): Name of the text file where the parameter values will be saved. If None, the values will not be saved anywhere.
-	
-	Return:
+	Parameters
+	----------
+	n_params : int
+		Number of parameters.
+	samples : int
+		Number of points in the parameter space.
+	mins, maxs : float or list
+		Lower and upper bounds. A single float is used for all parameters.
+	outfile : str or None
+		Text file to save the points to. None does not save them.
+
+	Returns
 	-------
-	An array containing the parameter values.
+	np.ndarray, shape (samples, n_params)
+		The parameter values.
 	"""
 	lhd = LatinHypercube(d=n_params).random(n=samples)
 	if np.array(mins).size==1: mins = [mins for i in range(n_params)]
@@ -25,17 +29,21 @@ def LH_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 
 def MC_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	"""
-	Parameters:
-	-----------
-	n_params (int): Give the number of parameters.
-	samples (int) : Total number of points required in the parameter space.
-	mins (float or list): Minimum value for the parametrs. If you give a float, then it assumes same minimum value for all the parameters.
-	maxs (float or list): Maximum value for the parameters. If you give a float, then it assumes same maximum value for all the parameters.
-	outfile (str): Name of the text file where the parameter values will be saved. If None, the values will not be saved anywhere.
-	
-	Return:
+	Parameters
+	----------
+	n_params : int
+		Number of parameters.
+	samples : int
+		Number of points in the parameter space.
+	mins, maxs : float or list
+		Lower and upper bounds. A single float is used for all parameters.
+	outfile : str or None
+		Text file to save the points to. None does not save them.
+
+	Returns
 	-------
-	An array containing the parameter values.
+	np.ndarray, shape (samples, n_params)
+		The parameter values.
 	"""
 	mcd = np.random.uniform(size=(samples,n_params))
 	if np.array(mins).size==1: mins = [mins for i in range(n_params)]
@@ -46,17 +54,21 @@ def MC_sampling(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 
 def MCS_nsphere(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	"""
-	Parameters:
-	-----------
-	n_params (int): Give the number of parameters.
-	samples (int) : Total number of points required in the parameter space.
-	mins (float or list): Minimum value for the parametrs. If you give a float, then it assumes same minimum value for all the parameters.
-	maxs (float or list): Maximum value for the parameters. If you give a float, then it assumes same maximum value for all the parameters.
-	outfile (str): Name of the text file where the parameter values will be saved. If None, the values will not be saved anywhere.
-	
-	Return:
+	Parameters
+	----------
+	n_params : int
+		Number of parameters.
+	samples : int
+		Number of points in the parameter space.
+	mins, maxs : float or list
+		Lower and upper bounds. A single float is used for all parameters.
+	outfile : str or None
+		Text file to save the points to. None does not save them.
+
+	Returns
 	-------
-	An array containing the parameter values.
+	np.ndarray, shape (samples, n_params)
+		The parameter values.
 	"""
 	mcd = np.random.uniform(size=(samples,n_params))
 	mcd_r = ((mcd-0.5)**2).sum(axis=1)
@@ -73,17 +85,21 @@ def MCS_nsphere(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 
 def LHS_nsphere(n_params=2, samples=10, mins=0, maxs=1, outfile=None):
 	"""
-	Parameters:
-	-----------
-	n_params (int): Give the number of parameters.
-	samples (int) : Total number of points required in the parameter space.
-	mins (float or list): Minimum value for the parametrs. If you give a float, then it assumes same minimum value for all the parameters.
-	maxs (float or list): Maximum value for the parameters. If you give a float, then it assumes same maximum value for all the parameters.
-	outfile (str): Name of the text file where the parameter values will be saved. If None, the values will not be saved anywhere.
-	
-	Return:
+	Parameters
+	----------
+	n_params : int
+		Number of parameters.
+	samples : int
+		Number of points in the parameter space.
+	mins, maxs : float or list
+		Lower and upper bounds. A single float is used for all parameters.
+	outfile : str or None
+		Text file to save the points to. None does not save them.
+
+	Returns
 	-------
-	An array containing the parameter values.
+	np.ndarray, shape (samples, n_params)
+		The parameter values.
 	"""
 	mins1, maxs1 = [0], [0.5]
 	for i in range(len(mins)-2):

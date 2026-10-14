@@ -495,12 +495,12 @@ class GriddedProbabilities(DistributionDiagnostic):
 class PosteriorComparison:
     """Compare multiple posteriors side-by-side with diagnostic plots.
 
-    Usage
-    -----
-    comp = PosteriorComparison()
-    comp.add(posterior_a, label='Method A')
-    comp.add(posterior_b, label='Method B')
-    comp.plot_boxplot()
+    Examples
+    --------
+    >>> comp = PosteriorComparison()
+    >>> comp.add(posterior_a, label='Method A')
+    >>> comp.add(posterior_b, label='Method B')
+    >>> comp.plot_boxplot()
     """
 
     _FALLBACK_COLORS = (

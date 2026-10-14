@@ -45,7 +45,7 @@ def bandwidth_kdeCV(X, kde=None, bw=10**np.linspace(-2,1), cv=1, verbose=True, k
 
 
 def cross_val_loss_kdeCV_loo(X, kde, fx=None, verbose=True):
-	"""
+	r"""
 	J(h) = \int \hat{f}^2_n(x)dx - 2\int \hat{f}(x)f(x)dx
 	\hat{J}(h) = \int \hat{f}^2_n(x)dx - \frac{2}{n}\sum \hat{f}_{-i}(x_i)
 	"""
@@ -72,7 +72,7 @@ def cross_val_loss_kdeCV_loo(X, kde, fx=None, verbose=True):
 
 
 def cross_val_loss_kdeCV_kFold(X, kde, fx=None, n_splits=5, verbose=True):
-	"""
+	r"""
 	J(h) = \int \hat{f}^2_n(x)dx - 2\int \hat{f}(x)f(x)dx
 	\hat{J}(h) = \int \hat{f}^2_n(x)dx - \frac{2}{n}\sum \hat{f}_{-i}(x_i)
 	"""

@@ -158,7 +158,7 @@ def density_1D(x, axes=None, bins=60, linestyle='-', linewidth=2, color=None, sh
 	if show_std: 
 		axes.plot(x.mean()*np.ones(10)-x.std(), np.linspace(0,ht[0].max(),10), ':', c='k', linewidth=linewidth)
 		axes.plot(x.mean()*np.ones(10)+x.std(), np.linspace(0,ht[0].max(),10), ':', c='k', linewidth=linewidth)
-	if show_title: axes.set_title('%.2f$_\mathrm{-%.2f}^\mathrm{+%.2f}$'%(x.mean(),x.std(),x.std()))
+	if show_title: axes.set_title(r'%.2f$_\mathrm{-%.2f}^\mathrm{+%.2f}$'%(x.mean(),x.std(),x.std()))
 	print(x.mean(),x.std())
 
 def contour_2D(x, y, CI=[68,95], axes=plt, flavor='hex', nbins='scott', cmap=plt.cm.BuGn_r, shading='gouraud', CI_plotparam=None, smooth_dist=2.5):

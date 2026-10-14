@@ -8,3 +8,4 @@ __pycache__/
 docs/_build/
 *.egg-info/
 .DS_Store
+docs/examples/

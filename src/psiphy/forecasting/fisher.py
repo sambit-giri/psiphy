@@ -1338,7 +1338,7 @@ class FisherMatrix:
 
 
 def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
-                  covariance_kw=None, derivative_kw=None, verbose=False):
+                  covariance_kw=None, derivative_kw=None, verbose=False, desc='blocks'):
     """
     One FisherMatrix, with its own cache file, per block of a data vector.
 
@@ -1363,6 +1363,8 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
         Arguments of estimate_covariance and estimate_derivatives, the same for
         every block (so the blocks can be joined).
     verbose : bool
+    desc : str
+        Label of the progress bar over the blocks.
 
     Returns
     -------
@@ -1378,7 +1380,8 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     >>> F = FisherMatrix.joint(list(fms.values())).compute()
     """
     out = {}
-    for name, kw in blocks.items():
+    for name, kw in (pbar := tqdm(blocks.items(), desc=desc)):
+        pbar.set_postfix(block=name)
         fm = FisherMatrix(simulator, theta_fid, param_names, verbose=verbose,
                           cache_file=None if cache_file is None else cache_file(name), **kw)
         fm.estimate_covariance(**(covariance_kw or {}))

@@ -152,3 +152,36 @@ def test_chunked_parallel_matches_unchunked(tmp_path):
         out[n_chunks] = fm.compute()
     np.testing.assert_allclose(out[3].F, out[1].F)
     assert len(out[3]._cache) == len(out[1]._cache)
+
+
+# ── Coulton & Wandelt (2023) combined estimator ───────────────────────────────
+
+def test_coulton_wandelt_noiseless_derivatives(fisher):
+    '''With exact derivatives the compressed and standard Fisher matrices agree.'''
+    F_std = fisher.F.copy()
+    fisher.estimate_derivatives(delta_frac=0.01, seeds=range(1, 9), noise_seed=0)
+    fisher.compute(method='CoultonWandelt2023')
+    np.testing.assert_allclose(fisher.F_lower, fisher.F_upper, rtol=0.05)
+    np.testing.assert_allclose(fisher.F, F_std, rtol=0.05)
+
+
+def _noisy_response_sim(theta, seed, noise_seed):
+    '''The response to b varies from seed to seed, so derivatives estimated from a few seeds are noisy.'''
+    a, b = theta
+    g = np.random.default_rng(seed).normal(0, 1.0, T.size)
+    noise = np.random.default_rng(1000 * seed + noise_seed).normal(0, SIGMA, T.size) if noise_seed else 0.0
+    return a + b * T * (1 + g) + noise
+
+
+def test_coulton_wandelt_brackets_truth():
+    '''Averaged over independent seed sets, F_lower <= F_true <= F_upper.'''
+    J = np.stack([np.ones_like(T), T], axis=1)
+    lo, up, F_true = [], [], None
+    for rep in range(20):
+        fm = FisherMatrix(_noisy_response_sim, theta_fid=[1.0, 2.0], param_names=["a", "b"], verbose=False)
+        fm.estimate_covariance(seeds=[0], noise_seeds=range(1, 401))
+        fm.estimate_derivatives(delta_frac=0.01, seeds=range(100 + 8 * rep, 108 + 8 * rep), noise_seed=0)
+        fm.compute(method='CoultonWandelt2023')
+        F_true = J.T @ fm.C_inv @ J
+        lo.append(np.trace(fm.F_lower)); up.append(np.trace(fm.F_upper))
+    assert np.mean(lo) < np.trace(F_true) < np.mean(up)

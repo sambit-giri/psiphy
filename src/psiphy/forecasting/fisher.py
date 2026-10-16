@@ -98,6 +98,8 @@ class FisherMatrix:
         self.F = None
         self.F_inv = None
         self.F_std = None
+        self.F_upper = None            # CoultonWandelt2023: standard Fisher (biased high)
+        self.F_lower = None            # CoultonWandelt2023: compressed Fisher (biased low)
         self.compute_method = None
 
     # ---- Parallel worker helpers ----
@@ -685,12 +687,16 @@ class FisherMatrix:
         method : str
             'standard'           — F = J C⁻¹ Jᵀ (default).
             'lfim'               — Score-trick estimator via Synthetic Likelihood.
-            'CoultonWandelt2023' — Geometric combined estimator (Eq. 18).
+            'CoultonWandelt2023' — Geometric mean of the standard Fisher (biased high by
+                                   derivative noise) and a compressed Fisher (biased low).
+                                   Also sets self.F_upper and self.F_lower.
             'Shrinkage'          — Ledoit-Wolf-style covariance regularisation.
         n_bootstrap : int
             (lfim only) Bootstrap resamples for uncertainty; populates self.F_std.
         n_split : int or None
-            (CoultonWandelt2023 only) Size of set A. Defaults to 50/50 split.
+            (CoultonWandelt2023 only) Number of derivative IC seeds used for the
+            compression; the rest measure the compressed derivatives, and the two
+            roles are then swapped. Defaults to half.
         shrinkage_target : str
             (Shrinkage only) 'diagonal' or 'identity'.
         debias_derivatives : bool
@@ -777,35 +783,37 @@ class FisherMatrix:
         return A.dot(scipy.linalg.sqrtm(AB))
 
     def _compute_CoultonWandelt(self, n_split=None):
-        """Geometric combined estimator (Coulton & Wandelt 2023, Eq. 18)."""
+        """
+        Combined estimator of Coulton & Wandelt (2023).
+
+        Noise in the estimated derivatives biases the standard Fisher matrix high
+        (F_upper). Compressing the data with derivatives from one set of IC seeds
+        and measuring the compressed derivatives with the other set gives a
+        Fisher matrix biased low (F_lower): noise in the compression only loses
+        information. The two sets then swap roles and the results are averaged.
+        F is the matrix geometric mean of F_upper and F_lower.
+        """
         assert self.x_realisations is not None, "Call estimate_covariance() first."
-        self._print("  Using Coulton & Wandelt (2023) geometric combined estimator...")
+        S = self.dmu_samples_ic
+        assert S is not None and len(S) >= 4, \
+            "Needs per-IC derivative samples: estimate_derivatives(use_crn=False) with >= 4 seeds."
+        self._print("  Using Coulton & Wandelt (2023) combined estimator...")
 
-        n_total = len(self.x_realisations)
-        n_data  = self.x_realisations.shape[1]
-        if n_split is None:
-            n_split = n_total // 2
+        n_split = len(S) // 2 if n_split is None else n_split
+        D_a, D_b = S[:n_split].mean(axis=0), S[n_split:].mean(axis=0)
 
-        x_a, x_b = self.x_realisations[:n_split], self.x_realisations[n_split:]
-        n_a, n_b  = len(x_a), len(x_b)
+        F_upper = self.dmu_dtheta @ self.C_inv @ self.dmu_dtheta.T
+        F_lower = np.zeros_like(F_upper)
+        for D_comp, D_meas in ((D_a, D_b), (D_b, D_a)):
+            # compression t = D_comp C^-1 x: Cov(t)^-1 = (D_comp C^-1 D_comp^T)^-1 with the same
+            # (Hartlap-corrected) C^-1, so exact derivatives give F_lower = F_upper
+            G = D_meas @ self.C_inv @ D_comp.T           # dt/dtheta from the other seeds
+            F_lower += 0.5 * G @ np.linalg.inv(D_comp @ self.C_inv @ D_comp.T) @ G.T
 
-        C_all  = np.cov(self.x_realisations, rowvar=False)
-        h_all  = (n_total - n_data - 2) / (n_total - 1) if n_total > n_data + 2 else 1.0
-        F_upper = self.dmu_dtheta @ (h_all * np.linalg.inv(C_all)) @ self.dmu_dtheta.T
-
-        C_a = np.cov(x_a, rowvar=False)
-        h_a = (n_a - n_data - 2) / (n_a - 1) if n_a > n_data + 2 else 1.0
-        W   = self.dmu_dtheta @ (h_a * np.linalg.inv(C_a))
-        y_b = (W @ x_b.T).T
-        C_y = np.cov(y_b, rowvar=False)
-        h_y = (n_b - self.n_params - 2) / (n_b - 1)
-        F_lower = h_y * np.linalg.inv(C_y)
-
-        try:
-            self.F = self._geometricMean(F_upper, F_lower)
-        except Exception as e:
-            self._print(f"    WARNING: Geometric mean failed ({e}), using linear fallback.")
-            self.F = ((n_total - n_data - 2) * F_upper - (n_total - n_data - 1) * F_lower) / (n_data + 1)
+        self.F_upper = 0.5 * (F_upper + F_upper.T)
+        self.F_lower = 0.5 * (F_lower + F_lower.T)
+        F = np.real(self._geometricMean(self.F_lower, self.F_upper))
+        self.F = 0.5 * (F + F.T)
 
     def _compute_Shrinkage(self, shrinkage_target='diagonal'):
         """Ledoit-Wolf-style covariance regularisation (Pope & Szapudi 2008)."""

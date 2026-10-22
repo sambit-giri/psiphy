@@ -59,6 +59,11 @@ class FisherMatrix:
     >>> fm.plot_ellipses()
     """
 
+    # Arrays written by save() and restored by load(); subclasses extend this.
+    _ARRAY_ATTRS = ('F', 'F_inv', 'F_std', 'C', 'C_inv', 'dmu_dtheta',
+                    'dmu_samples_ns', 'dmu_samples_ic',
+                    'x_mean_fid', 'x_realisations')
+
     def __init__(
         self,
         simulator,
@@ -159,6 +164,22 @@ class FisherMatrix:
 
     def _normalise(self, x):
         return (x - self.X_mean) / self.X_std
+
+    def _step_sizes(self, delta_frac):
+        """
+        Absolute finite-difference step per parameter. delta_frac is a scalar,
+        a dict keyed by parameter name or an array in param order, relative to
+        the fiducial value (absolute where the fiducial value is zero).
+        """
+        if isinstance(delta_frac, dict):
+            df_arr = np.array([float(delta_frac[p]) for p in self.param_names])
+        elif np.isscalar(delta_frac):
+            df_arr = np.full(self.n_params, float(delta_frac))
+        else:
+            df_arr = np.asarray(delta_frac, dtype=float)
+            assert df_arr.shape == (self.n_params,), \
+                f"delta_frac array must have length {self.n_params}"
+        return np.where(self.theta_fid != 0, df_arr * np.abs(self.theta_fid), df_arr)
 
     def _print(self, msg=""):
         if self.verbose:
@@ -464,15 +485,7 @@ class FisherMatrix:
         weights = stencil_configs[n_stencil]['weights']
         steps   = stencil_configs[n_stencil]['steps']
         seeds   = [int(s) for s in seeds]
-
-        if isinstance(delta_frac, dict):
-            df_arr = np.array([float(delta_frac[p]) for p in self.param_names])
-        elif np.isscalar(delta_frac):
-            df_arr = np.full(self.n_params, float(delta_frac))
-        else:
-            df_arr = np.asarray(delta_frac, dtype=float)
-            assert df_arr.shape == (self.n_params,), \
-                f"delta_frac array must have length {self.n_params}"
+        h_arr   = self._step_sizes(delta_frac)
 
         if self.x_realisations is not None:
             n_data = self.x_realisations.shape[1]
@@ -504,7 +517,7 @@ class FisherMatrix:
 
         stencil_thetas = []
         for j in range(self.n_params):
-            h = df_arr[j] * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else df_arr[j]
+            h = h_arr[j]
             for s_step in steps:
                 theta_step = self.theta_fid.copy()
                 theta_step[j] += s_step * h
@@ -513,7 +526,7 @@ class FisherMatrix:
                               desc="Computing derivatives", n_chunks=n_chunks)
 
         for j, pname in enumerate(self.param_names):
-            h = df_arr[j] * abs(self.theta_fid[j]) if self.theta_fid[j] != 0 else df_arr[j]
+            h = h_arr[j]
 
             if use_crn:
                 deriv_per_seed = []
@@ -685,12 +698,12 @@ class FisherMatrix:
         Parameters
         ----------
         method : str
-            'standard'           — F = J C⁻¹ Jᵀ (default).
-            'lfim'               — Score-trick estimator via Synthetic Likelihood.
-            'CoultonWandelt2023' — Geometric mean of the standard Fisher (biased high by
-                                   derivative noise) and a compressed Fisher (biased low).
-                                   Also sets self.F_upper and self.F_lower.
-            'Shrinkage'          — Ledoit-Wolf-style covariance regularisation.
+            - ``'standard'``: F = J C⁻¹ Jᵀ (default).
+            - ``'lfim'``: score-trick estimator via Synthetic Likelihood.
+            - ``'CoultonWandelt2023'``: geometric mean of the standard Fisher (biased
+              high by derivative noise) and a compressed Fisher (biased low).
+              Also sets self.F_upper and self.F_lower.
+            - ``'Shrinkage'``: Ledoit-Wolf-style covariance regularisation.
         n_bootstrap : int
             (lfim only) Bootstrap resamples for uncertainty; populates self.F_std.
         n_split : int or None
@@ -1058,7 +1071,7 @@ class FisherMatrix:
         assert np.array_equal(self.theta_fid, other.theta_fid), "Fiducials must match."
         assert self.param_names == other.param_names,            "Parameter names must match."
         assert self.F is not None and other.F is not None,       "Call compute() on both first."
-        combined = FisherMatrix(
+        combined = type(self)(
             simulator=None,
             theta_fid=self.theta_fid,
             param_names=self.param_names,
@@ -1291,9 +1304,7 @@ class FisherMatrix:
             'X_mean': self.X_mean,
             'X_std': self.X_std,
         }
-        for attr in ('F', 'F_inv', 'F_std', 'C', 'C_inv', 'dmu_dtheta',
-                     'dmu_samples_ns', 'dmu_samples_ic',
-                     'x_mean_fid', 'x_realisations'):
+        for attr in self._ARRAY_ATTRS:
             if getattr(self, attr) is not None:
                 d[attr] = getattr(self, attr)
         if self.hartlap is not None:
@@ -1326,9 +1337,7 @@ class FisherMatrix:
             X_std=float(data.get('X_std', 1.0)),
             **sim_kwargs,
         )
-        for attr in ('F', 'F_inv', 'F_std', 'C', 'C_inv', 'dmu_dtheta',
-                     'dmu_samples_ns', 'dmu_samples_ic',
-                     'x_mean_fid', 'x_realisations'):
+        for attr in cls._ARRAY_ATTRS:
             if attr in data:
                 setattr(obj, attr, data[attr])
         if 'hartlap' in data:
@@ -1341,12 +1350,13 @@ class FisherMatrix:
     def __repr__(self):
         status = "computed" if self.F is not None else "not computed"
         n_real = len(self.x_realisations) if self.x_realisations is not None else 0
-        return (f"FisherMatrix({status}, params={self.param_names}, "
+        return (f"{type(self).__name__}({status}, params={self.param_names}, "
                 f"n_realisations={n_real})")
 
 
 def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
-                  covariance_kw=None, derivative_kw=None, verbose=False, desc='blocks'):
+                  covariance_kw=None, derivative_kw=None, verbose=False, desc='blocks',
+                  fisher_class=None):
     """
     One FisherMatrix, with its own cache file, per block of a data vector.
 
@@ -1359,7 +1369,7 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     Parameters
     ----------
     simulator : callable
-        simulator(theta, seed, noise_seed, **kwargs) -> data vector of one block.
+        ``simulator(theta, seed, noise_seed, **kwargs)`` -> data vector of one block.
     theta_fid, param_names :
         As for FisherMatrix.
     blocks : dict
@@ -1373,6 +1383,9 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     verbose : bool
     desc : str
         Label of the progress bar over the blocks.
+    fisher_class : type or None
+        Class of the blocks, FisherMatrix (default) or a subclass such as
+        FisherMatrixDALI. Join them with ``fisher_class.joint``.
 
     Returns
     -------
@@ -1387,10 +1400,11 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     ...                     derivative_kw=dict(seeds=range(1, 41), delta_frac=0.02))
     >>> F = FisherMatrix.joint(list(fms.values())).compute()
     """
+    fisher_class = FisherMatrix if fisher_class is None else fisher_class
     out = {}
     for name, kw in (pbar := tqdm(blocks.items(), desc=desc)):
         pbar.set_postfix(block=name)
-        fm = FisherMatrix(simulator, theta_fid, param_names, verbose=verbose,
+        fm = fisher_class(simulator, theta_fid, param_names, verbose=verbose,
                           cache_file=None if cache_file is None else cache_file(name), **kw)
         fm.estimate_covariance(**(covariance_kw or {}))
         fm.estimate_derivatives(**(derivative_kw or {}))

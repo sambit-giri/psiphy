@@ -7,6 +7,7 @@ from itertools import combinations_with_replacement, permutations, product
 from math import factorial
 
 import numpy as np
+import scipy.linalg
 
 from .fisher import FisherMatrix, tqdm
 
@@ -314,6 +315,64 @@ class FisherMatrixDALI(FisherMatrix):
                   f"{lines}\n"
                   f"  Increase delta_frac for these parameters or use more seeds, and check that the "
                   f"simulator gives the same realisation for the same (seed, noise_seed) at every theta.")
+
+    # ---- Combining ----
+
+    @classmethod
+    def joint(cls, blocks, verbose=True):
+        """
+        DALI forecast of the concatenated data vectors of several
+        FisherMatrixDALI objects, for correlated blocks; see FisherMatrix.joint.
+
+        The higher-order derivatives and their per-seed samples are
+        concatenated block by block, up to the highest order every block has.
+        Every block must have run estimate_dali_derivatives on the same IC seeds.
+
+        Parameters
+        ----------
+        blocks : list of FisherMatrixDALI
+        verbose : bool
+
+        Returns
+        -------
+        FisherMatrixDALI
+            Call compute() on it as usual.
+        """
+        for b in blocks:
+            assert getattr(b, 'd2mu_dtheta', None) is not None, \
+                "Call estimate_dali_derivatives() on every block first."
+        if any(list(b.dali_seeds) != list(blocks[0].dali_seeds) for b in blocks):
+            raise ValueError("Blocks used different seeds in estimate_dali_derivatives.")
+        fc = super().joint(blocks, verbose=verbose)
+        order = 3 if all(b.d3mu_dtheta is not None for b in blocks) else 2
+        if order == 2 and any(b.d3mu_dtheta is not None for b in blocks):
+            fc._print("  Not every block has third derivatives; the joint forecast stops at order 2.")
+        for k in range(2, order + 1):
+            for attr in (f'd{k}mu_dtheta', f'd{k}mu_samples_ic'):
+                setattr(fc, attr, np.concatenate([getattr(b, attr) for b in blocks], axis=-1))
+        fc.dali_seeds = blocks[0].dali_seeds
+        return fc
+
+    def __add__(self, other):
+        """
+        Combine with an independent data set: the log-likelihoods add.
+
+        Returns a FisherMatrixDALI with F = self.F + other.F. Its DALI
+        likelihood is the sum of both, through the block-diagonal C^-1 and the
+        concatenated derivatives, up to the highest order both have (Fisher
+        only if ``other`` is a FisherMatrix without higher derivatives).
+        """
+        combined = super().__add__(other)
+        if any(x is None for x in (self.C_inv, other.C_inv, self.dmu_dtheta, other.dmu_dtheta)):
+            return combined
+        combined.C_inv = scipy.linalg.block_diag(self.C_inv, other.C_inv)
+        combined.dmu_dtheta = np.hstack([self.dmu_dtheta, other.dmu_dtheta])
+        for k in (2, 3):
+            a, b = getattr(self, f'd{k}mu_dtheta'), getattr(other, f'd{k}mu_dtheta', None)
+            if a is None or b is None:
+                break
+            setattr(combined, f'd{k}mu_dtheta', np.concatenate([a, b], axis=-1))
+        return combined
 
     # ---- DALI likelihood ----
 

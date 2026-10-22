@@ -1356,7 +1356,7 @@ class FisherMatrix:
 
 def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
                   covariance_kw=None, derivative_kw=None, verbose=False, desc='blocks',
-                  fisher_class=None):
+                  fisher_class=None, dali_kw=None):
     """
     One FisherMatrix, with its own cache file, per block of a data vector.
 
@@ -1386,6 +1386,9 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     fisher_class : type or None
         Class of the blocks, FisherMatrix (default) or a subclass such as
         FisherMatrixDALI. Join them with ``fisher_class.joint``.
+    dali_kw : dict or None
+        Arguments of estimate_dali_derivatives, run on every block when given;
+        needs ``fisher_class=FisherMatrixDALI``.
 
     Returns
     -------
@@ -1401,6 +1404,8 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
     >>> F = FisherMatrix.joint(list(fms.values())).compute()
     """
     fisher_class = FisherMatrix if fisher_class is None else fisher_class
+    if dali_kw is not None and not hasattr(fisher_class, 'estimate_dali_derivatives'):
+        raise ValueError("dali_kw needs fisher_class=FisherMatrixDALI.")
     out = {}
     for name, kw in (pbar := tqdm(blocks.items(), desc=desc)):
         pbar.set_postfix(block=name)
@@ -1408,5 +1413,7 @@ def fisher_blocks(simulator, theta_fid, param_names, blocks, cache_file=None,
                           cache_file=None if cache_file is None else cache_file(name), **kw)
         fm.estimate_covariance(**(covariance_kw or {}))
         fm.estimate_derivatives(**(derivative_kw or {}))
+        if dali_kw is not None:
+            fm.estimate_dali_derivatives(**dali_kw)
         out[name] = fm
     return out

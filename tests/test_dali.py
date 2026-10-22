@@ -274,3 +274,68 @@ def test_linear_model_dali_equals_fisher():
     theta = fm.theta_fid + np.random.default_rng(0).normal(0, 0.5, (50, 2))
     np.testing.assert_allclose(fm.dali_logpdf(theta, order=3), fm.dali_logpdf(theta, order=1),
                                rtol=1e-8, atol=1e-8)
+
+
+# ── combining blocks ───────────────────────────────────────────────────────────
+
+def _cubic_block(theta, seed, noise_seed, sl):
+    return cubic_sim(theta, seed, noise_seed)[sl]
+
+
+_SPLIT = {'lo': dict(sl=slice(0, 6)), 'hi': dict(sl=slice(6, None))}
+_BLOCK_KW = dict(covariance_kw=dict(seeds=range(1, 21), noise_seeds=range(1, 11)),
+                 derivative_kw=dict(delta_frac=0.05, seeds=range(1, 4), noise_seed=0),
+                 dali_kw=dict(order=3, delta_frac=0.05, seeds=range(1, 4), noise_seeds=[1, 2]))
+
+
+def _full_dali():
+    fm = FisherMatrixDALI(cubic_sim, theta_fid=[1.0, 2.0], param_names=["a", "b"], verbose=False)
+    fm.estimate_covariance(**_BLOCK_KW['covariance_kw'])
+    fm.estimate_derivatives(**_BLOCK_KW['derivative_kw'])
+    return fm.estimate_dali_derivatives(**_BLOCK_KW['dali_kw']).compute()
+
+
+def test_joint_of_split_vector_matches_full():
+    full = _full_dali()
+    fms = fisher_blocks(_cubic_block, [1.0, 2.0], ["a", "b"], _SPLIT,
+                        fisher_class=FisherMatrixDALI, **_BLOCK_KW)
+    joint = FisherMatrixDALI.joint(list(fms.values()), verbose=False).compute()
+    assert isinstance(joint, FisherMatrixDALI)
+    np.testing.assert_allclose(joint.d2mu_dtheta, full.d2mu_dtheta)
+    np.testing.assert_allclose(joint.d3mu_samples_ic, full.d3mu_samples_ic)
+    theta = full.theta_fid + np.random.default_rng(0).normal(0, 0.2, (20, 2))
+    np.testing.assert_allclose(joint.dali_logpdf(theta), full.dali_logpdf(theta), rtol=1e-8)
+
+
+def test_joint_checks_blocks():
+    fms = fisher_blocks(_cubic_block, [1.0, 2.0], ["a", "b"], _SPLIT,
+                        fisher_class=FisherMatrixDALI, **{**_BLOCK_KW, 'dali_kw': None})
+    with pytest.raises(AssertionError, match="estimate_dali_derivatives"):
+        FisherMatrixDALI.joint(list(fms.values()))
+    lo, hi = fms.values()
+    lo.estimate_dali_derivatives(order=3, seeds=range(1, 4), noise_seed=0)
+    hi.estimate_dali_derivatives(order=2, seeds=range(1, 3), noise_seed=0)
+    with pytest.raises(ValueError, match="different seeds"):
+        FisherMatrixDALI.joint([lo, hi])
+    hi.estimate_dali_derivatives(order=2, seeds=range(1, 4), noise_seed=0)
+    joint = FisherMatrixDALI.joint([lo, hi], verbose=False)
+    assert joint.d2mu_dtheta.shape == (2, 2, T.size) and joint.d3mu_dtheta is None
+
+
+def test_fisher_blocks_dali_kw_needs_subclass():
+    with pytest.raises(ValueError, match="FisherMatrixDALI"):
+        fisher_blocks(_cubic_block, [1.0, 2.0], ["a", "b"], _SPLIT, **_BLOCK_KW)
+
+
+def test_add_independent_data_sums_log_likelihoods():
+    a, b = _full_dali(), _quadratic_fm(order=2)
+    combined = a + b
+    assert isinstance(combined, FisherMatrixDALI)
+    np.testing.assert_allclose(combined.F, a.F + b.F)
+    theta = a.theta_fid + np.random.default_rng(0).normal(0, 0.2, (20, 2))
+    # b stops at order 2, so the combination does too
+    np.testing.assert_allclose(combined.dali_logpdf(theta),
+                               a.dali_logpdf(theta, order=2) + b.dali_logpdf(theta), rtol=1e-8)
+    assert combined.d3mu_dtheta is None
+    fisher_only = a + FisherMatrix.joint([_full_dali()], verbose=False).compute()
+    np.testing.assert_allclose(fisher_only.dali_logpdf(theta), 2 * a.dali_logpdf(theta, order=1), rtol=1e-8)

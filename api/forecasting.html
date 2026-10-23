@@ -90,11 +90,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.fisher.fisher_blocks"><code class="docutils literal notranslate"><span class="pre">fisher_blocks()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.estimate_dali_derivatives"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.estimate_dali_derivatives()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.convergence_test_delta_frac"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.convergence_test_delta_frac()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.joint"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.joint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_logpdf"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.dali_logpdf()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_tensors"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.dali_tensors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.sample"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.sample()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.to_getdist"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.to_getdist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.plot_dali"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.plot_dali()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -701,6 +703,45 @@ check, too small.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.convergence_test_delta_frac">
+<span class="sig-name descname"><span class="pre">convergence_test_delta_frac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_fracs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_stencil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_crn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_warn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.convergence_test_delta_frac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.convergence_test_delta_frac" title="Link to this definition"></a></dt>
+<dd><p>Test sensitivity of the derivatives to the finite-difference step size.</p>
+<p><code class="docutils literal notranslate"><span class="pre">order=1</span></code> runs FisherMatrix.convergence_test_delta_frac on the first
+derivatives. <code class="docutils literal notranslate"><span class="pre">order=2</span></code> (or 3) sweeps <code class="docutils literal notranslate"><span class="pre">delta_fracs</span></code> through
+estimate_dali_derivatives and records, for every distinct second (and
+third) derivative, its norm and its SNR over the IC seeds. A good step
+sits on the plateau between rounding or simulation noise (small h) and
+truncation error (large h); noise-dominated points (SNR &lt; snr_warn) are
+marked in the plot. No noise warnings are printed during the sweep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta_fracs</strong> (<em>array-like</em><em> or </em><em>None</em>) – Step sizes to test. Default: 10 log-spaced values from 1e-3 to 0.3.</p></li>
+<li><p><strong>seeds</strong> – Forwarded to estimate_derivatives / estimate_dali_derivatives.</p></li>
+<li><p><strong>noise_seed</strong> – Forwarded to estimate_derivatives / estimate_dali_derivatives.</p></li>
+<li><p><strong>noise_seeds</strong> – Forwarded to estimate_derivatives / estimate_dali_derivatives.</p></li>
+<li><p><strong>n_jobs</strong> – Forwarded to estimate_derivatives / estimate_dali_derivatives.</p></li>
+<li><p><strong>n_stencil</strong> – (order=1 only) Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>use_crn</strong> – (order=1 only) Forwarded to estimate_derivatives.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em>) – If True, show diagnostic plots.</p></li>
+<li><p><strong>restore</strong> (<em>bool</em>) – Restore the derivatives to their values before the test.</p></li>
+<li><p><strong>order</strong> (<em>int</em>) – 1, 2 or 3.</p></li>
+<li><p><strong>accuracy</strong> (<em>int</em>) – (order &gt;= 2) Forwarded to estimate_dali_derivatives.</p></li>
+<li><p><strong>snr_warn</strong> (<em>float</em>) – (order &gt;= 2) SNR below which a point is marked as noise-dominated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>order=1: as FisherMatrix.convergence_test_delta_frac. order &gt;= 2:
+entry name (e.g. ‘d(a)(b)’) -&gt; dict with keys ‘delta_fracs’,
+‘norms’ and ‘snr’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.joint">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">joint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.joint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.joint" title="Link to this definition"></a></dt>
 <dd><p>DALI forecast of the concatenated data vectors of several
@@ -799,6 +840,32 @@ are those of sample(); <code class="docutils literal notranslate"><span class="p
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>getdist.MCSamples</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.plot_dali">
+<span class="sig-name descname"><span class="pre">plot_dali</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">others</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_inch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">sample_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.plot_dali"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.plot_dali" title="Link to this definition"></a></dt>
+<dd><p>getdist triangle plot of the Fisher and DALI posteriors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>orders</strong> (<em>iterable</em><em> of </em><em>int</em><em> or </em><em>None</em>) – Orders to plot: 1 (Fisher), 2 (DALI-2), 3 (DALI-3). Default: all
+estimated orders.</p></li>
+<li><p><strong>others</strong> (<em>dict</em><em> or </em><em>None</em>) – Label -&gt; getdist MCSamples to overlay filled, e.g. the posterior of
+the exact likelihood.</p></li>
+<li><p><strong>n_samples</strong> (<em>int</em>)</p></li>
+<li><p><strong>label_names</strong> (<em>dict</em><em> or </em><em>None</em>) – param_name -&gt; LaTeX label.</p></li>
+<li><p><strong>colors</strong> (<em>list</em><em> or </em><em>None</em>) – One colour per curve (orders first, then others).</p></li>
+<li><p><strong>settings</strong> (<em>dict</em><em> or </em><em>None</em>) – getdist analysis settings applied to every sample, e.g.
+<code class="docutils literal notranslate"><span class="pre">{'fine_bins_2D':</span> <span class="pre">1024}</span></code> for long tails.</p></li>
+<li><p><strong>width_inch</strong> (<em>float</em>)</p></li>
+<li><p><strong>**sample_kw</strong> – Forwarded to to_getdist for the DALI orders (method, prior_bounds, …).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>getdist.plots.GetDistPlotter</p>
 </dd>
 </dl>
 </dd></dl>

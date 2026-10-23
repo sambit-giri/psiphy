@@ -141,7 +141,7 @@
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">getdist.chains</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">getdist</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCSamples</span><span class="p">,</span> <span class="n">plots</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">getdist</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCSamples</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.forecasting</span><span class="w"> </span><span class="kn">import</span> <span class="n">FisherMatrixDALI</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MHSampler</span>
@@ -434,7 +434,7 @@ mu_,AA, mu_,AAA, mu_,AAn (zero): 0.0 0.0 1.3877787807814455e-11
 <img alt="../_images/examples_fisher_analysis_higher_order_15_0.png" src="../_images/examples_fisher_analysis_higher_order_15_0.png" />
 </div>
 </div>
-<p>On the right of each curve the truncation error dominates (slope 2 or 4). On the left, rounding errors take over, and they hit the third derivatives at a larger step than the second. <code class="docutils literal notranslate"><span class="pre">delta_frac=0.02</span></code> (grey line) sits where both are accurate. For a simulator with noise, the noise also scales as <span class="math notranslate nohighlight">\(1/h^k\)</span>, which pushes the best step larger.</p>
+<p>On the right of each curve the truncation error dominates (slope 2 or 4). On the left, rounding errors take over, and they hit the third derivatives at a larger step than the second. <code class="docutils literal notranslate"><span class="pre">delta_frac=0.02</span></code> (grey line) sits where both are accurate. For a simulator with noise, the noise also scales as <span class="math notranslate nohighlight">\(1/h^k\)</span>, which pushes the best step larger. Without analytic derivatives, <code class="docutils literal notranslate"><span class="pre">convergence_test_delta_frac(order=2</span> <span class="pre">or</span> <span class="pre">3)</span></code> runs the sweep for you (see the end of section 5).</p>
 </section>
 <section id="5.-Simulation-noise-in-higher-derivatives">
 <h2>5. Simulation noise in higher derivatives<a class="headerlink" href="#5.-Simulation-noise-in-higher-derivatives" title="Link to this heading"></a></h2>
@@ -503,13 +503,43 @@ delta_frac=0.2, 40 seeds:
 </pre></div></div>
 </div>
 <p>A ten times larger step and four times more seeds reduce the noise, but not enough. Common random numbers remove it entirely. The per-entry values are stored in <code class="docutils literal notranslate"><span class="pre">dali_snr</span></code> and <code class="docutils literal notranslate"><span class="pre">dali_noise_1sigma</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">convergence_test_delta_frac(order=2)</span></code> sweeps the step size and plots the norm of every second derivative, with noise-dominated steps marked by crosses. Without common random numbers the norms fall as <span class="math notranslate nohighlight">\(1/h^2\)</span> and never reach a plateau; the noise dominates at every step. With them (<code class="docutils literal notranslate"><span class="pre">fm</span></code>, printed below), the norms stay within 10% up to the largest steps, where truncation error sets in, and the noise cancels to the rounding level (SNR ~ <span class="math notranslate nohighlight">\(10^{11}\)</span>).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res_no_crn</span> <span class="o">=</span> <span class="n">fm_no_crn</span><span class="o">.</span><span class="n">convergence_test_delta_frac</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">res_crn</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">convergence_test_delta_frac</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'d(A_s)(n_s)'</span><span class="p">,</span> <span class="s1">'d(n_s)(n_s)'</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: norm with common random numbers = "</span>
+          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">res_crn</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'norms'</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> .. </span><span class="si">{</span><span class="n">res_crn</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'norms'</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, "</span>
+          <span class="sa">f</span><span class="s2">"min SNR = </span><span class="si">{</span><span class="n">res_crn</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'snr'</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_fisher_analysis_higher_order_21_0.png" src="../_images/examples_fisher_analysis_higher_order_21_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+d(A_s)(n_s): norm with common random numbers = 5.458 .. 5.933, min SNR = 2.64e+11
+d(n_s)(n_s): norm with common random numbers = 12.881 .. 13.558, min SNR = 9.3e+10
+</pre></div></div>
+</div>
 </section>
 <section id="6.-The-DALI-likelihood">
 <h2>6. The DALI likelihood<a class="headerlink" href="#6.-The-DALI-likelihood" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">dali_logpdf(theta,</span> <span class="pre">order)</span></code> evaluates <span class="math notranslate nohighlight">\(\ln L\)</span> for a single point or a batch. <code class="docutils literal notranslate"><span class="pre">order=1</span></code> is the Fisher Gaussian. <code class="docutils literal notranslate"><span class="pre">dali_tensors()</span></code> returns the tensors of the expansion: <span class="math notranslate nohighlight">\(T_{(1,1)} = F\)</span>, <span class="math notranslate nohighlight">\(T_{(2,1)} = S\)</span> and <span class="math notranslate nohighlight">\(T_{(2,2)} = Q\)</span> of Sellentin et al., and for <code class="docutils literal notranslate"><span class="pre">order=3</span></code> also <span class="math notranslate nohighlight">\(T_{(3,1)}\)</span>, <span class="math notranslate nohighlight">\(T_{(3,2)}\)</span> and <span class="math notranslate nohighlight">\(T_{(3,3)}\)</span>.</p>
 <p>To see which terms matter, here is the size of each term in <span class="math notranslate nohighlight">\(-\ln L\)</span> at <span class="math notranslate nohighlight">\(\Delta n_{\rm s} = \pm 1\sigma\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">factorial</span>
@@ -539,7 +569,7 @@ Delta n_s = -0.091: T(1, 1): +0.523, T(2, 1): -0.047, T(2, 2): +0.006, T(3, 1): 
 <p>The Fisher term <span class="math notranslate nohighlight">\(T_{(1,1)}\)</span> is about 0.5 at <span class="math notranslate nohighlight">\(1\sigma\)</span>. The leading correction <span class="math notranslate nohighlight">\(T_{(2,1)}\)</span> (the <span class="math notranslate nohighlight">\(S\)</span> tensor) adds about 10% and flips sign between the two sides, so the posterior is asymmetric in <span class="math notranslate nohighlight">\(n_{\rm s}\)</span>. The triplet terms are smaller still at <span class="math notranslate nohighlight">\(1\sigma\)</span>, but grow faster (<span class="math notranslate nohighlight">\(\propto\Delta^4\)</span> to <span class="math notranslate nohighlight">\(\Delta^6\)</span>) in the tails. A slice through <span class="math notranslate nohighlight">\(-\ln L\)</span> along <span class="math notranslate nohighlight">\(n_{\rm s}\)</span> shows it. The exact curve is the likelihood of the noiseless fiducial data
 under the true model, with the same covariance:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">exact_logpdf</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
@@ -567,16 +597,16 @@ under the true model, with the same covariance:</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_fisher_analysis_higher_order_23_0.png" src="../_images/examples_fisher_analysis_higher_order_23_0.png" />
+<img alt="../_images/examples_fisher_analysis_higher_order_25_0.png" src="../_images/examples_fisher_analysis_higher_order_25_0.png" />
 </div>
 </div>
 </section>
 <section id="7.-Fisher-vs-DALI-vs-the-exact-posterior">
 <h2>7. Fisher vs DALI vs the exact posterior<a class="headerlink" href="#7.-Fisher-vs-DALI-vs-the-exact-posterior" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">sample(approx='dali',</span> <span class="pre">order=...)</span></code> draws equal-weight samples. <code class="docutils literal notranslate"><span class="pre">to_getdist</span></code> returns weighted getdist samples. The default <code class="docutils literal notranslate"><span class="pre">method='importance'</span></code> reweights draws from the Fisher Gaussian, with its covariance inflated by <code class="docutils literal notranslate"><span class="pre">inflate**2</span></code> (default 4). It prints a warning if the effective sample size is low; <code class="docutils literal notranslate"><span class="pre">method='emcee'</span></code> runs an ensemble MCMC instead.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sample(approx='dali',</span> <span class="pre">order=...)</span></code> draws equal-weight samples. <code class="docutils literal notranslate"><span class="pre">to_getdist</span></code> returns weighted getdist samples, and <code class="docutils literal notranslate"><span class="pre">plot_dali</span></code> draws a getdist triangle plot of the Fisher and DALI posteriors, with other samples overlaid. The default <code class="docutils literal notranslate"><span class="pre">method='importance'</span></code> reweights draws from the Fisher Gaussian, with its covariance inflated by <code class="docutils literal notranslate"><span class="pre">inflate**2</span></code> (default 4). It prints a warning if the effective sample size is low; <code class="docutils literal notranslate"><span class="pre">method='emcee'</span></code> runs an ensemble MCMC instead.</p>
 <p>As the reference, we sample the exact likelihood with <code class="docutils literal notranslate"><span class="pre">psiphy.mcmc.MHSampler</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">exact_logpdf</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">200_000</span><span class="p">):</span>
@@ -604,20 +634,8 @@ under the true model, with the same covariance:</p>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">8s</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">12.3f</span><span class="si">}{</span><span class="n">d</span><span class="si">:</span><span class="s2">10.3f</span><span class="si">}{</span><span class="n">k</span><span class="si">:</span><span class="s2">11.2f</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">skew</span><span class="p">)))</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">triangle</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">fine_bins_2D</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">fine_bins_2D</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>   <span class="c1"># long tails need a finer 2D grid</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">s</span><span class="o">.</span><span class="n">updateSettings</span><span class="p">({</span><span class="s1">'fine_bins_2D'</span><span class="p">:</span> <span class="n">fine_bins_2D</span><span class="p">})</span>
-    <span class="n">g</span> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">get_subplot_plotter</span><span class="p">(</span><span class="n">width_inch</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
-    <span class="n">g</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">legend_fontsize</span> <span class="o">=</span> <span class="mi">11</span>
-    <span class="n">g</span><span class="o">.</span><span class="n">triangle_plot</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">filled</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
-                    <span class="n">contour_colors</span><span class="o">=</span><span class="p">[</span><span class="s1">'C0'</span><span class="p">,</span> <span class="s1">'C1'</span><span class="p">,</span> <span class="s1">'C2'</span><span class="p">,</span> <span class="s1">'gray'</span><span class="p">],</span> <span class="n">contour_lws</span><span class="o">=</span><span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                    <span class="n">legend_loc</span><span class="o">=</span><span class="s1">'upper right'</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-
 <span class="n">samples</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">exact_logpdf</span><span class="p">)</span>
-<span class="n">triangle</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">fm</span><span class="o">.</span><span class="n">plot_dali</span><span class="p">(</span><span class="n">others</span><span class="o">=</span><span class="p">{</span><span class="s1">'Exact (MCMC)'</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="s1">'Exact'</span><span class="p">]},</span> <span class="n">label_names</span><span class="o">=</span><span class="n">label_names</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">200_000</span><span class="p">);</span>
 <span class="n">summary_table</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">DALI importance sampling ESS: </span><span class="si">{</span><span class="n">fm</span><span class="o">.</span><span class="n">dali_ess</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> of 200000"</span><span class="p">)</span>
 </pre></div>
@@ -627,7 +645,7 @@ under the true model, with the same covariance:</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_fisher_analysis_higher_order_25_0.png" src="../_images/examples_fisher_analysis_higher_order_25_0.png" />
+<img alt="../_images/examples_fisher_analysis_higher_order_27_0.png" src="../_images/examples_fisher_analysis_higher_order_27_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -641,7 +659,7 @@ DALI-2         0.952     0.178      -0.29       0.991     0.115      -0.51
 DALI-3         0.964     0.165      -0.02       0.998     0.096       0.02
 Exact          0.963     0.168      -0.06       0.998     0.099       0.03
 
-DALI importance sampling ESS: 88496 of 200000
+DALI importance sampling ESS: 89079 of 200000
 </pre></div></div>
 </div>
 <p>The Fisher ellipse is centred on the fiducial values and is symmetric. The exact posterior is shifted to lower <span class="math notranslate nohighlight">\(A_{\rm s}\)</span> and is curved. DALI-2 captures the shift, but overshoots the skewness and widens the contours. DALI-3 reproduces the exact means and widths to within a few percent, and follows the curved contours.</p>
@@ -651,7 +669,7 @@ DALI importance sampling ESS: 88496 of 200000
 <p><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI</span></code> supports the same block workflow as <code class="docutils literal notranslate"><span class="pre">FisherMatrix</span></code>. <code class="docutils literal notranslate"><span class="pre">fisher_blocks</span></code> simulates each part of the data vector separately, with its own cache. With <code class="docutils literal notranslate"><span class="pre">fisher_class=FisherMatrixDALI</span></code> and <code class="docutils literal notranslate"><span class="pre">dali_kw</span></code>, it also estimates the higher-order derivatives of every block. <code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.joint</span></code> concatenates the blocks and keeps their cross-covariance, for correlated blocks. <code class="docutils literal notranslate"><span class="pre">+</span></code> adds the log-likelihoods of independent data sets.</p>
 <p>We split the band powers into a low-<span class="math notranslate nohighlight">\(\ell\)</span> and a high-<span class="math notranslate nohighlight">\(\ell\)</span> block. Their noise is independent, so <code class="docutils literal notranslate"><span class="pre">joint</span></code> and <code class="docutils literal notranslate"><span class="pre">+</span></code> should agree with each other and with the single forecast above.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">psiphy.forecasting</span><span class="w"> </span><span class="kn">import</span> <span class="n">fisher_blocks</span>
@@ -692,12 +710,12 @@ DALI importance sampling ESS: 88496 of 200000
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 joint     : max |ln L - ln L(single forecast)| = 0.000
-low + high: max |ln L - ln L(single forecast)| = 0.274
+low + high: max |ln L - ln L(single forecast)| = 0.239
 
                sd(A_s)   sd(n_s)   (DALI-3)
-joint            0.165     0.097
+joint            0.165     0.096
 low + high       0.164     0.099
-single           0.166     0.098
+single           0.165     0.097
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">joint</span></code> reproduces the single forecast exactly, because it uses the same simulations and the same covariance. <code class="docutils literal notranslate"><span class="pre">+</span></code> differs slightly, because it drops the sample cross-covariance between the blocks. Here that is only noise; for correlated blocks it would be real, so use <code class="docutils literal notranslate"><span class="pre">joint</span></code> for those.</p>
@@ -707,7 +725,7 @@ single           0.166     0.098
 <h2>9. When the expansion breaks down<a class="headerlink" href="#9.-When-the-expansion-breaks-down" title="Link to this heading"></a></h2>
 <p>DALI is a Taylor series, so it can only be trusted while the series converges over the posterior. With the noise doubled to 1.0, <span class="math notranslate nohighlight">\(\sigma(n_{\rm s})\)</span> grows to about 0.18, and <span class="math notranslate nohighlight">\(\delta n_{\rm s} \ln(\ell/\ell_{\rm pivot})\)</span> reaches 1.6 at <span class="math notranslate nohighlight">\(3\sigma\)</span>. The truncated exponential is then a poor approximation:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fm_hi</span> <span class="o">=</span> <span class="n">FisherMatrixDALI</span><span class="p">(</span><span class="n">make_simulator</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">theta_fid</span><span class="p">,</span> <span class="n">param_names</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -723,7 +741,8 @@ single           0.166     0.098
 
 
 <span class="n">samples_hi</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">fm_hi</span><span class="p">,</span> <span class="n">exact_logpdf_hi</span><span class="p">)</span>
-<span class="n">triangle</span><span class="p">(</span><span class="n">samples_hi</span><span class="p">,</span> <span class="n">fine_bins_2D</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+<span class="n">fm_hi</span><span class="o">.</span><span class="n">plot_dali</span><span class="p">(</span><span class="n">others</span><span class="o">=</span><span class="p">{</span><span class="s1">'Exact (MCMC)'</span><span class="p">:</span> <span class="n">samples_hi</span><span class="p">[</span><span class="s1">'Exact'</span><span class="p">]},</span> <span class="n">label_names</span><span class="o">=</span><span class="n">label_names</span><span class="p">,</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{</span><span class="s1">'fine_bins_2D'</span><span class="p">:</span> <span class="mi">1024</span><span class="p">});</span>   <span class="c1"># long tails need a finer 2D grid</span>
 <span class="n">summary_table</span><span class="p">(</span><span class="n">samples_hi</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -732,7 +751,7 @@ single           0.166     0.098
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_fisher_analysis_higher_order_30_0.png" src="../_images/examples_fisher_analysis_higher_order_30_0.png" />
+<img alt="../_images/examples_fisher_analysis_higher_order_32_0.png" src="../_images/examples_fisher_analysis_higher_order_32_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -741,10 +760,10 @@ single           0.166     0.098
 <div class="output_area docutils container">
 <div class="highlight"><pre>
            mean(A_s)   sd(A_s)  skew(A_s)   mean(n_s)   sd(n_s)  skew(n_s)
-Fisher         1.000     0.324       0.00       1.000     0.182      -0.02
-DALI-2         0.788     0.382      -0.08       0.951     0.285      -0.06
-DALI-3         0.882     0.329       0.07       0.992     0.199       0.10
-Exact          0.852     0.349       0.01       0.978     0.269      -0.31
+Fisher         1.001     0.324       0.00       1.001     0.182       0.00
+DALI-2         0.785     0.381      -0.08       0.951     0.285      -0.05
+DALI-3         0.882     0.329       0.06       0.992     0.199       0.11
+Exact          0.843     0.348       0.02       0.977     0.271      -0.65
 </pre></div></div>
 </div>
 <p>The exact posterior now has a long tail towards low <span class="math notranslate nohighlight">\(n_{\rm s}\)</span> and <span class="math notranslate nohighlight">\(A_{\rm s}\)</span> (hence its large skewness). DALI-2 and DALI-3 disagree with each other, and neither matches it. Comparing two orders is a cheap check: if DALI-2 and DALI-3 differ a lot, the expansion has not converged. Sample the full likelihood or use simulation-based inference instead.</p>
@@ -774,19 +793,22 @@ Exact          0.852     0.349       0.01       0.978     0.269      -0.31
 <td><p><code class="docutils literal notranslate"><span class="pre">fm.dali_logpdf(theta,</span> <span class="pre">order)</span></code>, <code class="docutils literal notranslate"><span class="pre">fm.dali_tensors()</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p>Posterior</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">fm.sample(approx='dali')</span></code>, <code class="docutils literal notranslate"><span class="pre">fm.to_getdist(approx='dali')</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.sample(approx='dali')</span></code>, <code class="docutils literal notranslate"><span class="pre">fm.to_getdist(approx='dali')</span></code>, <code class="docutils literal notranslate"><span class="pre">fm.plot_dali()</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p>Blocks</p></td>
+<tr class="row-even"><td><p>Step size</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fm.convergence_test_delta_frac(order=2</span> <span class="pre">or</span> <span class="pre">3)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Blocks</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">fisher_blocks(...,</span> <span class="pre">fisher_class=FisherMatrixDALI,</span> <span class="pre">dali_kw=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.joint(blocks)</span></code>, <code class="docutils literal notranslate"><span class="pre">fm_a</span> <span class="pre">+</span> <span class="pre">fm_b</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>Save / load</p></td>
+<tr class="row-even"><td><p>Save / load</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">fm.save('results.npz')</span></code> / <code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.load('results.npz')</span></code></p></td>
 </tr>
 </tbody>
 </table>
 <p>Practical notes:</p>
 <ul class="simple">
-<li><p>Use a larger <code class="docutils literal notranslate"><span class="pre">delta_frac</span></code> for the higher derivatives than for the first ones, and check it with a sweep as in section 4.</p></li>
+<li><p>Use a larger <code class="docutils literal notranslate"><span class="pre">delta_frac</span></code> for the higher derivatives than for the first ones, and check it with <code class="docutils literal notranslate"><span class="pre">convergence_test_delta_frac(order=...)</span></code>.</p></li>
 <li><p>Make sure the simulator gives the same realisation for the same seeds at every <code class="docutils literal notranslate"><span class="pre">theta</span></code>; without that, the higher derivatives are noise.</p></li>
 <li><p>The covariance is taken as parameter-independent, as in <code class="docutils literal notranslate"><span class="pre">FisherMatrix</span></code>.</p></li>
 <li><p>Compare DALI-2 with DALI-3. If they disagree, the Taylor expansion is not reliable for this posterior.</p></li>

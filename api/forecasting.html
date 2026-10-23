@@ -77,6 +77,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.correlation_matrix"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.correlation_matrix()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.sub_fisher"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.sub_fisher()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.ellipse_params"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.ellipse_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.joint"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.joint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_ellipses"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_ellipses()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_derivatives"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_derivatives()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.plot_covariance"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.plot_covariance()</span></code></a></li>
@@ -84,6 +85,16 @@
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.to_getdist"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.to_getdist()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.save"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.save()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix.load"><code class="docutils literal notranslate"><span class="pre">FisherMatrix.load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.fisher.fisher_blocks"><code class="docutils literal notranslate"><span class="pre">fisher_blocks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.estimate_dali_derivatives"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.estimate_dali_derivatives()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.joint"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.joint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_logpdf"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.dali_logpdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_tensors"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.dali_tensors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.sample"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.sample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI.to_getdist"><code class="docutils literal notranslate"><span class="pre">FisherMatrixDALI.to_getdist()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -204,7 +215,7 @@ Must return a 1D array (the summary statistic).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.estimate_covariance">
-<span class="sig-name descname"><span class="pre">estimate_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(0,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_covariance" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">estimate_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(0,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_covariance" title="Link to this definition"></a></dt>
 <dd><p>Estimate the data covariance matrix at the fiducial point.</p>
 <p>Realisations are appended to any existing ones, so you can call this
 multiple times with different seed ranges to increase the sample size.</p>
@@ -216,6 +227,8 @@ multiple times with different seed ranges to increase the sample size.</p>
 <li><p><strong>n_jobs</strong> (<em>int</em>) – Number of parallel workers (joblib). -1 uses all CPUs.
 Each worker handles all noise_seeds for one IC seed, so the
 simulator’s in-memory coeval cache is reused within each job.</p></li>
+<li><p><strong>n_chunks</strong> (<em>int</em>) – (parallel only) Run the seeds in this many chunks, writing the cache
+after each, with a progress bar per finished chunk.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -242,7 +255,7 @@ and recomputes C_inv with the Hartlap correction.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives">
-<span class="sig-name descname"><span class="pre">estimate_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_stencil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_crn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">estimate_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_stencil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_crn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.estimate_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.estimate_derivatives" title="Link to this definition"></a></dt>
 <dd><p>Estimate dmu/dtheta via central finite differences.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -265,6 +278,8 @@ response is retained.</p></li>
 <li><p><strong>use_crn</strong> (<em>bool</em>) – Use Common Random Numbers to cancel cosmic variance in the subtraction.</p></li>
 <li><p><strong>n_jobs</strong> (<em>int</em>) – Number of parallel workers (joblib). -1 uses all CPUs.
 Each worker handles all noise_seeds for one (theta_step, IC seed) pair.</p></li>
+<li><p><strong>n_chunks</strong> (<em>int</em>) – (parallel only) Run the seeds in this many chunks, writing the cache
+after each, with a progress bar per finished chunk.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -309,12 +324,19 @@ middle: upturn at small h (stochastic noise) and at large h (truncation error).<
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>method</strong> (<em>str</em>) – ‘standard’           — F = J C⁻¹ Jᵀ (default).
-‘lfim’               — Score-trick estimator via Synthetic Likelihood.
-‘CoultonWandelt2023’ — Geometric combined estimator (Eq. 18).
-‘Shrinkage’          — Ledoit-Wolf-style covariance regularisation.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – <ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'standard'</span></code>: F = J C⁻¹ Jᵀ (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'lfim'</span></code>: score-trick estimator via Synthetic Likelihood.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'CoultonWandelt2023'</span></code>: geometric mean of the standard Fisher (biased
+high by derivative noise) and a compressed Fisher (biased low).
+Also sets self.F_upper and self.F_lower.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Shrinkage'</span></code>: Ledoit-Wolf-style covariance regularisation.</p></li>
+</ul>
+</p></li>
 <li><p><strong>n_bootstrap</strong> (<em>int</em>) – (lfim only) Bootstrap resamples for uncertainty; populates self.F_std.</p></li>
-<li><p><strong>n_split</strong> (<em>int</em><em> or </em><em>None</em>) – (CoultonWandelt2023 only) Size of set A. Defaults to 50/50 split.</p></li>
+<li><p><strong>n_split</strong> (<em>int</em><em> or </em><em>None</em>) – (CoultonWandelt2023 only) Number of derivative IC seeds used for the
+compression; the rest measure the compressed derivatives, and the two
+roles are then swapped. Defaults to half.</p></li>
 <li><p><strong>shrinkage_target</strong> (<em>str</em>) – (Shrinkage only) ‘diagonal’ or ‘identity’.</p></li>
 <li><p><strong>debias_derivatives</strong> (<em>bool</em>) – (‘standard’ only) Subtract the Fisher inflation caused by stochastic
 error in the estimated derivatives, E[dm^T C^-1 dm] = F + tr(C^-1 Cov(dm)).
@@ -411,6 +433,36 @@ no significant information; eigenvalues are clipped with a warning.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>center, width, height, angle_deg</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.FisherMatrix.joint">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">joint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#FisherMatrix.joint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.FisherMatrix.joint" title="Link to this definition"></a></dt>
+<dd><p>Fisher matrix of the concatenated data vectors of several FisherMatrix objects.</p>
+<p>Use this when the blocks come from the same simulations, e.g. different
+summaries, or one summary at different redshifts, so they are correlated
+and <code class="docutils literal notranslate"><span class="pre">F_a</span> <span class="pre">+</span> <span class="pre">F_b</span></code> would double count. The covariance is estimated from the
+concatenated vectors, paired by (seed, noise_seed), and the derivatives
+are concatenated block by block. Keeping one block (and one cache file)
+per summary or redshift means that adding a block later reuses the rest.</p>
+<p>Every block must have run estimate_covariance on the same (seed,
+noise_seed) pairs and estimate_derivatives on the same IC seeds. A block
+whose derivatives used a single noise seed (e.g. noiseless) enters the
+noise part of the derivative debias with zero scatter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blocks</strong> (<em>list</em><em> of </em><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix" title="psiphy.forecasting.fisher.FisherMatrix"><em>FisherMatrix</em></a>)</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Call compute() on it as usual.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix" title="psiphy.forecasting.fisher.FisherMatrix">FisherMatrix</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -516,6 +568,237 @@ no significant information; eigenvalues are clipped with a warning.</p></li>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix" title="psiphy.forecasting.fisher.FisherMatrix">FisherMatrix</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="psiphy.forecasting.fisher.fisher_blocks">
+<span class="sig-prename descclassname"><span class="pre">psiphy.forecasting.fisher.</span></span><span class="sig-name descname"><span class="pre">fisher_blocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta_fid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">derivative_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'blocks'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fisher_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dali_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/fisher.html#fisher_blocks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.fisher.fisher_blocks" title="Link to this definition"></a></dt>
+<dd><p>One FisherMatrix, with its own cache file, per block of a data vector.</p>
+<p>A block is any part of the data vector that is simulated separately:
+one redshift, frequency band, sky patch or summary statistic. Keeping one
+cache per block means that adding a block later only simulates the new
+one. Combine the blocks with <code class="docutils literal notranslate"><span class="pre">FisherMatrix.joint</span></code>, which keeps their
+cross-covariance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simulator</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">simulator(theta,</span> <span class="pre">seed,</span> <span class="pre">noise_seed,</span> <span class="pre">**kwargs)</span></code> -&gt; data vector of one block.</p></li>
+<li><p><strong>theta_fid</strong> – As for FisherMatrix.</p></li>
+<li><p><strong>param_names</strong> – As for FisherMatrix.</p></li>
+<li><p><strong>blocks</strong> (<em>dict</em>) – Block name -&gt; keyword arguments passed to the simulator for that block,
+e.g. <code class="docutils literal notranslate"><span class="pre">{z:</span> <span class="pre">dict(redshifts=[z])</span> <span class="pre">for</span> <span class="pre">z</span> <span class="pre">in</span> <span class="pre">redshifts}</span></code>.</p></li>
+<li><p><strong>cache_file</strong> (<em>callable</em><em> or </em><em>None</em>) – cache_file(name) -&gt; path of the block’s cache file.</p></li>
+<li><p><strong>covariance_kw</strong> (<em>dict</em><em> or </em><em>None</em>) – Arguments of estimate_covariance and estimate_derivatives, the same for
+every block (so the blocks can be joined).</p></li>
+<li><p><strong>derivative_kw</strong> (<em>dict</em><em> or </em><em>None</em>) – Arguments of estimate_covariance and estimate_derivatives, the same for
+every block (so the blocks can be joined).</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+<li><p><strong>desc</strong> (<em>str</em>) – Label of the progress bar over the blocks.</p></li>
+<li><p><strong>fisher_class</strong> (<em>type</em><em> or </em><em>None</em>) – Class of the blocks, FisherMatrix (default) or a subclass such as
+FisherMatrixDALI. Join them with <code class="docutils literal notranslate"><span class="pre">fisher_class.joint</span></code>.</p></li>
+<li><p><strong>dali_kw</strong> (<em>dict</em><em> or </em><em>None</em>) – Arguments of estimate_dali_derivatives, run on every block when given;
+needs <code class="docutils literal notranslate"><span class="pre">fisher_class=FisherMatrixDALI</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Block name -&gt; FisherMatrix with covariance and derivatives estimated.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fms</span> <span class="o">=</span> <span class="n">fisher_blocks</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="p">{</span><span class="n">z</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">redshifts</span><span class="o">=</span><span class="p">[</span><span class="n">z</span><span class="p">])</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">)},</span>
+<span class="gp">... </span>                    <span class="n">cache_file</span><span class="o">=</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'cache_z</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">.pkl'</span><span class="p">,</span>
+<span class="gp">... </span>                    <span class="n">covariance_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">41</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">41</span><span class="p">)),</span>
+<span class="gp">... </span>                    <span class="n">derivative_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">41</span><span class="p">),</span> <span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.02</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">F</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="o">.</span><span class="n">joint</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">fms</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<p id="module-psiphy.forecasting.dali">DALI forecasts: the Fisher expansion extended with higher-order derivatives
+of the model mean (Sellentin, Quartin &amp; Amendola 2014, arXiv:1401.6892).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">psiphy.forecasting.dali.</span></span><span class="sig-name descname"><span class="pre">FisherMatrixDALI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta_fid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#psiphy.forecasting.fisher.FisherMatrix" title="psiphy.forecasting.fisher.FisherMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">FisherMatrix</span></code></a></p>
+<p>Fisher forecast extended with DALI (Sellentin, Quartin &amp; Amendola 2014).</p>
+<p>The Fisher matrix keeps the first derivatives of the mean data vector.
+DALI also keeps its second (doublet, <code class="docutils literal notranslate"><span class="pre">order=2</span></code>) and third (triplet,
+<code class="docutils literal notranslate"><span class="pre">order=3</span></code>) derivatives, so the approximate likelihood:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ln</span> <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span> <span class="n">r</span><span class="o">^</span><span class="n">T</span> <span class="n">C</span><span class="o">^-</span><span class="mi">1</span> <span class="n">r</span><span class="p">,</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">mu_</span><span class="p">,</span><span class="n">a</span> <span class="n">D_a</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span> <span class="n">mu_</span><span class="p">,</span><span class="n">ab</span> <span class="n">D_a</span> <span class="n">D_b</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="mi">6</span> <span class="n">mu_</span><span class="p">,</span><span class="n">abc</span> <span class="n">D_a</span> <span class="n">D_b</span> <span class="n">D_c</span><span class="p">,</span>
+</pre></div>
+</div>
+<p>with <code class="docutils literal notranslate"><span class="pre">D</span> <span class="pre">=</span> <span class="pre">theta</span> <span class="pre">-</span> <span class="pre">theta_fid</span></code>, can be non-Gaussian in the parameters while
+staying normalisable. The covariance C is parameter-independent, as in
+FisherMatrix.</p>
+<p>Everything of FisherMatrix is inherited (covariance, first derivatives,
+compute, cache, parallel runs); its Gaussian outputs (sigma_1d,
+plot_ellipses, …) remain the Fisher baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>FisherMatrix.</strong> (<em>As for</em>)</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span> <span class="o">=</span> <span class="n">FisherMatrixDALI</span><span class="p">(</span><span class="n">my_sim</span><span class="p">,</span> <span class="n">theta_fid</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s1">'mu'</span><span class="p">,</span> <span class="s1">'sigma'</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_covariance</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span><span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">estimate_dali_derivatives</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delta_frac</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fm</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.estimate_dali_derivatives">
+<span class="sig-name descname"><span class="pre">estimate_dali_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(1,</span> <span class="pre">11)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_warn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.estimate_dali_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.estimate_dali_derivatives" title="Link to this definition"></a></dt>
+<dd><p>Estimate the second (and third) derivatives of the mean data vector
+with central finite differences.</p>
+<p>Each partial derivative uses the tensor product of central 1D stencils,
+e.g. <code class="docutils literal notranslate"><span class="pre">(mu_++</span> <span class="pre">-</span> <span class="pre">mu_+-</span> <span class="pre">-</span> <span class="pre">mu_-+</span> <span class="pre">+</span> <span class="pre">mu_--)</span> <span class="pre">/</span> <span class="pre">(4</span> <span class="pre">h_a</span> <span class="pre">h_b)</span></code> for <code class="docutils literal notranslate"><span class="pre">mu_,ab</span></code>
+at <code class="docutils literal notranslate"><span class="pre">accuracy=2</span></code>. The simulator gets the same (seed, noise_seed) at every
+stencil point, so the realisation largely cancels in the differences.
+Stencil points shared with estimate_derivatives (same steps) and the
+covariance runs are taken from the cache.</p>
+<p>Finite-difference noise grows as 1/h^2 (1/h^3 for the third
+derivatives), so these need larger steps than the first derivatives.
+After the run, the noise of each derivative is estimated from its
+scatter over the IC seeds, and a warning is printed (independent of
+verbose) for entries that are both noise-dominated (SNR &lt; snr_warn)
+and noisy enough to matter: the whitened noise of their term in r at
+the Fisher 1-sigma scale exceeds noise_tol.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>order</strong> (<em>int</em>) – 2 (doublet: <code class="docutils literal notranslate"><span class="pre">mu_,ab</span></code>) or 3 (triplet: <code class="docutils literal notranslate"><span class="pre">mu_,ab</span></code> and <code class="docutils literal notranslate"><span class="pre">mu_,abc</span></code>).</p></li>
+<li><p><strong>delta_frac</strong> (<em>float</em><em>, </em><em>dict</em><em>, or </em><em>array-like</em>) – Fractional step size per parameter, as for estimate_derivatives.</p></li>
+<li><p><strong>seeds</strong> (<em>iterable</em>) – IC seeds to average over. At least 2 are needed for the noise check.</p></li>
+<li><p><strong>noise_seed</strong> – As for estimate_derivatives.</p></li>
+<li><p><strong>noise_seeds</strong> – As for estimate_derivatives.</p></li>
+<li><p><strong>accuracy</strong> (<em>int</em>) – Truncation order of the stencils (error O(h^accuracy)); even, &gt;= 2.</p></li>
+<li><p><strong>snr_warn</strong> (<em>float</em>) – SNR below which an entry counts as noise-dominated. SNR is
+sqrt(m^T C^-1 m / tr(C^-1 Cov(m))) for the mean derivative m, which
+is about 1 for pure noise.</p></li>
+<li><p><strong>noise_tol</strong> (<em>float</em>) – Noise of an entry’s term in r (whitened, at the Fisher 1-sigma
+offsets) above which a noise-dominated entry is reported. The
+1-sigma offsets come from the first derivatives, debiased for their
+noise when estimate_derivatives recorded per-seed samples; noisy
+first derivatives without such samples make sigma, and so this
+check, too small.</p></li>
+<li><p><strong>n_jobs</strong> – As for estimate_derivatives.</p></li>
+<li><p><strong>n_chunks</strong> – As for estimate_derivatives.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>self</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.joint">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">joint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.joint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.joint" title="Link to this definition"></a></dt>
+<dd><p>DALI forecast of the concatenated data vectors of several
+FisherMatrixDALI objects, for correlated blocks; see FisherMatrix.joint.</p>
+<p>The higher-order derivatives and their per-seed samples are
+concatenated block by block, up to the highest order every block has.
+Every block must have run estimate_dali_derivatives on the same IC seeds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blocks</strong> (<em>list</em><em> of </em><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI" title="psiphy.forecasting.dali.FisherMatrixDALI"><em>FisherMatrixDALI</em></a>)</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Call compute() on it as usual.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#psiphy.forecasting.dali.FisherMatrixDALI" title="psiphy.forecasting.dali.FisherMatrixDALI">FisherMatrixDALI</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.dali_logpdf">
+<span class="sig-name descname"><span class="pre">dali_logpdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.dali_logpdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_logpdf" title="Link to this definition"></a></dt>
+<dd><p>DALI log-likelihood, ln L = -1/2 r^T C^-1 r (unnormalised).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_params</em><em>,</em><em>) or </em><em>(</em><em>n</em><em>, </em><em>n_params</em><em>)</em>)</p></li>
+<li><p><strong>order</strong> (<em>int</em><em> or </em><em>None</em>) – 1 (Fisher), 2 (doublet) or 3 (triplet); None uses the highest order
+whose derivatives have been estimated.</p></li>
+<li><p><strong>prior_bounds</strong> (<em>list</em><em> of </em><em>(</em><em>low</em><em>, </em><em>high</em><em>) or </em><em>None</em>) – Box prior; -inf outside.</p></li>
+<li><p><strong>log_prior</strong> (<em>callable</em><em> or </em><em>None</em>) – <code class="docutils literal notranslate"><span class="pre">log_prior(theta)</span> <span class="pre">-&gt;</span> <span class="pre">(n,)</span></code> for a batch theta of shape (n, n_params),
+added to the log-likelihood.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float or np.ndarray, shape (n,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.dali_tensors">
+<span class="sig-name descname"><span class="pre">dali_tensors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.dali_tensors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.dali_tensors" title="Link to this definition"></a></dt>
+<dd><p>The DALI tensors T_(i,j) = mu^(i)^T C^-1 mu^(j), mu^(i) being the i-th
+derivatives of the mean, such that</p>
+<blockquote>
+<div><p>-ln L = sum_(i,j) T_(i,j) D^(i+j) / (2 i! j!)</p>
+</div></blockquote>
+<p>over all pairs (i, j) with i, j &lt;= order. T_(1,1) is the Fisher matrix F,
+T_(2,1) and T_(2,2) are S and Q of Sellentin et al. (2014).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(i, j) -&gt; array with i + j parameter axes, for order &gt;= i &gt;= j &gt;= 1.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dali'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.sample" title="Link to this definition"></a></dt>
+<dd><p>Draw samples from the DALI (or Fisher) posterior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<em>int</em>)</p></li>
+<li><p><strong>approx</strong> (<em>str</em>) – ‘dali’ (default) or ‘fisher’ (Gaussian, as FisherMatrix.sample).</p></li>
+<li><p><strong>order</strong> (<em>int</em><em> or </em><em>None</em>) – DALI order; None uses the highest order estimated.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – ‘importance’ (default): importance sampling from the Fisher Gaussian
+with covariance inflated by <code class="docutils literal notranslate"><span class="pre">inflate**2</span></code>, then resampled to equal
+weights; prints a warning when the effective sample size is below
+<code class="docutils literal notranslate"><span class="pre">ess_warn</span> <span class="pre">*</span> <span class="pre">n_samples</span></code>. ‘emcee’: ensemble MCMC with <code class="docutils literal notranslate"><span class="pre">n_walkers</span></code>
+walkers and <code class="docutils literal notranslate"><span class="pre">n_burn</span></code> burn-in steps.</p></li>
+<li><p><strong>prior_bounds</strong> – As for dali_logpdf.</p></li>
+<li><p><strong>log_prior</strong> – As for dali_logpdf.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray, shape (n_samples, n_params)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="psiphy.forecasting.dali.FisherMatrixDALI.to_getdist">
+<span class="sig-name descname"><span class="pre">to_getdist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dali'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/psiphy/forecasting/dali.html#FisherMatrixDALI.to_getdist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#psiphy.forecasting.dali.FisherMatrixDALI.to_getdist" title="Link to this definition"></a></dt>
+<dd><p>getdist MCSamples of the DALI (or Fisher) posterior.</p>
+<p>Importance samples are passed with their weights. Keyword arguments
+are those of sample(); <code class="docutils literal notranslate"><span class="pre">prior_bounds</span></code> also sets the getdist ranges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>getdist.MCSamples</p>
 </dd>
 </dl>
 </dd></dl>

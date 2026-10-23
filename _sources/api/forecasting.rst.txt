@@ -9,3 +9,8 @@ psiphy.forecasting
 .. automodule:: psiphy.forecasting.fisher
    :members:
    :undoc-members:
+
+.. automodule:: psiphy.forecasting.dali
+   :members:
+   :undoc-members:
+   :show-inheritance:

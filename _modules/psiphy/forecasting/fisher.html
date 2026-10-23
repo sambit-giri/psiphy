@@ -157,6 +157,11 @@
 <span class="sd">    &gt;&gt;&gt; fm.plot_ellipses()</span>
 <span class="sd">    """</span>
 
+    <span class="c1"># Arrays written by save() and restored by load(); subclasses extend this.</span>
+    <span class="n">_ARRAY_ATTRS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'F'</span><span class="p">,</span> <span class="s1">'F_inv'</span><span class="p">,</span> <span class="s1">'F_std'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">,</span> <span class="s1">'C_inv'</span><span class="p">,</span> <span class="s1">'dmu_dtheta'</span><span class="p">,</span>
+                    <span class="s1">'dmu_samples_ns'</span><span class="p">,</span> <span class="s1">'dmu_samples_ic'</span><span class="p">,</span>
+                    <span class="s1">'x_mean_fid'</span><span class="p">,</span> <span class="s1">'x_realisations'</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">simulator</span><span class="p">,</span>
@@ -183,6 +188,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_load_cache</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cov_keys</span> <span class="o">=</span> <span class="p">[]</span>             <span class="c1"># (seed, noise_seed) of each row of x_realisations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deriv_seeds</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># IC seeds of dmu_samples_ic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deriv_noise_seeds</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># noise seeds the derivatives were averaged over</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x_mean_fid</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">C</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">C_inv</span> <span class="o">=</span> <span class="kc">None</span>
@@ -193,6 +201,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">F_inv</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">F_std</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F_upper</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># CoultonWandelt2023: standard Fisher (biased high)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F_lower</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># CoultonWandelt2023: compressed Fisher (biased low)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compute_method</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># ---- Parallel worker helpers ----</span>
@@ -203,14 +213,17 @@
         <span class="k">return</span> <span class="p">[(</span><span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">simulator</span><span class="p">(</span><span class="n">theta_step</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">noise_seeds</span><span class="p">]</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_prerun_parallel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">noise_seeds</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prerun_parallel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thetas</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">noise_seeds</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">n_chunks</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Run every uncached (theta, seed, noise_seed) simulation with joblib and</span>
 <span class="sd">        store the results in the cache. No-op when ``n_jobs == 1`` or joblib is</span>
 <span class="sd">        missing; callers then simulate serially through ``_simulate_cached``.</span>
 
 <span class="sd">        One job per (theta, IC seed) pair runs all its noise_seeds, so the</span>
-<span class="sd">        simulator's in-memory coeval cache is reused within each job.</span>
+<span class="sd">        simulator's in-memory coeval cache is reused within each job. With</span>
+<span class="sd">        ``n_chunks &gt; 1`` the seeds are run in chunks, the cache is written after</span>
+<span class="sd">        each chunk (an interruption loses at most one chunk) and a progress bar</span>
+<span class="sd">        advances per finished chunk.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -219,6 +232,10 @@
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">n_jobs</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_JOBLIB_AVAILABLE</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">n_chunks</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array_split</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">seeds</span><span class="p">),</span> <span class="n">n_chunks</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prerun_parallel</span><span class="p">(</span><span class="n">thetas</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">c</span><span class="p">],</span> <span class="n">noise_seeds</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+                       <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">desc</span><span class="si">}</span><span class="s2"> (seed chunks)"</span><span class="p">))</span>
         <span class="n">jobs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">theta</span> <span class="ow">in</span> <span class="n">thetas</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">seeds</span><span class="p">:</span>
@@ -245,6 +262,22 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_normalise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_mean</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_std</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_step_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_frac</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Absolute finite-difference step per parameter. delta_frac is a scalar,</span>
+<span class="sd">        a dict keyed by parameter name or an array in param order, relative to</span>
+<span class="sd">        the fiducial value (absolute where the fiducial value is zero).</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">[</span><span class="n">p</span><span class="p">])</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">):</span>
+            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">df_arr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">,),</span> \
+                <span class="sa">f</span><span class="s2">"delta_frac array must have length </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">df_arr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">),</span> <span class="n">df_arr</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
@@ -399,7 +432,7 @@
 
 <div class="viewcode-block" id="FisherMatrix.estimate_covariance">
 <a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.estimate_covariance">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="n">noise_seeds</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_chunks</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Estimate the data covariance matrix at the fiducial point.</span>
 
@@ -416,6 +449,9 @@
 <span class="sd">            Number of parallel workers (joblib). -1 uses all CPUs.</span>
 <span class="sd">            Each worker handles all noise_seeds for one IC seed, so the</span>
 <span class="sd">            simulator's in-memory coeval cache is reused within each job.</span>
+<span class="sd">        n_chunks : int</span>
+<span class="sd">            (parallel only) Run the seeds in this many chunks, writing the cache</span>
+<span class="sd">            after each, with a progress bar per finished chunk.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -430,7 +466,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">50</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_prerun_parallel</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">],</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">noise_seeds</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span>
-                              <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">)</span>
+                              <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">,</span> <span class="n">n_chunks</span><span class="o">=</span><span class="n">n_chunks</span><span class="p">)</span>
 
         <span class="n">fid_str</span> <span class="o">=</span> <span class="s2">"["</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"]"</span>
         <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Simulating realisations"</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)):</span>
@@ -440,12 +476,19 @@
                 <span class="n">new_realisations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_normalise</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
         <span class="n">new_realisations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_realisations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cov_keys</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">seed</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span> <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">seeds</span> <span class="k">for</span> <span class="n">ns</span> <span class="ow">in</span> <span class="n">noise_seeds</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">,</span> <span class="n">new_realisations</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="o">=</span> <span class="n">new_realisations</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_covariance</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Mean, covariance and Hartlap-corrected inverse from self.x_realisations."""</span>
         <span class="n">n_real</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">)</span>
         <span class="n">n_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
@@ -465,8 +508,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Hartlap factor: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hartlap</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Condition number: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">C</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">50</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
 
 <div class="viewcode-block" id="FisherMatrix.add_modelling_error">
 <a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.add_modelling_error">[docs]</a>
@@ -508,6 +549,7 @@
         <span class="n">n_stencil</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="n">use_crn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_chunks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Estimate dmu/dtheta via central finite differences.</span>
@@ -539,6 +581,9 @@
 <span class="sd">        n_jobs : int</span>
 <span class="sd">            Number of parallel workers (joblib). -1 uses all CPUs.</span>
 <span class="sd">            Each worker handles all noise_seeds for one (theta_step, IC seed) pair.</span>
+<span class="sd">        n_chunks : int</span>
+<span class="sd">            (parallel only) Run the seeds in this many chunks, writing the cache</span>
+<span class="sd">            after each, with a progress bar per finished chunk.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -555,15 +600,7 @@
         <span class="n">weights</span> <span class="o">=</span> <span class="n">stencil_configs</span><span class="p">[</span><span class="n">n_stencil</span><span class="p">][</span><span class="s1">'weights'</span><span class="p">]</span>
         <span class="n">steps</span>   <span class="o">=</span> <span class="n">stencil_configs</span><span class="p">[</span><span class="n">n_stencil</span><span class="p">][</span><span class="s1">'steps'</span><span class="p">]</span>
         <span class="n">seeds</span>   <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seeds</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">[</span><span class="n">p</span><span class="p">])</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">])</span>
-        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">):</span>
-            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">df_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">df_arr</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">,),</span> \
-                <span class="sa">f</span><span class="s2">"delta_frac array must have length </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">h_arr</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_sizes</span><span class="p">(</span><span class="n">delta_frac</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -579,6 +616,8 @@
 
         <span class="c1"># Per-group derivative estimates, used by compute(debias_derivatives=True)</span>
         <span class="c1"># to remove the tr(C^-1 Cov(dmu)) inflation of the Fisher matrix.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deriv_seeds</span> <span class="o">=</span> <span class="n">seeds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deriv_noise_seeds</span> <span class="o">=</span> <span class="n">noise_seeds_deriv</span>
         <span class="k">if</span> <span class="n">use_crn</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dmu_samples_ns</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dmu_samples_ic</span> <span class="o">=</span> <span class="kc">None</span>
@@ -593,16 +632,16 @@
 
         <span class="n">stencil_thetas</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">):</span>
-            <span class="n">h</span> <span class="o">=</span> <span class="n">df_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">df_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">s_step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
                 <span class="n">theta_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="n">theta_step</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s_step</span> <span class="o">*</span> <span class="n">h</span>
                 <span class="n">stencil_thetas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">theta_step</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prerun_parallel</span><span class="p">(</span><span class="n">stencil_thetas</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">noise_seeds_deriv</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span>
-                              <span class="n">desc</span><span class="o">=</span><span class="s2">"Computing derivatives"</span><span class="p">)</span>
+                              <span class="n">desc</span><span class="o">=</span><span class="s2">"Computing derivatives"</span><span class="p">,</span> <span class="n">n_chunks</span><span class="o">=</span><span class="n">n_chunks</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">pname</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">):</span>
-            <span class="n">h</span> <span class="o">=</span> <span class="n">df_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">df_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h_arr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">use_crn</span><span class="p">:</span>
                 <span class="n">deriv_per_seed</span> <span class="o">=</span> <span class="p">[]</span>
@@ -780,14 +819,18 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        method : str</span>
-<span class="sd">            'standard'           — F = J C⁻¹ Jᵀ (default).</span>
-<span class="sd">            'lfim'               — Score-trick estimator via Synthetic Likelihood.</span>
-<span class="sd">            'CoultonWandelt2023' — Geometric combined estimator (Eq. 18).</span>
-<span class="sd">            'Shrinkage'          — Ledoit-Wolf-style covariance regularisation.</span>
+<span class="sd">            - ``'standard'``: F = J C⁻¹ Jᵀ (default).</span>
+<span class="sd">            - ``'lfim'``: score-trick estimator via Synthetic Likelihood.</span>
+<span class="sd">            - ``'CoultonWandelt2023'``: geometric mean of the standard Fisher (biased</span>
+<span class="sd">              high by derivative noise) and a compressed Fisher (biased low).</span>
+<span class="sd">              Also sets self.F_upper and self.F_lower.</span>
+<span class="sd">            - ``'Shrinkage'``: Ledoit-Wolf-style covariance regularisation.</span>
 <span class="sd">        n_bootstrap : int</span>
 <span class="sd">            (lfim only) Bootstrap resamples for uncertainty; populates self.F_std.</span>
 <span class="sd">        n_split : int or None</span>
-<span class="sd">            (CoultonWandelt2023 only) Size of set A. Defaults to 50/50 split.</span>
+<span class="sd">            (CoultonWandelt2023 only) Number of derivative IC seeds used for the</span>
+<span class="sd">            compression; the rest measure the compressed derivatives, and the two</span>
+<span class="sd">            roles are then swapped. Defaults to half.</span>
 <span class="sd">        shrinkage_target : str</span>
 <span class="sd">            (Shrinkage only) 'diagonal' or 'identity'.</span>
 <span class="sd">        debias_derivatives : bool</span>
@@ -875,35 +918,37 @@
         <span class="k">return</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span><span class="n">AB</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_CoultonWandelt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_split</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Geometric combined estimator (Coulton &amp; Wandelt 2023, Eq. 18)."""</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Combined estimator of Coulton &amp; Wandelt (2023).</span>
+
+<span class="sd">        Noise in the estimated derivatives biases the standard Fisher matrix high</span>
+<span class="sd">        (F_upper). Compressing the data with derivatives from one set of IC seeds</span>
+<span class="sd">        and measuring the compressed derivatives with the other set gives a</span>
+<span class="sd">        Fisher matrix biased low (F_lower): noise in the compression only loses</span>
+<span class="sd">        information. The two sets then swap roles and the results are averaged.</span>
+<span class="sd">        F is the matrix geometric mean of F_upper and F_lower.</span>
+<span class="sd">        """</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"Call estimate_covariance() first."</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="s2">"  Using Coulton &amp; Wandelt (2023) geometric combined estimator..."</span><span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_samples_ic</span>
+        <span class="k">assert</span> <span class="n">S</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">,</span> \
+            <span class="s2">"Needs per-IC derivative samples: estimate_derivatives(use_crn=False) with &gt;= 4 seeds."</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="s2">"  Using Coulton &amp; Wandelt (2023) combined estimator..."</span><span class="p">)</span>
 
-        <span class="n">n_total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">)</span>
-        <span class="n">n_data</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">n_split</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">n_split</span> <span class="o">=</span> <span class="n">n_total</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">n_split</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">n_split</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">n_split</span>
+        <span class="n">D_a</span><span class="p">,</span> <span class="n">D_b</span> <span class="o">=</span> <span class="n">S</span><span class="p">[:</span><span class="n">n_split</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">S</span><span class="p">[</span><span class="n">n_split</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">x_a</span><span class="p">,</span> <span class="n">x_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">[:</span><span class="n">n_split</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">[</span><span class="n">n_split</span><span class="p">:]</span>
-        <span class="n">n_a</span><span class="p">,</span> <span class="n">n_b</span>  <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_a</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_b</span><span class="p">)</span>
+        <span class="n">F_upper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_dtheta</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">C_inv</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_dtheta</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">F_lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">F_upper</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">D_comp</span><span class="p">,</span> <span class="n">D_meas</span> <span class="ow">in</span> <span class="p">((</span><span class="n">D_a</span><span class="p">,</span> <span class="n">D_b</span><span class="p">),</span> <span class="p">(</span><span class="n">D_b</span><span class="p">,</span> <span class="n">D_a</span><span class="p">)):</span>
+            <span class="c1"># compression t = D_comp C^-1 x: Cov(t)^-1 = (D_comp C^-1 D_comp^T)^-1 with the same</span>
+            <span class="c1"># (Hartlap-corrected) C^-1, so exact derivatives give F_lower = F_upper</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">D_meas</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">C_inv</span> <span class="o">@</span> <span class="n">D_comp</span><span class="o">.</span><span class="n">T</span>           <span class="c1"># dt/dtheta from the other seeds</span>
+            <span class="n">F_lower</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">G</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">D_comp</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">C_inv</span> <span class="o">@</span> <span class="n">D_comp</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">@</span> <span class="n">G</span><span class="o">.</span><span class="n">T</span>
 
-        <span class="n">C_all</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">h_all</span>  <span class="o">=</span> <span class="p">(</span><span class="n">n_total</span> <span class="o">-</span> <span class="n">n_data</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_total</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_total</span> <span class="o">&gt;</span> <span class="n">n_data</span> <span class="o">+</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">1.0</span>
-        <span class="n">F_upper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_dtheta</span> <span class="o">@</span> <span class="p">(</span><span class="n">h_all</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">C_all</span><span class="p">))</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_dtheta</span><span class="o">.</span><span class="n">T</span>
-
-        <span class="n">C_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">x_a</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">h_a</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_a</span> <span class="o">-</span> <span class="n">n_data</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_a</span> <span class="o">&gt;</span> <span class="n">n_data</span> <span class="o">+</span> <span class="mi">2</span> <span class="k">else</span> <span class="mf">1.0</span>
-        <span class="n">W</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmu_dtheta</span> <span class="o">@</span> <span class="p">(</span><span class="n">h_a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">C_a</span><span class="p">))</span>
-        <span class="n">y_b</span> <span class="o">=</span> <span class="p">(</span><span class="n">W</span> <span class="o">@</span> <span class="n">x_b</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">C_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">y_b</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">h_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_b</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_params</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">F_lower</span> <span class="o">=</span> <span class="n">h_y</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">C_y</span><span class="p">)</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geometricMean</span><span class="p">(</span><span class="n">F_upper</span><span class="p">,</span> <span class="n">F_lower</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    WARNING: Geometric mean failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">), using linear fallback."</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">((</span><span class="n">n_total</span> <span class="o">-</span> <span class="n">n_data</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">F_upper</span> <span class="o">-</span> <span class="p">(</span><span class="n">n_total</span> <span class="o">-</span> <span class="n">n_data</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">F_lower</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_data</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F_upper</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">F_upper</span> <span class="o">+</span> <span class="n">F_upper</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F_lower</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">F_lower</span> <span class="o">+</span> <span class="n">F_lower</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_geometricMean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F_lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F_upper</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">F</span> <span class="o">+</span> <span class="n">F</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_Shrinkage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shrinkage_target</span><span class="o">=</span><span class="s1">'diagonal'</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Ledoit-Wolf-style covariance regularisation (Pope &amp; Szapudi 2008)."""</span>
@@ -1095,6 +1140,71 @@
 
     <span class="c1"># ---- Combining ----</span>
 
+<div class="viewcode-block" id="FisherMatrix.joint">
+<a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.FisherMatrix.joint">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">joint</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fisher matrix of the concatenated data vectors of several FisherMatrix objects.</span>
+
+<span class="sd">        Use this when the blocks come from the same simulations, e.g. different</span>
+<span class="sd">        summaries, or one summary at different redshifts, so they are correlated</span>
+<span class="sd">        and ``F_a + F_b`` would double count. The covariance is estimated from the</span>
+<span class="sd">        concatenated vectors, paired by (seed, noise_seed), and the derivatives</span>
+<span class="sd">        are concatenated block by block. Keeping one block (and one cache file)</span>
+<span class="sd">        per summary or redshift means that adding a block later reuses the rest.</span>
+
+<span class="sd">        Every block must have run estimate_covariance on the same (seed,</span>
+<span class="sd">        noise_seed) pairs and estimate_derivatives on the same IC seeds. A block</span>
+<span class="sd">        whose derivatives used a single noise seed (e.g. noiseless) enters the</span>
+<span class="sd">        noise part of the derivative debias with zero scatter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocks : list of FisherMatrix</span>
+<span class="sd">        verbose : bool</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FisherMatrix</span>
+<span class="sd">            Call compute() on it as usual.</span>
+<span class="sd">        """</span>
+        <span class="n">b0</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">,</span> <span class="n">b0</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">),</span> <span class="s2">"Fiducials must match."</span>
+            <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">param_names</span> <span class="o">==</span> <span class="n">b0</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span>            <span class="s2">"Parameter names must match."</span>
+            <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">x_realisations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"Call estimate_covariance() on every block first."</span>
+            <span class="k">assert</span> <span class="n">b</span><span class="o">.</span><span class="n">dmu_dtheta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>     <span class="s2">"Call estimate_derivatives() on every block first."</span>
+
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">cov_keys</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">))</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">]</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">b0</span><span class="o">.</span><span class="n">cov_keys</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Blocks </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> lack covariance realisations of block 0."</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">stack_samples</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">ids_attr</span><span class="p">):</span>
+            <span class="c1"># Blocks with one sample (or none) have zero scatter: repeat their mean derivative</span>
+            <span class="n">many</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">many</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">many</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">ids_attr</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">many</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ids_attr</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">: blocks used different </span><span class="si">{</span><span class="n">ids_attr</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">many</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">attr</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">if</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">many</span>
+                                   <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">dmu_dtheta</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">n</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">fc</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">b0</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">,</span> <span class="n">b0</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">cov_keys</span>       <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">b0</span><span class="o">.</span><span class="n">cov_keys</span><span class="p">)</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">x_realisations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fc</span><span class="o">.</span><span class="n">cov_keys</span><span class="p">])</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">_set_covariance</span><span class="p">()</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">dmu_dtheta</span>     <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">dmu_dtheta</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">])</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">dmu_samples_ic</span> <span class="o">=</span> <span class="n">stack_samples</span><span class="p">(</span><span class="s1">'dmu_samples_ic'</span><span class="p">,</span> <span class="s1">'deriv_seeds'</span><span class="p">)</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">dmu_samples_ns</span> <span class="o">=</span> <span class="n">stack_samples</span><span class="p">(</span><span class="s1">'dmu_samples_ns'</span><span class="p">,</span> <span class="s1">'deriv_noise_seeds'</span><span class="p">)</span>
+        <span class="n">fc</span><span class="o">.</span><span class="n">deriv_seeds</span>    <span class="o">=</span> <span class="n">b0</span><span class="o">.</span><span class="n">deriv_seeds</span>
+        <span class="k">return</span> <span class="n">fc</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add two Fisher matrices (e.g. from independent data sets).</span>
@@ -1104,7 +1214,7 @@
         <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">),</span> <span class="s2">"Fiducials must match."</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_names</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span>            <span class="s2">"Parameter names must match."</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">F</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>       <span class="s2">"Call compute() on both first."</span>
-        <span class="n">combined</span> <span class="o">=</span> <span class="n">FisherMatrix</span><span class="p">(</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
             <span class="n">simulator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">theta_fid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">theta_fid</span><span class="p">,</span>
             <span class="n">param_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="p">,</span>
@@ -1354,9 +1464,7 @@
             <span class="s1">'X_mean'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_mean</span><span class="p">,</span>
             <span class="s1">'X_std'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_std</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'F'</span><span class="p">,</span> <span class="s1">'F_inv'</span><span class="p">,</span> <span class="s1">'F_std'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">,</span> <span class="s1">'C_inv'</span><span class="p">,</span> <span class="s1">'dmu_dtheta'</span><span class="p">,</span>
-                     <span class="s1">'dmu_samples_ns'</span><span class="p">,</span> <span class="s1">'dmu_samples_ic'</span><span class="p">,</span>
-                     <span class="s1">'x_mean_fid'</span><span class="p">,</span> <span class="s1">'x_realisations'</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ARRAY_ATTRS</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hartlap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1392,9 +1500,7 @@
             <span class="n">X_std</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'X_std'</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
             <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'F'</span><span class="p">,</span> <span class="s1">'F_inv'</span><span class="p">,</span> <span class="s1">'F_std'</span><span class="p">,</span> <span class="s1">'C'</span><span class="p">,</span> <span class="s1">'C_inv'</span><span class="p">,</span> <span class="s1">'dmu_dtheta'</span><span class="p">,</span>
-                     <span class="s1">'dmu_samples_ns'</span><span class="p">,</span> <span class="s1">'dmu_samples_ic'</span><span class="p">,</span>
-                     <span class="s1">'x_mean_fid'</span><span class="p">,</span> <span class="s1">'x_realisations'</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_ARRAY_ATTRS</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">attr</span><span class="p">])</span>
         <span class="k">if</span> <span class="s1">'hartlap'</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
@@ -1408,8 +1514,76 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">status</span> <span class="o">=</span> <span class="s2">"computed"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"not computed"</span>
         <span class="n">n_real</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_realisations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"FisherMatrix(</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">, params=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">, params=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">param_names</span><span class="si">}</span><span class="s2">, "</span>
                 <span class="sa">f</span><span class="s2">"n_realisations=</span><span class="si">{</span><span class="n">n_real</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="fisher_blocks">
+<a class="viewcode-back" href="../../../api/forecasting.html#psiphy.forecasting.fisher.fisher_blocks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fisher_blocks</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">theta_fid</span><span class="p">,</span> <span class="n">param_names</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">cache_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">covariance_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">derivative_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">'blocks'</span><span class="p">,</span>
+                  <span class="n">fisher_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dali_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    One FisherMatrix, with its own cache file, per block of a data vector.</span>
+
+<span class="sd">    A block is any part of the data vector that is simulated separately:</span>
+<span class="sd">    one redshift, frequency band, sky patch or summary statistic. Keeping one</span>
+<span class="sd">    cache per block means that adding a block later only simulates the new</span>
+<span class="sd">    one. Combine the blocks with ``FisherMatrix.joint``, which keeps their</span>
+<span class="sd">    cross-covariance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    simulator : callable</span>
+<span class="sd">        ``simulator(theta, seed, noise_seed, **kwargs)`` -&gt; data vector of one block.</span>
+<span class="sd">    theta_fid, param_names :</span>
+<span class="sd">        As for FisherMatrix.</span>
+<span class="sd">    blocks : dict</span>
+<span class="sd">        Block name -&gt; keyword arguments passed to the simulator for that block,</span>
+<span class="sd">        e.g. ``{z: dict(redshifts=[z]) for z in redshifts}``.</span>
+<span class="sd">    cache_file : callable or None</span>
+<span class="sd">        cache_file(name) -&gt; path of the block's cache file.</span>
+<span class="sd">    covariance_kw, derivative_kw : dict or None</span>
+<span class="sd">        Arguments of estimate_covariance and estimate_derivatives, the same for</span>
+<span class="sd">        every block (so the blocks can be joined).</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">    desc : str</span>
+<span class="sd">        Label of the progress bar over the blocks.</span>
+<span class="sd">    fisher_class : type or None</span>
+<span class="sd">        Class of the blocks, FisherMatrix (default) or a subclass such as</span>
+<span class="sd">        FisherMatrixDALI. Join them with ``fisher_class.joint``.</span>
+<span class="sd">    dali_kw : dict or None</span>
+<span class="sd">        Arguments of estimate_dali_derivatives, run on every block when given;</span>
+<span class="sd">        needs ``fisher_class=FisherMatrixDALI``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Block name -&gt; FisherMatrix with covariance and derivatives estimated.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; fms = fisher_blocks(sim, theta, names, {z: dict(redshifts=[z]) for z in (7, 8, 9)},</span>
+<span class="sd">    ...                     cache_file=lambda z: f'cache_z{z:.2f}.pkl',</span>
+<span class="sd">    ...                     covariance_kw=dict(seeds=range(1, 41), noise_seeds=range(1, 41)),</span>
+<span class="sd">    ...                     derivative_kw=dict(seeds=range(1, 41), delta_frac=0.02))</span>
+<span class="sd">    &gt;&gt;&gt; F = FisherMatrix.joint(list(fms.values())).compute()</span>
+<span class="sd">    """</span>
+    <span class="n">fisher_class</span> <span class="o">=</span> <span class="n">FisherMatrix</span> <span class="k">if</span> <span class="n">fisher_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fisher_class</span>
+    <span class="k">if</span> <span class="n">dali_kw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fisher_class</span><span class="p">,</span> <span class="s1">'estimate_dali_derivatives'</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"dali_kw needs fisher_class=FisherMatrixDALI."</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">kw</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">)):</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">fm</span> <span class="o">=</span> <span class="n">fisher_class</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">theta_fid</span><span class="p">,</span> <span class="n">param_names</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                          <span class="n">cache_file</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">cache_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cache_file</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">estimate_covariance</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">covariance_kw</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">estimate_derivatives</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">derivative_kw</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="k">if</span> <span class="n">dali_kw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fm</span><span class="o">.</span><span class="n">estimate_dali_derivatives</span><span class="p">(</span><span class="o">**</span><span class="n">dali_kw</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fm</span>
+    <span class="k">return</span> <span class="n">out</span></div>
 
 </pre></div>
 

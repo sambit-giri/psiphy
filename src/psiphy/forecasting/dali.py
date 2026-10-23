@@ -6,6 +6,7 @@ from collections import Counter
 from itertools import combinations_with_replacement, permutations, product
 from math import factorial
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
 
@@ -243,7 +244,7 @@ class FisherMatrixDALI(FisherMatrix):
         for k, stencil_k in stencils.items():
             samples = np.zeros((len(seeds),) + (p,) * k + (n_data,))
             for idx, points in stencil_k.items():
-                name = "d" + "".join(f"({self.param_names[i]})" for i in idx)
+                name = self._entry_name(idx)
                 d = np.zeros((len(seeds), n_data))
                 for off, w in points:
                     theta = self.theta_fid + off * h
@@ -308,13 +309,129 @@ class FisherMatrixDALI(FisherMatrix):
                         if s < snr_warn and n1 > noise_tol]
         if flagged:
             lines = "\n".join(
-                "    d" + "".join(f"({self.param_names[i]})" for i in idx)
-                + f": SNR = {s:.2f}, noise at 1 sigma = {n1:.3g}"
+                f"    {self._entry_name(idx)}: SNR = {s:.2f}, noise at 1 sigma = {n1:.3g}"
                 for idx, s, n1 in flagged)
             print(f"  WARNING: {len(flagged)} DALI derivative(s) are dominated by simulation noise:\n"
                   f"{lines}\n"
                   f"  Increase delta_frac for these parameters or use more seeds, and check that the "
                   f"simulator gives the same realisation for the same (seed, noise_seed) at every theta.")
+
+    def _entry_name(self, idx):
+        return "d" + "".join(f"({self.param_names[i]})" for i in idx)
+
+    def convergence_test_delta_frac(
+        self,
+        delta_fracs=None,
+        seeds=range(1, 11),
+        noise_seed=0,
+        noise_seeds=None,
+        n_stencil=2,
+        use_crn=False,
+        plot=True,
+        restore=True,
+        n_jobs=1,
+        order=1,
+        accuracy=2,
+        snr_warn=3.0,
+    ):
+        """
+        Test sensitivity of the derivatives to the finite-difference step size.
+
+        ``order=1`` runs FisherMatrix.convergence_test_delta_frac on the first
+        derivatives. ``order=2`` (or 3) sweeps ``delta_fracs`` through
+        estimate_dali_derivatives and records, for every distinct second (and
+        third) derivative, its norm and its SNR over the IC seeds. A good step
+        sits on the plateau between rounding or simulation noise (small h) and
+        truncation error (large h); noise-dominated points (SNR < snr_warn) are
+        marked in the plot. No noise warnings are printed during the sweep.
+
+        Parameters
+        ----------
+        delta_fracs : array-like or None
+            Step sizes to test. Default: 10 log-spaced values from 1e-3 to 0.3.
+        seeds, noise_seed, noise_seeds, n_jobs :
+            Forwarded to estimate_derivatives / estimate_dali_derivatives.
+        n_stencil, use_crn :
+            (order=1 only) Forwarded to estimate_derivatives.
+        plot : bool
+            If True, show diagnostic plots.
+        restore : bool
+            Restore the derivatives to their values before the test.
+        order : int
+            1, 2 or 3.
+        accuracy : int
+            (order >= 2) Forwarded to estimate_dali_derivatives.
+        snr_warn : float
+            (order >= 2) SNR below which a point is marked as noise-dominated.
+
+        Returns
+        -------
+        dict
+            order=1: as FisherMatrix.convergence_test_delta_frac. order >= 2:
+            entry name (e.g. 'd(a)(b)') -> dict with keys 'delta_fracs',
+            'norms' and 'snr'.
+        """
+        if order == 1:
+            return super().convergence_test_delta_frac(
+                delta_fracs=delta_fracs, seeds=seeds, noise_seed=noise_seed, noise_seeds=noise_seeds,
+                n_stencil=n_stencil, use_crn=use_crn, plot=plot, restore=restore, n_jobs=n_jobs)
+        if order not in (2, 3):
+            raise ValueError(f"order must be 1, 2 or 3, got {order!r}.")
+        if delta_fracs is None:
+            delta_fracs = np.logspace(-3, np.log10(0.3), 10)
+        delta_fracs = np.asarray(delta_fracs)
+
+        saved_attrs = ('d2mu_dtheta', 'd3mu_dtheta', 'd2mu_samples_ic', 'd3mu_samples_ic',
+                       'dali_seeds', 'dali_snr', 'dali_noise_1sigma')
+        saved = {a: getattr(self, a) for a in saved_attrs}
+        entries = {k: list(combinations_with_replacement(range(self.n_params), k))
+                   for k in range(2, order + 1)}
+        results = {self._entry_name(idx): {'delta_fracs': delta_fracs, 'norms': [], 'snr': []}
+                   for idx_k in entries.values() for idx in idx_k}
+
+        verbose, self.verbose = self.verbose, False
+        try:
+            for df in tqdm(delta_fracs, desc="delta_frac sweep", disable=not verbose):
+                self.estimate_dali_derivatives(order=order, delta_frac=df, seeds=seeds,
+                                               noise_seed=noise_seed, noise_seeds=noise_seeds,
+                                               accuracy=accuracy, snr_warn=0.0, n_jobs=n_jobs)
+                for k, idx_k in entries.items():
+                    d = getattr(self, f"d{k}mu_dtheta")
+                    for idx in idx_k:
+                        r = results[self._entry_name(idx)]
+                        r['norms'].append(np.linalg.norm(d[idx]))
+                        r['snr'].append(self.dali_snr[k][idx] if self.dali_snr is not None else np.nan)
+        finally:
+            self.verbose = verbose
+        for r in results.values():
+            r['norms'], r['snr'] = np.array(r['norms']), np.array(r['snr'])
+
+        if restore:
+            for a, v in saved.items():
+                setattr(self, a, v)
+            self._print("  Restored original DALI derivatives.")
+
+        if plot:
+            fig, axes = plt.subplots(1, len(entries), figsize=(5 * len(entries), 3.8), squeeze=False)
+            for ax, (k, idx_k) in zip(axes[0], entries.items()):
+                scale = max(results[self._entry_name(idx)]['norms'].max() for idx in idx_k)
+                for c, idx in enumerate(idx_k):
+                    r = results[self._entry_name(idx)]
+                    if r['norms'].max() < 1e-8 * scale:   # zero up to rounding
+                        continue
+                    ax.loglog(delta_fracs, r['norms'], 'o-', color=f'C{c}', ms=4,
+                              label=self._entry_name(idx))
+                    noisy = r['snr'] < snr_warn
+                    ax.loglog(delta_fracs[noisy], r['norms'][noisy], 'x', color='k', ms=8)
+                ax.plot([], [], 'kx', label=f'SNR < {snr_warn:g}')
+                ax.set_xlabel('delta_frac')
+                ax.set_ylabel(f'|d^{k}mu|')
+                ax.legend(fontsize=8, frameon=False)
+            fig.suptitle('Convergence test: delta_frac sensitivity of the DALI derivatives')
+            fig.tight_layout()
+            plt.show()
+
+        return results
 
     # ---- Combining ----
 
@@ -561,3 +678,59 @@ class FisherMatrixDALI(FisherMatrix):
             label=label,
             ranges=None if bounds is None else dict(zip(self.param_names, bounds)),
         )
+
+    # ---- Plotting ----
+
+    def plot_dali(self, orders=None, others=None, n_samples=100_000, label_names=None,
+                  colors=None, settings=None, width_inch=6, **sample_kw):
+        """
+        getdist triangle plot of the Fisher and DALI posteriors.
+
+        Parameters
+        ----------
+        orders : iterable of int or None
+            Orders to plot: 1 (Fisher), 2 (DALI-2), 3 (DALI-3). Default: all
+            estimated orders.
+        others : dict or None
+            Label -> getdist MCSamples to overlay filled, e.g. the posterior of
+            the exact likelihood.
+        n_samples : int
+        label_names : dict or None
+            param_name -> LaTeX label.
+        colors : list or None
+            One colour per curve (orders first, then others).
+        settings : dict or None
+            getdist analysis settings applied to every sample, e.g.
+            ``{'fine_bins_2D': 1024}`` for long tails.
+        width_inch : float
+        **sample_kw :
+            Forwarded to to_getdist for the DALI orders (method, prior_bounds, ...).
+
+        Returns
+        -------
+        getdist.plots.GetDistPlotter
+        """
+        from getdist import plots
+        if orders is None:
+            orders = range(1, self._dali_order(None) + 1)
+        names = {1: 'Fisher', 2: 'DALI-2', 3: 'DALI-3'}
+        samples = [self.to_getdist(n_samples, label=names[o], label_names=label_names, approx='fisher')
+                   if o == 1 else
+                   self.to_getdist(n_samples, label=names[self._dali_order(o)], label_names=label_names,
+                                   order=o, **sample_kw)
+                   for o in orders]
+        for label, s in (others or {}).items():
+            s.label = label
+            samples.append(s)
+        if settings:
+            for s in samples:
+                s.updateSettings(settings)
+        n_own = len(samples) - len(others or {})
+        if colors is None:
+            colors = [f'C{i}' for i in range(n_own)] + ['gray'] * (len(samples) - n_own)
+        g = plots.get_subplot_plotter(width_inch=width_inch)
+        g.triangle_plot(samples, filled=[False] * n_own + [True] * (len(samples) - n_own),
+                        contour_colors=colors, contour_lws=[1.5] * n_own + [1] * (len(samples) - n_own),
+                        legend_loc='upper right')
+        plt.show()
+        return g

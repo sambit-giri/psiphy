@@ -339,3 +339,81 @@ def test_add_independent_data_sums_log_likelihoods():
     assert combined.d3mu_dtheta is None
     fisher_only = a + FisherMatrix.joint([_full_dali()], verbose=False).compute()
     np.testing.assert_allclose(fisher_only.dali_logpdf(theta), 2 * a.dali_logpdf(theta, order=1), rtol=1e-8)
+
+
+# ── step-size convergence and plotting ─────────────────────────────────────────
+
+def test_convergence_test_higher_orders_restores():
+    fm = _dali().estimate_dali_derivatives(order=3, delta_frac=0.05, seeds=range(1, 3))
+    d2, d3 = fm.d2mu_dtheta.copy(), fm.d3mu_dtheta.copy()
+    res = fm.convergence_test_delta_frac(order=3, delta_fracs=[0.01, 0.05, 0.2], seeds=range(1, 3), plot=True)
+    assert set(res) == {'d(a)(a)', 'd(a)(b)', 'd(b)(b)', 'd(a)(a)(a)', 'd(a)(a)(b)', 'd(a)(b)(b)', 'd(b)(b)(b)'}
+    # cubic mean: the stencils are exact at every step
+    np.testing.assert_allclose(res['d(b)(b)']['norms'], np.linalg.norm(analytic_d2(1.0, 2.0)[1, 1]), rtol=1e-6)
+    assert res['d(a)(b)(b)']['snr'].shape == (3,)
+    np.testing.assert_array_equal(fm.d2mu_dtheta, d2)
+    np.testing.assert_array_equal(fm.d3mu_dtheta, d3)
+
+
+def test_convergence_test_order_1_is_the_base_test():
+    fm = _dali()
+    res = fm.convergence_test_delta_frac(order=1, delta_fracs=[0.01, 0.1], seeds=range(1, 3), plot=False)
+    assert set(res) == {'a', 'b'} and len(res['a']['norms']) == 2
+    with pytest.raises(ValueError, match="order"):
+        fm.convergence_test_delta_frac(order=4)
+
+
+def test_plot_dali():
+    from getdist import MCSamples
+    fm = _quadratic_fm(order=3)
+    exact = MCSamples(samples=fm.sample(2000), names=["a", "b"])
+    g = fm.plot_dali(others={'Exact': exact}, n_samples=5000)
+    labels = [t.get_text() for t in g.legend.get_texts()]
+    assert labels == ['Fisher', 'DALI-2', 'DALI-3', 'Exact']
+
+
+# ── non-linear toy model ───────────────────────────────────────────────────────
+
+def test_power_law_spectrum_dali_beats_fisher():
+    '''PowerLawSpectrum: analytic derivatives are recovered, and DALI-3 moments match the
+    exact posterior where the Fisher ellipse does not.'''
+    from psiphy.toy_models import PowerLawSpectrum
+    from psiphy.mcmc import importance_sampling
+    from scipy.stats import multivariate_normal
+
+    model = PowerLawSpectrum(ells=np.geomspace(10, 2000, 10), noise_sigma=0.5)
+
+    def sim(theta, seed, noise_seed):
+        x = model._spectrum(theta)
+        return x + np.random.default_rng(1000 * seed + noise_seed).normal(0, 0.5, x.size) if noise_seed else x
+
+    fm = FisherMatrixDALI(sim, theta_fid=[1.0, 1.0], param_names=model.param_names, verbose=False)
+    fm.estimate_covariance(seeds=range(1, 51), noise_seeds=range(1, 11))
+    fm.estimate_derivatives(delta_frac=0.01, seeds=[1], noise_seed=0)
+    fm.estimate_dali_derivatives(order=3, delta_frac=0.02, seeds=[1, 2], noise_seed=0)
+    fm.compute()
+
+    P, L = (model.ells / model.ell_pivot) ** 0, np.log(model.ells / model.ell_pivot)
+    np.testing.assert_allclose(fm.d2mu_dtheta[0, 1], P * L, atol=1e-2)
+    np.testing.assert_allclose(fm.d2mu_dtheta[1, 1], P * L**2, atol=1e-2)
+    np.testing.assert_allclose(fm.d3mu_dtheta[1, 1, 1], P * L**3, atol=5e-2)
+
+    proposal = multivariate_normal(fm.theta_fid, 9 * fm.F_inv)
+    X = proposal.rvs(100_000, random_state=0)
+
+    def moments(logp):
+        w = importance_sampling(logp, X, log_proposal_fn=proposal.logpdf, vectorized=True)['weights']
+        mean = w @ X
+        return mean, np.sqrt(w @ (X - mean)**2)
+
+    def exact(theta):
+        r = np.array([model._spectrum(t) for t in theta]) - model._spectrum(fm.theta_fid)
+        return -0.5 * np.einsum('na,ab,nb->n', r, fm.C_inv, r)
+
+    m_ex, s_ex = moments(exact)
+    m_f, s_f = moments(lambda t: fm.dali_logpdf(t, order=1))
+    m_d, s_d = moments(lambda t: fm.dali_logpdf(t, order=3))
+    sigma = fm.sigma_1d()
+    assert abs(m_f[0] - m_ex[0]) > 0.15 * sigma[0]          # Fisher misses the shift in A_s
+    np.testing.assert_allclose(m_d, m_ex, atol=0.03 * sigma.min())
+    np.testing.assert_allclose(s_d, s_ex, rtol=0.05)

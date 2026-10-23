@@ -1,1 +1,2 @@
-from .fisher import FisherMatrix
+from .fisher import FisherMatrix, fisher_blocks
+from .dali import FisherMatrixDALI

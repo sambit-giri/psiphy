@@ -21,4 +21,5 @@ Tutorials
    :caption: Forecasting and diagnostics
 
    examples/fisher_analysis
+   examples/fisher_analysis_higher_order
    examples/plotting_diagnostics_tutorial
